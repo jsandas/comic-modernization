@@ -5,5 +5,18 @@ get_original:
 	echo "Downloading ${ARCHIVE_URL} via curl..."
 	curl -L -o zip/${VERSION}.zip ${ARCHIVE_URL}
 	
-	echo "Extracting archive to orig/..."
-	unzip -o "zip/${VERSION}.zip" -d "orig/"
+	echo "Extracting archive to orig/${VERSION}..."
+	unzip -o "zip/${VERSION}.zip" -d "orig/${VERSION}"
+
+programs:
+	$(MAKE) -C programs
+
+deriv:
+	$(MAKE) -C deriv
+
+disassembly:
+	$(MAKE) -C disassembly
+
+all: programs deriv disassembly
+
+.PHONY: all programs deriv disassembly
