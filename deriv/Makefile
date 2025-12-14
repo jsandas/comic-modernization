@@ -167,207 +167,207 @@ all: $(EXES) $(EGA_PNGS) $(PT_PNGS) $(PT_SOLIDITY_PNGS) $(SOUNDS) $(SPRITES) $(S
 
 EXTRACT_SOUND = ../programs/extract-sound "$<" $(OFFSET) "$@"
 
-R1sw1988/sound-title.wav: OFFSET = 0x2521
-R1swh11988/sound-title.wav: OFFSET = 0x2521
-R2sw1988/sound-title.wav: OFFSET = 0x25a2
+# R1sw1988/sound-title.wav: OFFSET = 0x2521
+# R1swh11988/sound-title.wav: OFFSET = 0x2521
+# R2sw1988/sound-title.wav: OFFSET = 0x25a2
 R3sw1989/sound-title.wav: OFFSET = 0x25d2
-R4a1sw1989/sound-title.wav: OFFSET = 0x27a2
-R4sw1989/sound-title.wav: OFFSET = 0x27a2
-R5sw1991/sound-title.wav: OFFSET = 0x29c4
-Kseni/sound-title.wav: OFFSET = 0x2421
+# R4a1sw1989/sound-title.wav: OFFSET = 0x27a2
+# R4sw1989/sound-title.wav: OFFSET = 0x27a2
+# R5sw1991/sound-title.wav: OFFSET = 0x29c4
+# Kseni/sound-title.wav: OFFSET = 0x2421
 %/sound-title.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-start.wav: OFFSET = 0x2665
-R1swh11988/sound-start.wav: OFFSET = 0x2665
-R2sw1988/sound-start.wav: OFFSET = 0x2bc0
+# R1sw1988/sound-start.wav: OFFSET = 0x2665
+# R1swh11988/sound-start.wav: OFFSET = 0x2665
+# R2sw1988/sound-start.wav: OFFSET = 0x2bc0
 R3sw1989/sound-start.wav: OFFSET = 0x2bf2
-R4a1sw1989/sound-start.wav: OFFSET = 0x2daa
-R4sw1989/sound-start.wav: OFFSET = 0x2d9e
+# R4a1sw1989/sound-start.wav: OFFSET = 0x2daa
+# R4sw1989/sound-start.wav: OFFSET = 0x2d9e
 # No R5sw1991 version of this sound.
-Kseni/sound-start.wav: OFFSET = 0x2565
+# Kseni/sound-start.wav: OFFSET = 0x2565
 %/sound-start.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-unused.wav: OFFSET = 0x26a5
-R1swh11988/sound-unused.wav: OFFSET = 0x26a5
-R2sw1988/sound-unused.wav: OFFSET = 0x2c00
+# R1sw1988/sound-unused.wav: OFFSET = 0x26a5
+# R1swh11988/sound-unused.wav: OFFSET = 0x26a5
+# R2sw1988/sound-unused.wav: OFFSET = 0x2c00
 R3sw1989/sound-unused.wav: OFFSET = 0x2c32
-R4a1sw1989/sound-unused.wav: OFFSET = 0x2dea
-R4sw1989/sound-unused.wav: OFFSET = 0x2dde
+# R4a1sw1989/sound-unused.wav: OFFSET = 0x2dea
+# R4sw1989/sound-unused.wav: OFFSET = 0x2dde
 # No R5sw1991 version of this sound.
-Kseni/sound-unused.wav: OFFSET = 0x25a5
+# Kseni/sound-unused.wav: OFFSET = 0x25a5
 %/sound-unused.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-door.wav: OFFSET = 0xeda9
-R1swh11988/sound-door.wav: OFFSET = 0xeda9
-R2sw1988/sound-door.wav: OFFSET = 0xf309
+# R1sw1988/sound-door.wav: OFFSET = 0xeda9
+# R1swh11988/sound-door.wav: OFFSET = 0xeda9
+# R2sw1988/sound-door.wav: OFFSET = 0xf309
 R3sw1989/sound-door.wav: OFFSET = 0xf339
-R4a1sw1989/sound-door.wav: OFFSET = 0xf4f9
-R4sw1989/sound-door.wav: OFFSET = 0xf4e9
-R5sw1991/sound-door.wav: OFFSET = 0xfc29
-Kseni/sound-door.wav: OFFSET = 0xeca9
+# R4a1sw1989/sound-door.wav: OFFSET = 0xf4f9
+# R4sw1989/sound-door.wav: OFFSET = 0xf4e9
+# R5sw1991/sound-door.wav: OFFSET = 0xfc29
+# Kseni/sound-door.wav: OFFSET = 0xeca9
 %/sound-door.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-death.wav: OFFSET = 0xedd1
-R1swh11988/sound-death.wav: OFFSET = 0xedd1
-R2sw1988/sound-death.wav: OFFSET = 0xf331
+# R1sw1988/sound-death.wav: OFFSET = 0xedd1
+# R1swh11988/sound-death.wav: OFFSET = 0xedd1
+# R2sw1988/sound-death.wav: OFFSET = 0xf331
 R3sw1989/sound-death.wav: OFFSET = 0xf361
-R4a1sw1989/sound-death.wav: OFFSET = 0xf521
-R4sw1989/sound-death.wav: OFFSET = 0xf511
-R5sw1991/sound-death.wav: OFFSET = 0xfc51
-Kseni/sound-death.wav: OFFSET = 0xecd1
+# R4a1sw1989/sound-death.wav: OFFSET = 0xf521
+# R4sw1989/sound-death.wav: OFFSET = 0xf511
+# R5sw1991/sound-death.wav: OFFSET = 0xfc51
+# Kseni/sound-death.wav: OFFSET = 0xecd1
 %/sound-death.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-teleport.wav: OFFSET = 0xedf9
-R1swh11988/sound-teleport.wav: OFFSET = 0xedf9
-R2sw1988/sound-teleport.wav: OFFSET = 0xf359
+# R1sw1988/sound-teleport.wav: OFFSET = 0xedf9
+# R1swh11988/sound-teleport.wav: OFFSET = 0xedf9
+# R2sw1988/sound-teleport.wav: OFFSET = 0xf359
 R3sw1989/sound-teleport.wav: OFFSET = 0xf389
-R4a1sw1989/sound-teleport.wav: OFFSET = 0xf549
-R4sw1989/sound-teleport.wav: OFFSET = 0xf539
-R5sw1991/sound-teleport.wav: OFFSET = 0xfc79
-Kseni/sound-teleport.wav: OFFSET = 0xecf9
+# R4a1sw1989/sound-teleport.wav: OFFSET = 0xf549
+# R4sw1989/sound-teleport.wav: OFFSET = 0xf539
+# R5sw1991/sound-teleport.wav: OFFSET = 0xfc79
+# Kseni/sound-teleport.wav: OFFSET = 0xecf9
 %/sound-teleport.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-unknown.wav: OFFSET = 0xee19
-R1swh11988/sound-unknown.wav: OFFSET = 0xee19
-R2sw1988/sound-unknown.wav: OFFSET = 0xf379
+# R1sw1988/sound-unknown.wav: OFFSET = 0xee19
+# R1swh11988/sound-unknown.wav: OFFSET = 0xee19
+# R2sw1988/sound-unknown.wav: OFFSET = 0xf379
 R3sw1989/sound-unknown.wav: OFFSET = 0xf3a9
-R4a1sw1989/sound-unknown.wav: OFFSET = 0xf569
-R4sw1989/sound-unknown.wav: OFFSET = 0xf559
-R5sw1991/sound-unknown.wav: OFFSET = 0xfc99
-Kseni/sound-unknown.wav: OFFSET = 0xed19
+# R4a1sw1989/sound-unknown.wav: OFFSET = 0xf569
+# R4sw1989/sound-unknown.wav: OFFSET = 0xf559
+# R5sw1991/sound-unknown.wav: OFFSET = 0xfc99
+# Kseni/sound-unknown.wav: OFFSET = 0xed19
 %/sound-unknown.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-materialize.wav: OFFSET = 0xee25
-R1swh11988/sound-materialize.wav: OFFSET = 0xee25
-R2sw1988/sound-materialize.wav: OFFSET = 0xf385
+# R1sw1988/sound-materialize.wav: OFFSET = 0xee25
+# R1swh11988/sound-materialize.wav: OFFSET = 0xee25
+# R2sw1988/sound-materialize.wav: OFFSET = 0xf385
 R3sw1989/sound-materialize.wav: OFFSET = 0xf3b5
-R4a1sw1989/sound-materialize.wav: OFFSET = 0xf575
-R4sw1989/sound-materialize.wav: OFFSET = 0xf565
-R5sw1991/sound-materialize.wav: OFFSET = 0xfca5
-Kseni/sound-materialize.wav: OFFSET = 0xed25
+# R4a1sw1989/sound-materialize.wav: OFFSET = 0xf575
+# R4sw1989/sound-materialize.wav: OFFSET = 0xf565
+# R5sw1991/sound-materialize.wav: OFFSET = 0xfca5
+# Kseni/sound-materialize.wav: OFFSET = 0xed25
 %/sound-materialize.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-gameover.wav: OFFSET = 0xee85
-R1swh11988/sound-gameover.wav: OFFSET = 0xee85
-R2sw1988/sound-gameover.wav: OFFSET = 0xf3e5
+# R1sw1988/sound-gameover.wav: OFFSET = 0xee85
+# R1swh11988/sound-gameover.wav: OFFSET = 0xee85
+# R2sw1988/sound-gameover.wav: OFFSET = 0xf3e5
 R3sw1989/sound-gameover.wav: OFFSET = 0xf415
-R4a1sw1989/sound-gameover.wav: OFFSET = 0xf5d5
-R4sw1989/sound-gameover.wav: OFFSET = 0xf5c5
-R5sw1991/sound-gameover.wav: OFFSET = 0xfd05
-Kseni/sound-gameover.wav: OFFSET = 0xed85
+# R4a1sw1989/sound-gameover.wav: OFFSET = 0xf5d5
+# R4sw1989/sound-gameover.wav: OFFSET = 0xf5c5
+# R5sw1991/sound-gameover.wav: OFFSET = 0xfd05
+# Kseni/sound-gameover.wav: OFFSET = 0xed85
 %/sound-gameover.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-transition.wav: OFFSET = 0xeede
-R1swh11988/sound-transition.wav: OFFSET = 0xeede
-R2sw1988/sound-transition.wav: OFFSET = 0xf43e
+# R1sw1988/sound-transition.wav: OFFSET = 0xeede
+# R1swh11988/sound-transition.wav: OFFSET = 0xeede
+# R2sw1988/sound-transition.wav: OFFSET = 0xf43e
 R3sw1989/sound-transition.wav: OFFSET = 0xf46f
-R4a1sw1989/sound-transition.wav: OFFSET = 0xf62f
-R4sw1989/sound-transition.wav: OFFSET = 0xf61f
-R5sw1991/sound-transition.wav: OFFSET = 0xfd3f
-Kseni/sound-transition.wav: OFFSET = 0xedde
+# R4a1sw1989/sound-transition.wav: OFFSET = 0xf62f
+# R4sw1989/sound-transition.wav: OFFSET = 0xf61f
+# R5sw1991/sound-transition.wav: OFFSET = 0xfd3f
+# Kseni/sound-transition.wav: OFFSET = 0xedde
 %/sound-transition.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-toobad.wav: OFFSET = 0xeefe
-R1swh11988/sound-toobad.wav: OFFSET = 0xeefe
-R2sw1988/sound-toobad.wav: OFFSET = 0xf45e
+# R1sw1988/sound-toobad.wav: OFFSET = 0xeefe
+# R1swh11988/sound-toobad.wav: OFFSET = 0xeefe
+# R2sw1988/sound-toobad.wav: OFFSET = 0xf45e
 R3sw1989/sound-toobad.wav: OFFSET = 0xf48f
-R4a1sw1989/sound-toobad.wav: OFFSET = 0xf64f
-R4sw1989/sound-toobad.wav: OFFSET = 0xf63f
-R5sw1991/sound-toobad.wav: OFFSET = 0xfd5f
-Kseni/sound-toobad.wav: OFFSET = 0xedfe
+# R4a1sw1989/sound-toobad.wav: OFFSET = 0xf64f
+# R4sw1989/sound-toobad.wav: OFFSET = 0xf63f
+# R5sw1991/sound-toobad.wav: OFFSET = 0xfd5f
+# Kseni/sound-toobad.wav: OFFSET = 0xedfe
 %/sound-toobad.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-shoot.wav: OFFSET = 0xef4e
-R1swh11988/sound-shoot.wav: OFFSET = 0xef4e
-R2sw1988/sound-shoot.wav: OFFSET = 0xf4ae
+# R1sw1988/sound-shoot.wav: OFFSET = 0xef4e
+# R1swh11988/sound-shoot.wav: OFFSET = 0xef4e
+# R2sw1988/sound-shoot.wav: OFFSET = 0xf4ae
 R3sw1989/sound-shoot.wav: OFFSET = 0xf4de
-R4a1sw1989/sound-shoot.wav: OFFSET = 0xf69e
-R4sw1989/sound-shoot.wav: OFFSET = 0xf68e
-R5sw1991/sound-shoot.wav: OFFSET = 0xfdae
-Kseni/sound-shoot.wav: OFFSET = 0xee4e
+# R4a1sw1989/sound-shoot.wav: OFFSET = 0xf69e
+# R4sw1989/sound-shoot.wav: OFFSET = 0xf68e
+# R5sw1991/sound-shoot.wav: OFFSET = 0xfdae
+# Kseni/sound-shoot.wav: OFFSET = 0xee4e
 %/sound-shoot.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-pop.wav: OFFSET = 0xef5a
-R1swh11988/sound-pop.wav: OFFSET = 0xef5a
-R2sw1988/sound-pop.wav: OFFSET = 0xf4ba
+# R1sw1988/sound-pop.wav: OFFSET = 0xef5a
+# R1swh11988/sound-pop.wav: OFFSET = 0xef5a
+# R2sw1988/sound-pop.wav: OFFSET = 0xf4ba
 R3sw1989/sound-pop.wav: OFFSET = 0xf4ea
-R4a1sw1989/sound-pop.wav: OFFSET = 0xf6aa
-R4sw1989/sound-pop.wav: OFFSET = 0xf69a
-R5sw1991/sound-pop.wav: OFFSET = 0xfdba
-Kseni/sound-pop.wav: OFFSET = 0xee5a
+# R4a1sw1989/sound-pop.wav: OFFSET = 0xf6aa
+# R4sw1989/sound-pop.wav: OFFSET = 0xf69a
+# R5sw1991/sound-pop.wav: OFFSET = 0xfdba
+# Kseni/sound-pop.wav: OFFSET = 0xee5a
 %/sound-pop.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-damage.wav: OFFSET = 0xef71
-R1swh11988/sound-damage.wav: OFFSET = 0xef71
-R2sw1988/sound-damage.wav: OFFSET = 0xf4d1
+# R1sw1988/sound-damage.wav: OFFSET = 0xef71
+# R1swh11988/sound-damage.wav: OFFSET = 0xef71
+# R2sw1988/sound-damage.wav: OFFSET = 0xf4d1
 R3sw1989/sound-damage.wav: OFFSET = 0xf501
-R4a1sw1989/sound-damage.wav: OFFSET = 0xf6c1
-R4sw1989/sound-damage.wav: OFFSET = 0xf6b1
-R5sw1991/sound-damage.wav: OFFSET = 0xfdd1
-Kseni/sound-damage.wav: OFFSET = 0xee71
+# R4a1sw1989/sound-damage.wav: OFFSET = 0xf6c1
+# R4sw1989/sound-damage.wav: OFFSET = 0xf6b1
+# R5sw1991/sound-damage.wav: OFFSET = 0xfdd1
+# Kseni/sound-damage.wav: OFFSET = 0xee71
 %/sound-damage.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-itemget.wav: OFFSET = 0xef81
-R1swh11988/sound-itemget.wav: OFFSET = 0xef81
-R2sw1988/sound-itemget.wav: OFFSET = 0xf4e1
+# R1sw1988/sound-itemget.wav: OFFSET = 0xef81
+# R1swh11988/sound-itemget.wav: OFFSET = 0xef81
+# R2sw1988/sound-itemget.wav: OFFSET = 0xf4e1
 R3sw1989/sound-itemget.wav: OFFSET = 0xf511
-R4a1sw1989/sound-itemget.wav: OFFSET = 0xf6d1
-R4sw1989/sound-itemget.wav: OFFSET = 0xf6c1
-R5sw1991/sound-itemget.wav: OFFSET = 0xfde1
-Kseni/sound-itemget.wav: OFFSET = 0xee81
+# R4a1sw1989/sound-itemget.wav: OFFSET = 0xf6d1
+# R4sw1989/sound-itemget.wav: OFFSET = 0xf6c1
+# R5sw1991/sound-itemget.wav: OFFSET = 0xfde1
+# Kseni/sound-itemget.wav: OFFSET = 0xee81
 %/sound-itemget.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sound-wereinthemoney.wav: OFFSET = 0xef95
-R1swh11988/sound-wereinthemoney.wav: OFFSET = 0xef95
-R2sw1988/sound-wereinthemoney.wav: OFFSET = 0xf4f5
+# R1sw1988/sound-wereinthemoney.wav: OFFSET = 0xef95
+# R1swh11988/sound-wereinthemoney.wav: OFFSET = 0xef95
+# R2sw1988/sound-wereinthemoney.wav: OFFSET = 0xf4f5
 R3sw1989/sound-wereinthemoney.wav: OFFSET = 0xf525
-R4a1sw1989/sound-wereinthemoney.wav: OFFSET = 0xf6e5
-R4sw1989/sound-wereinthemoney.wav: OFFSET = 0xf6d5
-R5sw1991/sound-wereinthemoney.wav: OFFSET = 0xfdf5
-Kseni/sound-wereinthemoney.wav: OFFSET = 0xee95
+# R4a1sw1989/sound-wereinthemoney.wav: OFFSET = 0xf6e5
+# R4sw1989/sound-wereinthemoney.wav: OFFSET = 0xf6d5
+# R5sw1991/sound-wereinthemoney.wav: OFFSET = 0xfdf5
+# Kseni/sound-wereinthemoney.wav: OFFSET = 0xee95
 %/sound-wereinthemoney.wav: %/unpacked.exe
 	$(EXTRACT_SOUND)
 
-R1sw1988/sprite-%.png: R1sw1988/unpacked.exe
-	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
-R1swh11988/sprite-%.png: R1swh11988/unpacked.exe
-	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
-R2sw1988/sprite-%.png: R2sw1988/unpacked.exe
-	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
+# R1sw1988/sprite-%.png: R1sw1988/unpacked.exe
+# 	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
+# R1swh11988/sprite-%.png: R1swh11988/unpacked.exe
+# 	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
+# R2sw1988/sprite-%.png: R2sw1988/unpacked.exe
+# 	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
 R3sw1989/sprite-%.png: R3sw1989/unpacked.exe
 	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
-R4sw1989/sprite-%.png: R4sw1989/unpacked.exe
-	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
-R4a1sw1989/sprite-%.png: R4a1sw1989/unpacked.exe
-	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
-R5sw1991/sprite-%.png: R5sw1991/unpacked.exe
-	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
-Kseni/sprite-%.png: Kseni/unpacked.exe
-	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
+# R4sw1989/sprite-%.png: R4sw1989/unpacked.exe
+# 	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
+# R4a1sw1989/sprite-%.png: R4a1sw1989/unpacked.exe
+# 	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
+# R5sw1991/sprite-%.png: R5sw1991/unpacked.exe
+# 	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
+# Kseni/sprite-%.png: Kseni/unpacked.exe
+# 	../programs/unpack-game-graphic/unpack-game-graphic $(MASK) "$<" $$(($(SPRITES_START)+$(OFFSET)+512)) "$(DIMENSIONS)" > "$@"
 
-R1sw1988/sprite-%.png:   SPRITES_START = 0x8e80
-R1swh11988/sprite-%.png: SPRITES_START = 0x8e80
-R2sw1988/sprite-%.png:   SPRITES_START = 0x93e0
+# R1sw1988/sprite-%.png:   SPRITES_START = 0x8e80
+# R1swh11988/sprite-%.png: SPRITES_START = 0x8e80
+# R2sw1988/sprite-%.png:   SPRITES_START = 0x93e0
 R3sw1989/sprite-%.png:   SPRITES_START = 0x9410
-R4sw1989/sprite-%.png:   SPRITES_START = 0x95c0
-R4a1sw1989/sprite-%.png: SPRITES_START = 0x95d0
-R5sw1991/sprite-%.png:   SPRITES_START = 0x9d00
-Kseni/sprite-%.png:      SPRITES_START = 0x8d80
+# R4sw1989/sprite-%.png:   SPRITES_START = 0x95c0
+# R4a1sw1989/sprite-%.png: SPRITES_START = 0x95d0
+# R5sw1991/sprite-%.png:   SPRITES_START = 0x9d00
+# Kseni/sprite-%.png:      SPRITES_START = 0x8d80
 
 %/sprite-corkscrew_even.png \
 %/sprite-doorkey_even.png \
