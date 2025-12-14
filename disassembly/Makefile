@@ -11,13 +11,6 @@ GRAPHICS := $(addprefix graphics/, $(addsuffix .ega, \
 		comic_running_2_$(facing)_16x32m \
 		comic_running_3_$(facing)_16x32m \
 		comic_jumping_$(facing)_16x32m \
-		$(foreach prefix,R4_ Kseni_, \
-			$(prefix)comic_standing_$(facing)_16x32m \
-			$(prefix)comic_running_1_$(facing)_16x32m \
-			$(prefix)comic_running_2_$(facing)_16x32m \
-			$(prefix)comic_running_3_$(facing)_16x32m \
-			$(prefix)comic_jumping_$(facing)_16x32m \
-		) \
 	) \
 	$(foreach i,0 1,fireball_$(i)_16x8m) \
 	$(foreach i,0 1 2,white_spark_$(i)_16x16m) \
@@ -28,7 +21,6 @@ GRAPHICS := $(addprefix graphics/, $(addsuffix .ega, \
 	$(foreach item,corkscrew door_key boots lantern teleport_wand gems crown gold blastola_cola shield, \
 		$(foreach evenodd,even odd, \
 			$(item)_$(evenodd)_16x16m \
-			Kseni_$(item)_$(evenodd)_16x16m \
 		) \
 	) \
 	$(foreach i,1 2 3 4 5, \
@@ -38,18 +30,12 @@ GRAPHICS := $(addprefix graphics/, $(addsuffix .ega, \
 	) \
 	life_icon_bright_16x16m \
 	life_icon_dark_16x16m \
-	Kseni_life_icon_bright_16x16m \
-	Kseni_life_icon_dark_16x16m \
 	$(foreach i,0 1 2 3 4 5 6 7 8 9,score_digit_$(i)_8x16) \
 	meter_empty_8x16 \
 	meter_half_8x16 \
 	meter_full_8x16 \
 	pause_128x48 \
 	game_over_128x48 \
-	R4_pause_128x48 \
-	R4_game_over_128x48 \
-	Kseni_pause_128x48 \
-	Kseni_game_over_128x48 \
 	high_scores_320x200 \
 ))
 
@@ -61,18 +47,6 @@ djlink/djlink:
 
 %.exe: %.obj
 	"$(DJLINK)" -o "$@" $^
-
-%.com: %.asm
-	"$(NASM)" -f bin -o "$@" "$<"
-
-# NASM is capable of generating COM files directly ("-f bin"), but if we
-# do that we can't use section in the same way and would have to rewrite
-# a lot of the original program. Instead, we do more like what Yury
-# Lesiuk did: start with a decompressed KSENI.EXE, then prepend a loader
-# stub that does the relocations in the COM file.
-# .INTERMEDIATE: Kseni_stub.com Kseni.exe
-# Kseni.com: Kseni_stub.com Kseni.exe
-# 	(cat Kseni_stub.com; dd if=Kseni.exe bs=512 skip=1) > "$@"
 
 .INTERMEDIATE: %.obj
 %.obj: %.asm R3_levels.asm $(GRAPHICS)
@@ -87,8 +61,6 @@ graphics/%.ega:
 	dd if="$(EXE)" of="$@" bs=1 skip="$$((512+($(EXTRACT_SKIP))))" count="$$(($(EXTRACT_COUNT)))"
 
 graphics/%.ega: EXE=../deriv/R3sw1989/unpacked.exe
-# graphics/R4_%.ega: EXE=../deriv/R4sw1989/unpacked.exe
-# graphics/Kseni_%.ega: EXE=../deriv/Kseni/unpacked.exe
 
 # Graphics have 4 EGA planes, 8 pixels per byte in each plane.
 %_8x16.ega:    EXTRACT_COUNT=4*8*16/8
@@ -111,28 +83,6 @@ graphics/comic_running_1_left_16x32m.ega:  EXTRACT_SKIP=0x8e80+6*320
 graphics/comic_running_2_left_16x32m.ega:  EXTRACT_SKIP=0x8e80+7*320
 graphics/comic_running_3_left_16x32m.ega:  EXTRACT_SKIP=0x8e80+8*320
 graphics/comic_jumping_left_16x32m.ega:    EXTRACT_SKIP=0x8e80+9*320
-
-# graphics/R4_comic_standing_right_16x32m.ega:  EXTRACT_SKIP=0x95c0+0*320
-# graphics/R4_comic_running_1_right_16x32m.ega: EXTRACT_SKIP=0x95c0+1*320
-# graphics/R4_comic_running_2_right_16x32m.ega: EXTRACT_SKIP=0x95c0+2*320
-# graphics/R4_comic_running_3_right_16x32m.ega: EXTRACT_SKIP=0x95c0+3*320
-# graphics/R4_comic_jumping_right_16x32m.ega:   EXTRACT_SKIP=0x95c0+4*320
-# graphics/R4_comic_standing_left_16x32m.ega:   EXTRACT_SKIP=0x95c0+5*320
-# graphics/R4_comic_running_1_left_16x32m.ega:  EXTRACT_SKIP=0x95c0+6*320
-# graphics/R4_comic_running_2_left_16x32m.ega:  EXTRACT_SKIP=0x95c0+7*320
-# graphics/R4_comic_running_3_left_16x32m.ega:  EXTRACT_SKIP=0x95c0+8*320
-# graphics/R4_comic_jumping_left_16x32m.ega:    EXTRACT_SKIP=0x95c0+9*320
-
-# graphics/Kseni_comic_standing_right_16x32m.ega:  EXTRACT_SKIP=0x8d80+0*320
-# graphics/Kseni_comic_running_1_right_16x32m.ega: EXTRACT_SKIP=0x8d80+1*320
-# graphics/Kseni_comic_running_2_right_16x32m.ega: EXTRACT_SKIP=0x8d80+2*320
-# graphics/Kseni_comic_running_3_right_16x32m.ega: EXTRACT_SKIP=0x8d80+3*320
-# graphics/Kseni_comic_jumping_right_16x32m.ega:   EXTRACT_SKIP=0x8d80+4*320
-# graphics/Kseni_comic_standing_left_16x32m.ega:   EXTRACT_SKIP=0x8d80+5*320
-# graphics/Kseni_comic_running_1_left_16x32m.ega:  EXTRACT_SKIP=0x8d80+6*320
-# graphics/Kseni_comic_running_2_left_16x32m.ega:  EXTRACT_SKIP=0x8d80+7*320
-# graphics/Kseni_comic_running_3_left_16x32m.ega:  EXTRACT_SKIP=0x8d80+8*320
-# graphics/Kseni_comic_jumping_left_16x32m.ega:    EXTRACT_SKIP=0x8d80+9*320
 
 graphics/fireball_0_16x8m.ega: EXTRACT_SKIP=0x9b00+0*80
 graphics/fireball_1_16x8m.ega: EXTRACT_SKIP=0x9b00+1*80
@@ -195,28 +145,6 @@ graphics/gold_odd_16x16m.ega:           EXTRACT_SKIP=0xbc44+0xa00+7*160
 graphics/blastola_cola_odd_16x16m.ega:  EXTRACT_SKIP=0xbc44+0xa00+8*160
 graphics/shield_odd_16x16m.ega:         EXTRACT_SKIP=0xbc44+0xa00+14*160
 
-# graphics/Kseni_corkscrew_even_16x16m.ega:     EXTRACT_SKIP=0xbb44+0x000+0*160
-# graphics/Kseni_door_key_even_16x16m.ega:      EXTRACT_SKIP=0xbb44+0x000+1*160
-# graphics/Kseni_boots_even_16x16m.ega:         EXTRACT_SKIP=0xbb44+0x000+2*160
-# graphics/Kseni_lantern_even_16x16m.ega:       EXTRACT_SKIP=0xbb44+0x000+3*160
-# graphics/Kseni_teleport_wand_even_16x16m.ega: EXTRACT_SKIP=0xbb44+0x000+4*160
-# graphics/Kseni_gems_even_16x16m.ega:          EXTRACT_SKIP=0xbb44+0x000+5*160
-# graphics/Kseni_crown_even_16x16m.ega:         EXTRACT_SKIP=0xbb44+0x000+6*160
-# graphics/Kseni_gold_even_16x16m.ega:          EXTRACT_SKIP=0xbb44+0x000+7*160
-# graphics/Kseni_blastola_cola_even_16x16m.ega: EXTRACT_SKIP=0xbb44+0x000+8*160
-# graphics/Kseni_shield_even_16x16m.ega:        EXTRACT_SKIP=0xbb44+0x000+14*160
-#
-# graphics/Kseni_corkscrew_odd_16x16m.ega:      EXTRACT_SKIP=0xbb44+0xa00+0*160
-# graphics/Kseni_door_key_odd_16x16m.ega:       EXTRACT_SKIP=0xbb44+0xa00+1*160
-# graphics/Kseni_boots_odd_16x16m.ega:          EXTRACT_SKIP=0xbb44+0xa00+2*160
-# graphics/Kseni_lantern_odd_16x16m.ega:        EXTRACT_SKIP=0xbb44+0xa00+3*160
-# graphics/Kseni_teleport_wand_odd_16x16m.ega:  EXTRACT_SKIP=0xbb44+0xa00+4*160
-# graphics/Kseni_gems_odd_16x16m.ega:           EXTRACT_SKIP=0xbb44+0xa00+5*160
-# graphics/Kseni_crown_odd_16x16m.ega:          EXTRACT_SKIP=0xbb44+0xa00+6*160
-# graphics/Kseni_gold_odd_16x16m.ega:           EXTRACT_SKIP=0xbb44+0xa00+7*160
-# graphics/Kseni_blastola_cola_odd_16x16m.ega:  EXTRACT_SKIP=0xbb44+0xa00+8*160
-# graphics/Kseni_shield_odd_16x16m.ega:         EXTRACT_SKIP=0xbb44+0xa00+14*160
-
 graphics/blastola_cola_inventory_1_even_16x16m.ega: EXTRACT_SKIP=0xc144+0x000+1*160
 graphics/blastola_cola_inventory_2_even_16x16m.ega: EXTRACT_SKIP=0xc144+0x000+2*160
 graphics/blastola_cola_inventory_3_even_16x16m.ega: EXTRACT_SKIP=0xc144+0x000+3*160
@@ -230,9 +158,6 @@ graphics/blastola_cola_inventory_5_odd_16x16m.ega:  EXTRACT_SKIP=0xc144+0xa00+5*
 
 graphics/life_icon_bright_16x16m.ega: EXTRACT_SKIP=0xc5a4+0x000
 graphics/life_icon_dark_16x16m.ega:   EXTRACT_SKIP=0xc5a4+0xa00
-
-# graphics/Kseni_life_icon_bright_16x16m.ega: EXTRACT_SKIP=0xc4a4+0x000
-# graphics/Kseni_life_icon_dark_16x16m.ega:   EXTRACT_SKIP=0xc4a4+0xa00
 
 graphics/score_digit_0_8x16.ega: EXTRACT_SKIP=0xd044+0*64
 graphics/score_digit_1_8x16.ega: EXTRACT_SKIP=0xd044+1*64
@@ -251,12 +176,6 @@ graphics/meter_full_8x16.ega:  EXTRACT_SKIP=0xd344
 
 graphics/pause_128x48.ega: EXTRACT_SKIP=0xd384
 graphics/game_over_128x48.ega: EXTRACT_SKIP=0xdf84
-
-# graphics/R4_pause_128x48.ega: EXTRACT_SKIP=0xdac4
-# graphics/R4_game_over_128x48.ega: EXTRACT_SKIP=0xe6c4
-
-# graphics/Kseni_pause_128x48.ega: EXTRACT_SKIP=0xd284
-# graphics/Kseni_game_over_128x48.ega: EXTRACT_SKIP=0xde84
 
 graphics/high_scores_320x200.ega: EXTRACT_SKIP=0xfdd0
 
