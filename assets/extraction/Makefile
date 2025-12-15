@@ -11,6 +11,13 @@ SOUNDS = \
 SPRITES = $(foreach name, \
 	$(foreach evenodd, even odd, $(addsuffix _$(evenodd), corkscrew doorkey boots lantern teleportwand gems crown gold cola shield)) \
 	$(foreach facing, right left, $(addsuffix _$(facing), comic_standing comic_running_1 comic_running_2 comic_running_3 comic_jumping)) \
+	$(foreach i,0 1 2 3 4 5 6 7, comic_death_$(i)) \
+	$(foreach i,0 1 2, teleport_$(i)) \
+	$(foreach i,0 1 2 3 4 5 6 7 8 9 10 11, materialize_$(i)) \
+	$(foreach i,0 1, fireball_$(i)) \
+	$(foreach i,0 1 2, white_spark_$(i) red_spark_$(i)) \
+	$(foreach i,0 1 2 3 4 5 6 7 8 9, score_digit_$(i)) \
+	meter_empty meter_half meter_full \
 	life_icon_bright life_icon_dark pause game_over \
 ,sprite-$(name).png)
 SHP_GIFS = $(foreach facing,left right, \
@@ -261,7 +268,57 @@ sprite-comic_running_1_left.png \
 sprite-comic_running_2_left.png \
 sprite-comic_running_3_left.png \
 sprite-comic_jumping_left.png \
+sprite-comic_death_0.png \
+sprite-comic_death_1.png \
+sprite-comic_death_2.png \
+sprite-comic_death_3.png \
+sprite-comic_death_4.png \
+sprite-comic_death_5.png \
+sprite-comic_death_6.png \
+sprite-comic_death_7.png \
+sprite-teleport_0.png \
+sprite-teleport_1.png \
+sprite-teleport_2.png \
+sprite-materialize_0.png \
+sprite-materialize_1.png \
+sprite-materialize_2.png \
+sprite-materialize_3.png \
+sprite-materialize_4.png \
+sprite-materialize_5.png \
+sprite-materialize_6.png \
+sprite-materialize_7.png \
+sprite-materialize_8.png \
+sprite-materialize_9.png \
+sprite-materialize_10.png \
+sprite-materialize_11.png \
 : DIMENSIONS = 16x32
+
+sprite-fireball_0.png \
+sprite-fireball_1.png \
+: DIMENSIONS = 16x8
+
+sprite-white_spark_0.png \
+sprite-white_spark_1.png \
+sprite-white_spark_2.png \
+sprite-red_spark_0.png \
+sprite-red_spark_1.png \
+sprite-red_spark_2.png \
+: DIMENSIONS = 16x16
+
+sprite-score_digit_0.png \
+sprite-score_digit_1.png \
+sprite-score_digit_2.png \
+sprite-score_digit_3.png \
+sprite-score_digit_4.png \
+sprite-score_digit_5.png \
+sprite-score_digit_6.png \
+sprite-score_digit_7.png \
+sprite-score_digit_8.png \
+sprite-score_digit_9.png \
+sprite-meter_empty.png \
+sprite-meter_half.png \
+sprite-meter_full.png \
+: DIMENSIONS = 8x16
 
 sprite-pause.png \
 sprite-game_over.png \
@@ -299,10 +356,54 @@ sprite-comic_running_1_left.png \
 sprite-comic_running_2_left.png \
 sprite-comic_running_3_left.png \
 sprite-comic_jumping_left.png \
+sprite-comic_death_0.png \
+sprite-comic_death_1.png \
+sprite-comic_death_2.png \
+sprite-comic_death_3.png \
+sprite-comic_death_4.png \
+sprite-comic_death_5.png \
+sprite-comic_death_6.png \
+sprite-comic_death_7.png \
+sprite-teleport_0.png \
+sprite-teleport_1.png \
+sprite-teleport_2.png \
+sprite-materialize_0.png \
+sprite-materialize_1.png \
+sprite-materialize_2.png \
+sprite-materialize_3.png \
+sprite-materialize_4.png \
+sprite-materialize_5.png \
+sprite-materialize_6.png \
+sprite-materialize_7.png \
+sprite-materialize_8.png \
+sprite-materialize_9.png \
+sprite-materialize_10.png \
+sprite-materialize_11.png \
+sprite-fireball_0.png \
+sprite-fireball_1.png \
+sprite-white_spark_0.png \
+sprite-white_spark_1.png \
+sprite-white_spark_2.png \
+sprite-red_spark_0.png \
+sprite-red_spark_1.png \
+sprite-red_spark_2.png \
 : MASK = -mask
 
 sprite-pause.png \
 sprite-game_over.png \
+sprite-score_digit_0.png \
+sprite-score_digit_1.png \
+sprite-score_digit_2.png \
+sprite-score_digit_3.png \
+sprite-score_digit_4.png \
+sprite-score_digit_5.png \
+sprite-score_digit_6.png \
+sprite-score_digit_7.png \
+sprite-score_digit_8.png \
+sprite-score_digit_9.png \
+sprite-meter_empty.png \
+sprite-meter_half.png \
+sprite-meter_full.png \
 : MASK =
 
 sprite-corkscrew_even.png:    OFFSET = 0x2dc4+0x000+160*0
@@ -341,6 +442,58 @@ sprite-comic_jumping_left.png:    OFFSET = 0x0000+320*9
 
 sprite-pause.png:     OFFSET = 0x4504
 sprite-game_over.png: OFFSET = 0x5104
+
+sprite-comic_death_0.png: OFFSET = 0x10e0+0*320
+sprite-comic_death_1.png: OFFSET = 0x10e0+1*320
+sprite-comic_death_2.png: OFFSET = 0x10e0+2*320
+sprite-comic_death_3.png: OFFSET = 0x10e0+3*320
+sprite-comic_death_4.png: OFFSET = 0x10e0+4*320
+sprite-comic_death_5.png: OFFSET = 0x10e0+5*320
+sprite-comic_death_6.png: OFFSET = 0x10e0+6*320
+sprite-comic_death_7.png: OFFSET = 0x10e0+7*320
+
+sprite-teleport_0.png: OFFSET = 0x1ae0+0*320
+sprite-teleport_1.png: OFFSET = 0x1ae0+1*320
+sprite-teleport_2.png: OFFSET = 0x1ae0+2*320
+
+sprite-materialize_0.png:  OFFSET = 0x1ea0+0*320
+sprite-materialize_1.png:  OFFSET = 0x1ea0+1*320
+sprite-materialize_2.png:  OFFSET = 0x1ea0+2*320
+sprite-materialize_3.png:  OFFSET = 0x1ea0+3*320
+sprite-materialize_4.png:  OFFSET = 0x1ea0+4*320
+sprite-materialize_5.png:  OFFSET = 0x1ea0+5*320
+sprite-materialize_6.png:  OFFSET = 0x1ea0+6*320
+sprite-materialize_7.png:  OFFSET = 0x1ea0+7*320
+sprite-materialize_8.png:  OFFSET = 0x1ea0+8*320
+sprite-materialize_9.png:  OFFSET = 0x1ea0+9*320
+sprite-materialize_10.png: OFFSET = 0x1ea0+10*320
+sprite-materialize_11.png: OFFSET = 0x1ea0+11*320
+
+sprite-fireball_0.png: OFFSET = 0x0c80+0*80
+sprite-fireball_1.png: OFFSET = 0x0c80+1*80
+
+sprite-white_spark_0.png: OFFSET = 0x0d20+0*160
+sprite-white_spark_1.png: OFFSET = 0x0d20+1*160
+sprite-white_spark_2.png: OFFSET = 0x0d20+2*160
+
+sprite-red_spark_0.png: OFFSET = 0x0f00+0*160
+sprite-red_spark_1.png: OFFSET = 0x0f00+1*160
+sprite-red_spark_2.png: OFFSET = 0x0f00+2*160
+
+sprite-score_digit_0.png: OFFSET = 0x41c4+0*64
+sprite-score_digit_1.png: OFFSET = 0x41c4+1*64
+sprite-score_digit_2.png: OFFSET = 0x41c4+2*64
+sprite-score_digit_3.png: OFFSET = 0x41c4+3*64
+sprite-score_digit_4.png: OFFSET = 0x41c4+4*64
+sprite-score_digit_5.png: OFFSET = 0x41c4+5*64
+sprite-score_digit_6.png: OFFSET = 0x41c4+6*64
+sprite-score_digit_7.png: OFFSET = 0x41c4+7*64
+sprite-score_digit_8.png: OFFSET = 0x41c4+8*64
+sprite-score_digit_9.png: OFFSET = 0x41c4+9*64
+
+sprite-meter_empty.png: OFFSET = 0x4444
+sprite-meter_half.png:  OFFSET = 0x4484
+sprite-meter_full.png:  OFFSET = 0x44c4
 
 ball.shp-left.gif: $(EXTRACTED_DIR)/unpacked.exe $(ORIGINAL_DIR)/BALL.SHP
 	./programs/unpack-shp/unpack-shp $^ left > "$(EXTRACTED_DIR)/$@"
