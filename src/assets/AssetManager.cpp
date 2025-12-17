@@ -55,21 +55,8 @@ std::filesystem::path AssetManager::findDataDirectory() {
 }
 
 SDL_Texture* AssetManager::getTexture(const std::string& name) {
-    auto it = textures.find(name);
-    if (it != textures.end()) {
-        return it->second.texture;
-    }
-
-    SDL_Texture* texture = loadPNG(name);
-    if (texture) {
-        TextureInfo info;
-        info.texture = texture;
-        SDL_QueryTexture(texture, nullptr, nullptr, &info.width, &info.height);
-        textures[name] = info;
-        return texture;
-    }
-
-    return nullptr;
+    // Use getTextureInfo to ensure consistent loading behavior
+    return getTextureInfo(name).texture;
 }
 
 TextureInfo AssetManager::getTextureInfo(const std::string& name) {
