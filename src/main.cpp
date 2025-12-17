@@ -65,6 +65,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    // Set asset manager for graphics
+    graphics.setAssetManager(&assets);
+
     // Initialize game state
     GameState game_state;
 
@@ -126,8 +129,43 @@ int main(int argc, char* argv[]) {
         // Rendering
         graphics.clear();
 
-        // Placeholder: render game content
-        // This would render the current map, player, enemies, etc.
+        // Render the tilemap based on current level and stage
+        if (game_state.current_map) {
+            // Get the tileset name for the current level
+            std::string tileset_name;
+            switch (game_state.current_level_number) {
+                case GameConstants::LEVEL_NUMBER_LAKE:    tileset_name = "lake.tt2"; break;
+                case GameConstants::LEVEL_NUMBER_FOREST:  tileset_name = "forest.tt2"; break;
+                case GameConstants::LEVEL_NUMBER_SPACE:   tileset_name = "space.tt2"; break;
+                case GameConstants::LEVEL_NUMBER_COMP:    tileset_name = "comp.tt2"; break;
+                case GameConstants::LEVEL_NUMBER_CAVE:    tileset_name = "cave.tt2"; break;
+                case GameConstants::LEVEL_NUMBER_SHED:    tileset_name = "shed.tt2"; break;
+                case GameConstants::LEVEL_NUMBER_CASTLE:  tileset_name = "castle.tt2"; break;
+                case GameConstants::LEVEL_NUMBER_BASE:    tileset_name = "base.tt2"; break;
+                default:                                  tileset_name = "forest.tt2"; break;
+            }
+            
+            graphics.renderTileMap(*game_state.current_map, game_state.camera_x, 0, tileset_name);
+        }
+
+        // Render player sprite
+        // For now, just render a simple placeholder at the player position
+        std::string player_sprite = "sprite-comic_standing_" + std::string(game_state.comic_facing == 1 ? "right" : "left");
+        graphics.drawSpriteByName(game_state.comic_x, game_state.comic_y, player_sprite);
+
+        // Render enemies (placeholder - would iterate over active enemies)
+        for (const auto& enemy : game_state.enemies) {
+            if (enemy.spawn_timer > 0) {
+                // Skip rendering if spawn timer is active (materializing effect)
+                continue;
+            }
+            // Enemy rendering would go here
+        }
+
+        // Render fireballs
+        for (const auto& fireball : game_state.fireballs) {
+            graphics.drawSpriteByName(fireball.x, fireball.y, "sprite-fireball_0");
+        }
 
         graphics.present();
 

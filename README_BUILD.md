@@ -19,7 +19,7 @@ Initial implementation phase - basic framework and build system established.
 - [x] Successful build with all assets copied to data/
 
 ### Next Steps
-- [ ] Implement tile and sprite rendering
+- [x] Implement tile and sprite rendering
 - [ ] Port game physics and collision detection
 - [ ] Implement enemy AI behaviors (5 types: bounce, leap, roll, seek, shy)
 - [ ] Implement item collection and door mechanics
@@ -133,6 +133,27 @@ Key constants from the original assembly are defined in [src/game/Constants.h](s
 **TileMap** - Level map
 - 128×10 tile IDs
 - Solidity data per tile
+
+## Graphics Rendering System
+
+The rendering system provides tile and sprite drawing with efficient texture caching:
+
+### Tile Rendering
+- Individual tiles are loaded from tileset PNG files on-demand and cached
+- Naming convention: `tileset-id` (e.g., `forest.tt2-00`, `forest.tt2-1a`)
+- `renderTileMap()` renders the visible map with camera offset support
+- Handles out-of-screen culling to reduce draw calls
+
+### Sprite Rendering
+- Sprites are loaded from the `/data/sprite-*.png` files
+- Both texture object and texture info (dimensions) are cached
+- `drawSprite()` renders sprites at specific screen coordinates
+- `drawSpriteByName()` is a convenience wrapper for loading by name
+
+### Asset Caching
+- Textures are cached in-memory after first load
+- `TextureInfo` struct stores texture pointer, width, and height
+- Efficient `getTextureInfo()` method for dimension queries
 
 ## Asset Pipeline
 

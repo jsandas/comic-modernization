@@ -10,9 +10,9 @@ AssetManager::AssetManager()
 
 AssetManager::~AssetManager() {
     // Clean up cached textures
-    for (auto& [name, texture] : textures) {
-        if (texture) {
-            SDL_DestroyTexture(texture);
+    for (auto& [name, info] : textures) {
+        if (info.texture) {
+            SDL_DestroyTexture(info.texture);
         }
     }
     textures.clear();
@@ -57,16 +57,37 @@ std::filesystem::path AssetManager::findDataDirectory() {
 SDL_Texture* AssetManager::getTexture(const std::string& name) {
     auto it = textures.find(name);
     if (it != textures.end()) {
+        return it->second.texture;
+    }
+
+    SDL_Texture* texture = loadPNG(name);
+    if (texture) {
+        TextureInfo info;
+        info.texture = texture;
+        SDL_QueryTexture(texture, nullptr, nullptr, &info.width, &info.height);
+        textures[name] = info;
+        return texture;
+    }
+
+    return nullptr;
+}
+
+TextureInfo AssetManager::getTextureInfo(const std::string& name) {
+    auto it = textures.find(name);
+    if (it != textures.end()) {
         return it->second;
     }
 
     SDL_Texture* texture = loadPNG(name);
     if (texture) {
-        textures[name] = texture;
-        return texture;
+        TextureInfo info;
+        info.texture = texture;
+        SDL_QueryTexture(texture, nullptr, nullptr, &info.width, &info.height);
+        textures[name] = info;
+        return info;
     }
 
-    return nullptr;
+    return TextureInfo();
 }
 
 SDL_AudioSpec* AssetManager::getAudioSpec(const std::string& name) {
