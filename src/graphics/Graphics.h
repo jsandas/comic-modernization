@@ -51,7 +51,7 @@ private:
     
     // Cache for tile name strings to avoid per-frame allocations
     // Maps tileset_name -> array of 256 tile names
-    mutable std::unordered_map<std::string, std::array<std::string, 256>> tileNameCache;
+    std::unordered_map<std::string, std::array<std::string, 256>> tileNameCache;
 
     void initializePalette();
 };
