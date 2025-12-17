@@ -503,7 +503,7 @@ bee.shp-left.gif: $(EXTRACTED_DIR)/unpacked.exe $(ORIGINAL_DIR)/BEE.SHP
 	./programs/unpack-shp/unpack-shp $^ left > "$(EXTRACTED_DIR)/$@"
 bee.shp-right.gif: $(EXTRACTED_DIR)/unpacked.exe $(ORIGINAL_DIR)/BEE.SHP
 	./programs/unpack-shp/unpack-shp $^ right > "$(EXTRACTED_DIR)/$@"
-bird.shp-left.gif: $(EXTRACTED_DIR)/unpacked.exe $(ORIGINAL_DIR)/BIRD.SHPd
+bird.shp-left.gif: $(EXTRACTED_DIR)/unpacked.exe $(ORIGINAL_DIR)/BIRD.SHP
 	./programs/unpack-shp/unpack-shp $^ left > "$(EXTRACTED_DIR)/$@"
 bird.shp-right.gif: $(EXTRACTED_DIR)/unpacked.exe $(ORIGINAL_DIR)/BIRD.SHP
 	./programs/unpack-shp/unpack-shp $^ right > "$(EXTRACTED_DIR)/$@"
