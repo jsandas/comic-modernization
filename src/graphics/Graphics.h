@@ -10,6 +10,7 @@
 
 // Forward declarations
 class AssetManager;
+struct TileMap;
 
 class Graphics {
 public:
@@ -33,7 +34,7 @@ public:
     void drawSpriteByName(int px, int py, const std::string& sprite_name, int width = 0, int height = 0);
     
     // Full map rendering - renders tilemap at given offset
-    void renderTileMap(const class TileMap& tilemap, int camera_x, int camera_y, const std::string& tileset_name);
+    void renderTileMap(const TileMap& tilemap, int camera_x, int camera_y, const std::string& tileset_name);
     
     // Get cached tile name (format: "tileset-XX" where XX is hex tile_id)
     const std::string& getCachedTileName(const std::string& tileset_name, uint8_t tile_id);
