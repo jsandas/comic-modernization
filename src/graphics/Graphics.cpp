@@ -101,9 +101,12 @@ void Graphics::drawSprite(int px, int py, SDL_Texture* texture, int width, int h
     dest_rect.x = px;
     dest_rect.y = py;
     
-    // If width/height not specified, query texture size
+    // Query texture dimensions only for unspecified dimensions
     if (width == 0 || height == 0) {
-        SDL_QueryTexture(texture, nullptr, nullptr, &dest_rect.w, &dest_rect.h);
+        int tex_w, tex_h;
+        SDL_QueryTexture(texture, nullptr, nullptr, &tex_w, &tex_h);
+        dest_rect.w = (width > 0) ? width : tex_w;
+        dest_rect.h = (height > 0) ? height : tex_h;
     } else {
         dest_rect.w = width;
         dest_rect.h = height;
