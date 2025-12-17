@@ -75,11 +75,8 @@ void Graphics::drawTile(int px, int py, uint8_t tile_id, const std::string& tile
         return;
     }
 
-    // Load the tileset texture for this specific tile
-    // Tileset naming convention: "tileset-id" (e.g., "forest.tt2-00")
-    std::string tile_name = tileset_name + "-" + 
-                           (tile_id < 16 ? "0" : "") + 
-                           (char)(tile_id < 10 ? ('0' + tile_id) : ('a' + tile_id - 10));
+    // Use cached tile name to avoid per-frame string allocations
+    const std::string& tile_name = getCachedTileName(tileset_name, tile_id);
     
     SDL_Texture* texture = assetManager->getTexture(tile_name);
     if (!texture) {
@@ -172,6 +169,23 @@ void Graphics::renderTileMap(const TileMap& tilemap, int camera_x, int camera_y,
             }
         }
     }
+}
+
+const std::string& Graphics::getCachedTileName(const std::string& tileset_name, uint8_t tile_id) {
+    // Check if we have cached names for this tileset
+    auto it = tileNameCache.find(tileset_name);
+    if (it == tileNameCache.end()) {
+        // Generate all 256 tile names for this tileset
+        std::array<std::string, 256> names;
+        for (int i = 0; i < 256; ++i) {
+            // Format: "tileset-XX" where XX is hex (e.g., "forest.tt2-00", "forest.tt2-ff")
+            char hex[3];
+            snprintf(hex, sizeof(hex), "%02x", i);
+            names[i] = tileset_name + "-" + hex;
+        }
+        it = tileNameCache.emplace(tileset_name, std::move(names)).first;
+    }
+    return it->second[tile_id];
 }
 
 void Graphics::initializePalette() {
