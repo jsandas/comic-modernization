@@ -120,9 +120,13 @@ void Graphics::drawSpriteByName(int px, int py, const std::string& sprite_name, 
         return;
     }
 
-    SDL_Texture* texture = assetManager->getTexture(sprite_name);
-    if (texture) {
-        drawSprite(px, py, texture, width, height);
+    // Get cached texture info to avoid redundant SDL_QueryTexture calls
+    TextureInfo info = assetManager->getTextureInfo(sprite_name);
+    if (info.texture) {
+        // Use cached dimensions if width/height not specified
+        int final_width = (width > 0) ? width : info.width;
+        int final_height = (height > 0) ? height : info.height;
+        drawSprite(px, py, info.texture, final_width, final_height);
     }
 }
 
