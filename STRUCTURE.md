@@ -85,7 +85,7 @@ This document describes the organization of the Captain Comic C++ SDL2 port.
 ### Assets Workflow
 1. **Original files**: `assets/original/R3sw1989/` contains the original DOS game files
 2. **Extraction**: `assets/extraction/Makefile` orchestrates asset extraction via Go tools
-3. **Generated assets**: `assets/extracted/R3sw1989/` contains PNG, WAV, GIF files
+3. **Generated assets**: `assets/extracted` contains PNG, WAV, GIF files
 4. **Build copy**: CMake copies assets to `build/data/` for the executable
 
 ### Git Tracking

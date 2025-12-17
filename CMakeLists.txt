@@ -27,7 +27,7 @@ add_custom_target(build_assets
 add_custom_command(
     TARGET build_assets POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/assets/extracted/R3sw1989
+        ${CMAKE_SOURCE_DIR}/assets/extracted
         ${CMAKE_BINARY_DIR}/data
     COMMENT "Copying assets to ${CMAKE_BINARY_DIR}/data"
 )
