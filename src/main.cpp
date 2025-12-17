@@ -151,7 +151,7 @@ int main(int argc, char* argv[]) {
         // Render player sprite
         // For now, just render a simple placeholder at the player position
         std::string player_sprite = "sprite-comic_standing_" + std::string(game_state.comic_facing == 1 ? "right" : "left");
-        graphics.drawSpriteByName(game_state.comic_x, game_state.comic_y, player_sprite);
+        graphics.drawSpriteByName(game_state.comic_x - game_state.camera_x, game_state.comic_y, player_sprite);
 
         // Render enemies (placeholder - would iterate over active enemies)
         for (const auto& enemy : game_state.enemies) {
@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
 
         // Render fireballs
         for (const auto& fireball : game_state.fireballs) {
-            graphics.drawSpriteByName(fireball.x, fireball.y, "sprite-fireball_0");
+            graphics.drawSpriteByName(fireball.x - game_state.camera_x, fireball.y, "sprite-fireball_0");
         }
 
         graphics.present();
