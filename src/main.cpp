@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
                 default:                                  tileset_name = "forest.tt2"; break;
             }
             
-            graphics.renderTileMap(*game_state.current_map, game_state.camera_x, 0, tileset_name);
+            graphics.renderTileMap(*game_state.current_map, game_state.camera_x, tileset_name);
         }
 
         // Render player sprite

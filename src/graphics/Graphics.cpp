@@ -130,14 +130,14 @@ void Graphics::drawSpriteByName(int px, int py, const std::string& sprite_name, 
     }
 }
 
-void Graphics::renderTileMap(const TileMap& tilemap, int camera_x, int camera_y, const std::string& tileset_name) {
+void Graphics::renderTileMap(const TileMap& tilemap, int camera_x, const std::string& tileset_name) {
     if (!assetManager || !renderer) {
         return;
     }
 
     // Calculate which tiles are visible on screen
     int start_tile_x = camera_x / GameConstants::TILE_SIZE;
-    int start_tile_y = camera_y / GameConstants::TILE_SIZE;
+    int start_tile_y = 0;
     
     int tiles_wide = (GameConstants::SCREEN_WIDTH / GameConstants::TILE_SIZE) + 2;
     int tiles_high = (GameConstants::SCREEN_HEIGHT / GameConstants::TILE_SIZE) + 2;
@@ -166,7 +166,7 @@ void Graphics::renderTileMap(const TileMap& tilemap, int camera_x, int camera_y,
                 
                 // Calculate screen position
                 int screen_x = (tx * GameConstants::TILE_SIZE) - camera_x;
-                int screen_y = (ty * GameConstants::TILE_SIZE) - camera_y;
+                int screen_y = (ty * GameConstants::TILE_SIZE);
                 
                 drawTile(screen_x, screen_y, tile_id, tileset_name);
             }
