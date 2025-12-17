@@ -36,9 +36,6 @@ public:
     // Full map rendering - renders tilemap at given offset
     void renderTileMap(const TileMap& tilemap, int camera_x, const std::string& tileset_name);
     
-    // Get cached tile name (format: "tileset-XX" where XX is hex tile_id)
-    const std::string& getCachedTileName(const std::string& tileset_name, uint8_t tile_id);
-    
     // Get SDL objects
     SDL_Window* getWindow() const { return window; }
     SDL_Renderer* getRenderer() const { return renderer; }
@@ -53,5 +50,8 @@ private:
     // Maps tileset_name -> array of 256 tile names
     std::unordered_map<std::string, std::array<std::string, 256>> tileNameCache;
 
+    // Get cached tile name (format: "tileset-XX" where XX is hex tile_id)
+    const std::string& getCachedTileName(const std::string& tileset_name, uint8_t tile_id);
+    
     void initializePalette();
 };
