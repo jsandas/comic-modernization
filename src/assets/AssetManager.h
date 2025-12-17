@@ -6,6 +6,12 @@
 #include <filesystem>
 #include <SDL2/SDL.h>
 
+struct TextureInfo {
+    SDL_Texture* texture = nullptr;
+    int width = 0;
+    int height = 0;
+};
+
 class AssetManager {
 public:
     AssetManager();
@@ -16,6 +22,9 @@ public:
 
     // Load and cache textures from PNG files
     SDL_Texture* getTexture(const std::string& name);
+    
+    // Get texture info (size, etc.)
+    TextureInfo getTextureInfo(const std::string& name);
 
     // Load and cache audio buffers from WAV files
     SDL_AudioSpec* getAudioSpec(const std::string& name);
@@ -29,7 +38,7 @@ public:
 private:
     std::filesystem::path dataPath;
     SDL_Renderer* renderer = nullptr;
-    std::unordered_map<std::string, SDL_Texture*> textures;
+    std::unordered_map<std::string, TextureInfo> textures;
     std::unordered_map<std::string, SDL_AudioSpec*> audioSpecs;
 
     // Helper to resolve data path relative to executable

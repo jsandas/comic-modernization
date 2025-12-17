@@ -1,8 +1,10 @@
 #include "Graphics.h"
+#include "assets/AssetManager.h"
+#include "game/GameState.h"
 #include <iostream>
 
 Graphics::Graphics() 
-    : window(nullptr), renderer(nullptr) {
+    : window(nullptr), renderer(nullptr), assetManager(nullptr) {
 }
 
 Graphics::~Graphics() {
@@ -68,14 +70,125 @@ void Graphics::present() {
     SDL_RenderPresent(renderer);
 }
 
-void Graphics::drawTile(int x, int y, uint8_t tile_id) {
-    // Placeholder for tile rendering
-    // Will be implemented when asset loading is complete
+void Graphics::drawTile(int px, int py, uint8_t tile_id, const std::string& tileset_name) {
+    if (!assetManager || !renderer) {
+        return;
+    }
+
+    // Use cached tile name to avoid per-frame string allocations
+    const std::string& tile_name = getCachedTileName(tileset_name, tile_id);
+    
+    SDL_Texture* texture = assetManager->getTexture(tile_name);
+    if (!texture) {
+        return;
+    }
+
+    SDL_Rect dest_rect;
+    dest_rect.x = px;
+    dest_rect.y = py;
+    dest_rect.w = GameConstants::TILE_SIZE;
+    dest_rect.h = GameConstants::TILE_SIZE;
+
+    SDL_RenderCopy(renderer, texture, nullptr, &dest_rect);
 }
 
-void Graphics::drawSprite(int x, int y, const char* sprite_name) {
-    // Placeholder for sprite rendering
-    // Will be implemented when asset loading is complete
+void Graphics::drawSprite(int px, int py, SDL_Texture* texture, int width, int height) {
+    if (!texture || !renderer) {
+        return;
+    }
+
+    SDL_Rect dest_rect;
+    dest_rect.x = px;
+    dest_rect.y = py;
+    
+    // Query texture dimensions only for unspecified dimensions
+    if (width == 0 || height == 0) {
+        int tex_w, tex_h;
+        SDL_QueryTexture(texture, nullptr, nullptr, &tex_w, &tex_h);
+        dest_rect.w = (width > 0) ? width : tex_w;
+        dest_rect.h = (height > 0) ? height : tex_h;
+    } else {
+        dest_rect.w = width;
+        dest_rect.h = height;
+    }
+
+    SDL_RenderCopy(renderer, texture, nullptr, &dest_rect);
+}
+
+void Graphics::drawSpriteByName(int px, int py, const std::string& sprite_name, int width, int height) {
+    if (!assetManager) {
+        return;
+    }
+
+    // Get cached texture info to avoid redundant SDL_QueryTexture calls
+    TextureInfo info = assetManager->getTextureInfo(sprite_name);
+    if (info.texture) {
+        // Use cached dimensions if width/height not specified
+        int final_width = (width > 0) ? width : info.width;
+        int final_height = (height > 0) ? height : info.height;
+        drawSprite(px, py, info.texture, final_width, final_height);
+    }
+}
+
+void Graphics::renderTileMap(const TileMap& tilemap, int camera_x, const std::string& tileset_name) {
+    if (!assetManager || !renderer) {
+        return;
+    }
+
+    // Calculate which tiles are visible on screen
+    int start_tile_x = camera_x / GameConstants::TILE_SIZE;
+    int start_tile_y = 0;
+    
+    int tiles_wide = (GameConstants::SCREEN_WIDTH / GameConstants::TILE_SIZE) + 2;
+    int tiles_high = (GameConstants::SCREEN_HEIGHT / GameConstants::TILE_SIZE) + 2;
+    
+    // Clamp to map bounds
+    start_tile_x = (start_tile_x < 0) ? 0 : start_tile_x;
+    start_tile_y = (start_tile_y < 0) ? 0 : start_tile_y;
+    
+    int end_tile_x = start_tile_x + tiles_wide;
+    int end_tile_y = start_tile_y + tiles_high;
+    
+    if (end_tile_x > GameConstants::SCREEN_WIDTH_TILES) {
+        end_tile_x = GameConstants::SCREEN_WIDTH_TILES;
+    }
+    if (end_tile_y > GameConstants::SCREEN_HEIGHT_TILES) {
+        end_tile_y = GameConstants::SCREEN_HEIGHT_TILES;
+    }
+
+    // Render visible tiles
+    for (int ty = start_tile_y; ty < end_tile_y; ++ty) {
+        for (int tx = start_tile_x; tx < end_tile_x; ++tx) {
+            int tile_idx = ty * GameConstants::SCREEN_WIDTH_TILES + tx;
+            
+            if (tile_idx >= 0 && tile_idx < static_cast<int>(tilemap.tiles.size())) {
+                uint8_t tile_id = tilemap.tiles[tile_idx];
+                
+                // Calculate screen position
+                int screen_x = (tx * GameConstants::TILE_SIZE) - camera_x;
+                int screen_y = (ty * GameConstants::TILE_SIZE);
+                
+                drawTile(screen_x, screen_y, tile_id, tileset_name);
+            }
+        }
+    }
+}
+
+const std::string& Graphics::getCachedTileName(const std::string& tileset_name, uint8_t tile_id) {
+    // Check if we have cached names for this tileset
+    auto it = tileNameCache.find(tileset_name);
+    if (it == tileNameCache.end()) {
+        // Generate all 256 tile names for this tileset
+        std::array<std::string, 256> names;
+        for (int i = 0; i < 256; ++i) {
+            // Format: "tileset-XX" where XX is hex (e.g., "forest.tt2-00", "forest.tt2-ff")
+            char hex[3];
+            snprintf(hex, sizeof(hex), "%02x", i);
+            names[i] = tileset_name + "-" + hex;
+        }
+        it = tileNameCache.emplace(tileset_name, std::move(names)).first;
+    }
+    return it->second[tile_id];
 }
 
 void Graphics::initializePalette() {
