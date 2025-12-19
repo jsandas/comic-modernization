@@ -64,7 +64,7 @@ int main() {
         std::string script = std::string(PROJECT_ROOT) + "/src/tests/asm/run_asm_unicorn.py";
         char cmd[512];
         snprintf(cmd, sizeof(cmd), "python3 %s %d --x %d --y %d --set-tile %d %d 1",
-                 script.c_str(), 0, x/8, y/8, tx, ty);
+                 script.c_str(), 0, x, y, tx, ty);
         int asm_res = run_asm_raw(cmd);
         bool asm_bool = (asm_res != 0);
         if(cpp_res != asm_bool) {
@@ -86,7 +86,7 @@ int main() {
         std::string script = std::string(PROJECT_ROOT) + "/src/tests/asm/run_asm_unicorn.py";
         char cmd[512];
         snprintf(cmd, sizeof(cmd), "python3 %s %d --x %d --y %d --set-tile %d %d 1",
-                 script.c_str(), 1, x/8, y/8, tx, ty);
+                 script.c_str(), 1, x, y, tx, ty);
         int asm_res = run_asm_raw(cmd);
         bool asm_bool = (asm_res != 0);
         if(cpp_res != asm_bool) {

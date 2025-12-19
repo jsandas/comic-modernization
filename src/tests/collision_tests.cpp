@@ -23,10 +23,10 @@ TEST_CASE("Vertical collision when tile is solid", "[collision]") {
         char cmd[512];
         if(tile_x >= 0 && tile_y >= 0) {
             snprintf(cmd, sizeof(cmd), "python3 %s %d --x %d --y %d --set-tile %d %d 1",
-                     script.c_str(), mode, ax/8, ay/8, tile_x, tile_y);
+                     script.c_str(), mode, ax, ay, tile_x, tile_y);
         } else {
             snprintf(cmd, sizeof(cmd), "python3 %s %d --x %d --y %d",
-                     script.c_str(), mode, ax/8, ay/8);
+                     script.c_str(), mode, ax, ay);
         }
         // debug: write command to /tmp for investigation
         {
