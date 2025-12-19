@@ -5,6 +5,9 @@ set(SOURCES
     audio/Audio.cpp
     input/Input.cpp
     game/GameState.cpp
+    game/Collision.cpp
+    game/EnemyLogic.cpp
+    game/FireballLogic.cpp
 )
 
 set(HEADERS
@@ -14,6 +17,9 @@ set(HEADERS
     input/Input.h
     game/GameState.h
     game/Constants.h
+    game/Collision.h
+    game/EnemyLogic.h
+    game/FireballLogic.h
 )
 
 add_executable(comic-c ${SOURCES} ${HEADERS})

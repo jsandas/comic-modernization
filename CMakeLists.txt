@@ -32,5 +32,7 @@ add_custom_command(
     COMMENT "Copying assets to ${CMAKE_BINARY_DIR}/data"
 )
 
-# Add source subdirectory
+# Enable testing and add source and test subdirectories
+enable_testing()
 add_subdirectory(src)
+add_subdirectory(src/tests)
