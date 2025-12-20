@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include <memory>
+#include <string>
 #include "Constants.h"
 
 // Enemy structure

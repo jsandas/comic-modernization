@@ -18,10 +18,19 @@ if(NOT SDL2_image_FOUND)
 endif()
 
 # Add custom target to build assets
-add_custom_target(build_assets
-    COMMAND make -C ${CMAKE_SOURCE_DIR}/assets/extraction
-    COMMENT "Building game assets..."
-)
+set(ASSET_EXTRACTION_DIR ${CMAKE_SOURCE_DIR}/assets/extraction)
+
+if(EXISTS ${CMAKE_SOURCE_DIR}/original/COMIC.EXE)
+    add_custom_target(build_assets
+        COMMAND make -C ${ASSET_EXTRACTION_DIR}
+        COMMENT "Building game assets..."
+    )
+else()
+    add_custom_target(build_assets
+        COMMAND ${CMAKE_COMMAND} -E echo "Skipping build_assets: original game files not present in repo"
+        COMMENT "Skipping game assets build (original files missing)"
+    )
+endif()
 
 # Copy assets to build directory
 add_custom_command(
