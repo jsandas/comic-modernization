@@ -69,3 +69,11 @@ assets/downloaded/
 reference/disassembly/graphics/*.ega
 assets/original/*
 *.zip
+
+# Generated logs and temporary sweep outputs
+tmp_logs/
+asm_disasm_summary*.txt
+asm_sweep*.log
+sweep_summary.csv
+sweep_*.csv
+tmp_logs/
