@@ -73,7 +73,12 @@ assets/original/*
 # Generated logs and temporary sweep outputs
 tmp_logs/
 asm_disasm_summary*.txt
+asm_disasm_sweep*.log
 asm_sweep*.log
 sweep_summary.csv
 sweep_*.csv
 tmp_logs/
+
+# CTest temporary files produced under build/Testing
+Testing/Temporary/
+Testing/*/Temporary/
