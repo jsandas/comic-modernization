@@ -50,3 +50,6 @@ target_include_directories(asm_ci_compare PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..
 target_compile_definitions(asm_ci_compare PRIVATE PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
 
 add_test(NAME asm_ci_compare COMMAND $<TARGET_FILE:asm_ci_compare>)
+
+# Python-based parity test: inline trampoline vs isolated run
+add_test(NAME asm_inline_parity_py COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/asm/test_inline_parity.py)

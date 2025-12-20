@@ -32,6 +32,11 @@ jobs:
           echo "Running asm_ci_compare..."
           build/src/tests/asm_ci_compare
 
+      - name: Run inline parity python test
+        run: |
+          echo "Running inline parity python test..."
+          python3 src/tests/asm/test_inline_parity.py
+
       - name: Run tests (tests dir)
         run: ctest --test-dir build/src/tests --output-on-failure -V
 

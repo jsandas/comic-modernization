@@ -1,0 +1,506 @@
+[run_asm_unicorn.py] ARGV: ['src/tests/asm/run_asm_unicorn.py', '0', '--x', '16', '--y', '16']
+[run_asm_unicorn.py] patching marker b'MD' at 0 -> value 0
+[run_asm_unicorn.py] converting INX from 16 (pixels) -> 2 (asm units: tile=1, span=0)
+[run_asm_unicorn.py] patching marker b'INX' at 3 -> value 2
+[run_asm_unicorn.py] converting INY from 16 (pixels) -> 2 (asm units: tile=1, span=0)
+[run_asm_unicorn.py] patching marker b'INY' at 7 -> value 2
+[run_asm_unicorn.py] regs IP=0x1100 EIP=0x1100 CS=0x110 DS=0x100 SS=0x110 entry_linear=0x1100 entry_seg=0x110 entry_ip=0x0 data_seg=0x100
+[run_asm_unicorn.py] added DBG mem-write hook for 0x1645-0x1684
+[run_asm_unicorn.py] added DBG mem-read hook for 0x1645-0x1684
+[run_asm_unicorn.py] added MAP mem-read hook for 0x112f-0x192e
+[run_asm_unicorn.py] added MAP mem-write hook for 0x112f-0x192e
+[run_asm_unicorn.py] exec @ 0x1655 opcode_bytes: c70631063412
+[run_asm_unicorn.py] exec @ 0x165b opcode_bytes: c606330612
+[run_asm_unicorn.py] exec @ 0x1660 opcode_bytes: 8a260601
+[run_asm_unicorn.py] exec @ 0x1664 opcode_bytes: a00a01
+[run_asm_unicorn.py] exec @ 0x1667 opcode_bytes: 88265106
+[run_asm_unicorn.py] exec @ 0x166b opcode_bytes: a25006
+[run_asm_unicorn.py] exec @ 0x166e opcode_bytes: 8a160201
+[run_asm_unicorn.py] exec @ 0x1672 opcode_bytes: 80fa00
+[run_asm_unicorn.py] exec @ 0x1675 opcode_bytes: 7419
+[run_asm_unicorn.py] exec @ 0x1690 opcode_bytes: c6064506bb
+[run_asm_unicorn.py] AGGRESSIVE monitor installed at exec 0x1690
+[run_asm_unicorn.py] AGGR MEMWRITE SEQ=9 @ 0x1645 size 1 val 00 pc 0x1690 REGS {'IP': 1424, 'CS': 272, 'DS': 256, 'ES': 0}
+[run_asm_unicorn.py] exec @ 0x1695 opcode_bytes: c6064f06f0
+[run_asm_unicorn.py] AGGR MEMWRITE SEQ=12 @ 0x164f size 1 val 00 pc 0x1695 REGS {'IP': 1429, 'CS': 272, 'DS': 256, 'ES': 0}
+[run_asm_unicorn.py] exec @ 0x169a opcode_bytes: e81901
+[run_asm_unicorn.py] call at 0x169a -> target 0x17b6; PRE-REGS: {'AX': 514, 'BX': 0, 'CX': 0, 'DX': 0, 'SI': 0, 'DI': 0, 'BP': 0, 'SP': 0, 'SS': 272, 'DS': 256, 'ES': 0, 'stack': [77, 68, 0, 73, 78, 88, 2, 73, 78, 89, 2, 69, 78, 88, 0, 69, 78, 89, 0, 69, 66, 72, 0, 80, 76, 88, 0, 80, 76, 89, 0, 70, 66, 88, 0, 70, 66, 89, 0, 70, 66, 86, 0, 0, 77, 65, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
+[run_asm_unicorn.py] call-target bytes @ 0x17b6: 50535152565755c606450612b012a233
+[run_asm_unicorn.py] installed RETURN-WRITE/READ watch at 0x110fe / 0x110ff for CALL 0x169a -> 0x17b6
+[run_asm_unicorn.py] AGGR MEMWRITE SEQ=13 @ 0x110fe size 2 val <err> pc 0x169a REGS {'IP': 1434, 'CS': 272, 'DS': 256, 'ES': 0}
+[run_asm_unicorn.py] RETURN-WRITE @ 0x110fe size 2 val 1437 call_site 0x169a target 0x17b6 PRE-REGS {'AX': 514, 'BX': 0, 'CX': 0, 'DX': 0, 'SI': 0, 'DI': 0, 'BP': 0, 'SP': 0, 'SS': 272, 'DS': 256, 'ES': 0, 'stack': [77, 68, 0, 73, 78, 88, 2, 73, 78, 89, 2, 69, 78, 88, 0, 69, 78, 89, 0, 69, 66, 72, 0, 80, 76, 88, 0, 80, 76, 89, 0, 70, 66, 88, 0, 70, 66, 89, 0, 70, 66, 86, 0, 0, 77, 65, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]} CURR-REGS {'IP': 1434, 'CS': 272, 'SP': 0, 'SS': 272, 'DS': 256, 'ES': 0}
+[run_asm_unicorn.py] RECENT IPS (last 12):
+  - 0x1655: c70631063412
+  - 0x165b: c606330612
+  - 0x1660: 8a260601
+  - 0x1664: a00a01
+  - 0x1667: 88265106
+  - 0x166b: a25006
+  - 0x166e: 8a160201
+  - 0x1672: 80fa00
+  - 0x1675: 7419
+  - 0x1690: c6064506bb
+  - 0x1695: c6064f06f0
+  - 0x169a: e81901
+[run_asm_unicorn.py] BYTES AROUND PC 0x169a (start 0x168a len 48): 84ae00e9f300c6064506bbc6064f06f0e81901c6064f06f9eb05e81902eb007208c606360600e9d100c606360601e9c9
+[run_asm_unicorn.py] STACK AROUND SP 0x1100: 000000000000000000000000000000004d4400494e5802494e5902454e5800454e590045424800504c5800504c5900464258004642590046425600004d415000
+[run_asm_unicorn.py] STACK DIFF: no changes in captured stack snapshot
+[run_asm_unicorn.py] LIKELY WRITER @ 0x1695: c6064f06f0
+[run_asm_unicorn.py] BYTES BACKWARD FROM PC start 0x167a len 64: 742880fa02743a80fa03746680fa040f84ae00e9f300c6064506bbc6064f06f0e81901c6064f06f9eb05e81902eb007208c606360600e9d100c606360601e9c9
+[run_asm_unicorn.py] BACKWARD DISASM (around 0x169a):
+  0x167a:	je	0x16a4
+  0x167c:	cmp	dl, 2
+  0x167f:	je	0x16bb
+  0x1681:	cmp	dl, 3
+  0x1684:	je	0x16ec
+  0x1686:	cmp	dl, 4
+  0x1689:	je	0x173b
+  0x168d:	jmp	0x1783
+  0x1690:	mov	byte ptr [0x645], 0xbb
+[run_asm_unicorn.py] BACKWARD DISASM HINT: possible store at 0x1690 -> mov byte ptr [0x645], 0xbb
+  0x1695:	mov	byte ptr [0x64f], 0xf0
+[run_asm_unicorn.py] BACKWARD DISASM HINT: possible store at 0x1695 -> mov byte ptr [0x64f], 0xf0
+  0x169a:	call	0x17b6
+  0x169d:	mov	byte ptr [0x64f], 0xf9
+[run_asm_unicorn.py] BACKWARD DISASM HINT: possible store at 0x169d -> mov byte ptr [0x64f], 0xf9
+  0x16a2:	jmp	0x16a9
+  0x16a4:	call	0x18c0
+  0x16a7:	jmp	0x16a9
+  0x16a9:	jb	0x16b3
+  0x16ab:	mov	byte ptr [0x636], 0
+[run_asm_unicorn.py] BACKWARD DISASM HINT: possible store at 0x16ab -> mov byte ptr [0x636], 0
+  0x16b0:	jmp	0x1784
+  0x16b3:	mov	byte ptr [0x636], 1
+[run_asm_unicorn.py] BACKWARD DISASM HINT: possible store at 0x16b3 -> mov byte ptr [0x636], 1
+[run_asm_unicorn.py] RETURN-WRITE HIT COUNT for 0x110fe = 1
+[run_asm_unicorn.py] call_targets_seen = [(6070, {'AX': 514, 'BX': 0, 'CX': 0, 'DX': 0, 'SI': 0, 'DI': 0, 'BP': 0, 'SP': 0, 'SS': 272, 'DS': 256, 'ES': 0, 'stack': [77, 68, 0, 73, 78, 88, 2, 73, 78, 89, 2, 69, 78, 88, 0, 69, 78, 89, 0, 69, 66, 72, 0, 80, 76, 88, 0, 80, 76, 89, 0, 70, 66, 88, 0, 70, 66, 89, 0, 70, 66, 86, 0, 0, 77, 65, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]})]
+[run_asm_unicorn.py] Running isolated emulation at target 0x17b6 with PRE-REGS {'AX': 514, 'BX': 0, 'CX': 0, 'DX': 0, 'SI': 0, 'DI': 0, 'BP': 0, 'SP': 0, 'SS': 272, 'DS': 256, 'ES': 0, 'stack': [77, 68, 0, 73, 78, 88, 2, 73, 78, 89, 2, 69, 78, 88, 0, 69, 78, 89, 0, 69, 66, 72, 0, 80, 76, 88, 0, 80, 76, 89, 0, 70, 66, 88, 0, 70, 66, 89, 0, 70, 66, 86, 0, 0, 77, 65, 80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
+[run_asm_unicorn.py] restored 64 stack bytes and fake return IP into isolated emulator at 0x1300 / return at 0x12fe
+[run_asm_unicorn.py][isolated] exec @ 0x17b6 bytes: 50
+[run_asm_unicorn.py][isolated] exec @ 0x17b7 bytes: 53
+[run_asm_unicorn.py][isolated] exec @ 0x17b8 bytes: 51
+[run_asm_unicorn.py][isolated] exec @ 0x17b9 bytes: 52
+[run_asm_unicorn.py][isolated] exec @ 0x17ba bytes: 56
+[run_asm_unicorn.py][isolated] exec @ 0x17bb bytes: 57
+[run_asm_unicorn.py][isolated] exec @ 0x17bc bytes: 55
+[run_asm_unicorn.py][isolated] exec @ 0x17bd bytes: c606450612
+[run_asm_unicorn.py][isolated] mov byte [imm16],imm8 at 0x645 (linear 0x1645) -> 0x12
+[run_asm_unicorn.py][isolated][DBG] MEMWRITE SEQ=1 @ 0x1645 offset 0 val 0x12 pc 0x17bd
+[run_asm_unicorn.py][isolated] exec @ 0x17c2 bytes: b012
+[run_asm_unicorn.py][isolated] exec @ 0x17c4 bytes: a23306
+[run_asm_unicorn.py][isolated] mov [imm],al at 0x633 (linear 0x1633) AL=18
+[run_asm_unicorn.py][isolated] exec @ 0x17c7 bytes: 88e0
+[run_asm_unicorn.py][isolated] exec @ 0x17c9 bytes: d0e8
+[run_asm_unicorn.py][isolated] exec @ 0x17cb bytes: 88c3
+[run_asm_unicorn.py][isolated] exec @ 0x17cd bytes: 30ff
+[run_asm_unicorn.py][isolated] exec @ 0x17cf bytes: 88c0
+[run_asm_unicorn.py][isolated] exec @ 0x17d1 bytes: a00a01
+[run_asm_unicorn.py][isolated] exec @ 0x17d4 bytes: d0e8
+[run_asm_unicorn.py][isolated] exec @ 0x17d6 bytes: 88c1
+[run_asm_unicorn.py][isolated] exec @ 0x17d8 bytes: c606450622
+[run_asm_unicorn.py][isolated] mov byte [imm16],imm8 at 0x645 (linear 0x1645) -> 0x22
+[run_asm_unicorn.py][isolated][DBG] MEMWRITE SEQ=2 @ 0x1645 offset 0 val 0x22 pc 0x17d8
+[run_asm_unicorn.py][isolated] exec @ 0x17dd bytes: b022
+[run_asm_unicorn.py][isolated] exec @ 0x17df bytes: a23306
+[run_asm_unicorn.py][isolated] mov [imm],al at 0x633 (linear 0x1633) AL=34
+[run_asm_unicorn.py][isolated] exec @ 0x17e2 bytes: 88e0
+[run_asm_unicorn.py][isolated] exec @ 0x17e4 bytes: 2401
+[run_asm_unicorn.py][isolated] exec @ 0x17e6 bytes: 88c2
+[run_asm_unicorn.py][isolated] exec @ 0x17e8 bytes: a00a01
+[run_asm_unicorn.py][isolated] exec @ 0x17eb bytes: 2401
+[run_asm_unicorn.py][isolated] exec @ 0x17ed bytes: 88c6
+[run_asm_unicorn.py][isolated] exec @ 0x17ef bytes: c606450633
+[run_asm_unicorn.py][isolated] mov byte [imm16],imm8 at 0x645 (linear 0x1645) -> 0x33
+[run_asm_unicorn.py][isolated][DBG] MEMWRITE SEQ=3 @ 0x1645 offset 0 val 0x33 pc 0x17ef
+[run_asm_unicorn.py][isolated] exec @ 0x17f4 bytes: b033
+[run_asm_unicorn.py][isolated] exec @ 0x17f6 bytes: a23306
+[run_asm_unicorn.py][isolated] mov [imm],al at 0x633 (linear 0x1633) AL=51
+[run_asm_unicorn.py][isolated] exec @ 0x17f9 bytes: c6064f0621
+[run_asm_unicorn.py][isolated] mov byte [imm16],imm8 at 0x64f (linear 0x164f) -> 0x21
+[run_asm_unicorn.py][isolated][DBG] MEMWRITE SEQ=4 @ 0x164f offset 10 val 0x21 pc 0x17f9
+[run_asm_unicorn.py][isolated] exec @ 0x17fe bytes: 89c8
+[run_asm_unicorn.py][isolated] exec @ 0x1800 bytes: 89c5
+[run_asm_unicorn.py][isolated] exec @ 0x1802 bytes: 89df
+[run_asm_unicorn.py][isolated] exec @ 0x1804 bytes: 89de
+[run_asm_unicorn.py][isolated] exec @ 0x1806 bytes: 88d0
+[run_asm_unicorn.py][isolated] exec @ 0x1808 bytes: 98
+[run_asm_unicorn.py][isolated] exec @ 0x1809 bytes: 01c6
+[run_asm_unicorn.py][isolated] exec @ 0x180b bytes: 89f3
+[run_asm_unicorn.py][isolated] exec @ 0x180d bytes: 89ee
+[run_asm_unicorn.py][isolated] exec @ 0x180f bytes: 88f0
+[run_asm_unicorn.py][isolated] exec @ 0x1811 bytes: 98
+[run_asm_unicorn.py][isolated] exec @ 0x1812 bytes: 01c6
+[run_asm_unicorn.py][isolated] exec @ 0x1814 bytes: 89f1
+[run_asm_unicorn.py][isolated] exec @ 0x1816 bytes: c6064f06ee
+[run_asm_unicorn.py][isolated] mov byte [imm16],imm8 at 0x64f (linear 0x164f) -> 0xee
+[run_asm_unicorn.py][isolated][DBG] MEMWRITE SEQ=5 @ 0x164f offset 10 val 0xee pc 0x1816
+[run_asm_unicorn.py][isolated] exec @ 0x181b bytes: 89f8
+[run_asm_unicorn.py][isolated] exec @ 0x181d bytes: a24606
+[run_asm_unicorn.py][isolated] mov [imm],al at 0x646 (linear 0x1646) AL=1
+[run_asm_unicorn.py][isolated][DBG] MEMWRITE SEQ=6 @ 0x1646 offset 1 val 0x1 pc 0x181d
+[run_asm_unicorn.py][isolated] exec @ 0x1820 bytes: 881e4706
+[run_asm_unicorn.py][isolated] exec @ 0x1824 bytes: 89e8
+[run_asm_unicorn.py][isolated] exec @ 0x1826 bytes: a24806
+[run_asm_unicorn.py][isolated] mov [imm],al at 0x648 (linear 0x1648) AL=1
+[run_asm_unicorn.py][isolated][DBG] MEMWRITE SEQ=7 @ 0x1648 offset 3 val 0x1 pc 0x1826
+[run_asm_unicorn.py][isolated] exec @ 0x1829 bytes: 880e4906
+[run_asm_unicorn.py][isolated] exec @ 0x182d bytes: 89e8
+[run_asm_unicorn.py][isolated] exec @ 0x182f bytes: 89c5
+[run_asm_unicorn.py][isolated] exec @ 0x1831 bytes: c6064f0631
+[run_asm_unicorn.py][isolated] mov byte [imm16],imm8 at 0x64f (linear 0x164f) -> 0x31
+[run_asm_unicorn.py][isolated][DBG] MEMWRITE SEQ=8 @ 0x164f offset 10 val 0x31 pc 0x1831
+[run_asm_unicorn.py][isolated] exec @ 0x1836 bytes: 89e8
+[run_asm_unicorn.py][isolated] exec @ 0x1838 bytes: d1e0
+[run_asm_unicorn.py][isolated] exec @ 0x183a bytes: d1e0
+[run_asm_unicorn.py][isolated] exec @ 0x183c bytes: d1e0
+[run_asm_unicorn.py][isolated] exec @ 0x183e bytes: d1e0
+[run_asm_unicorn.py][isolated] exec @ 0x1840 bytes: d1e0
+[run_asm_unicorn.py][isolated] exec @ 0x1842 bytes: d1e0
+[run_asm_unicorn.py][isolated] exec @ 0x1844 bytes: d1e0
+[run_asm_unicorn.py][isolated] exec @ 0x1846 bytes: 89c2
+[run_asm_unicorn.py][isolated] exec @ 0x1848 bytes: be2f01
+[run_asm_unicorn.py][isolated] exec @ 0x184b bytes: 81c60a05
+[run_asm_unicorn.py][isolated] exec @ 0x184f bytes: 8a04
+[run_asm_unicorn.py][isolated] exec @ 0x1851 bytes: b400
+[run_asm_unicorn.py][isolated] exec @ 0x1853 bytes: 89c7
+[run_asm_unicorn.py][isolated] exec @ 0x1855 bytes: c6064f0641
+[run_asm_unicorn.py][isolated] mov byte [imm16],imm8 at 0x64f (linear 0x164f) -> 0x41
+[run_asm_unicorn.py][isolated][DBG] MEMWRITE SEQ=9 @ 0x164f offset 10 val 0x41 pc 0x1855
+[run_asm_unicorn.py][isolated] exec @ 0x185a bytes: 89d0
+[run_asm_unicorn.py][isolated] exec @ 0x185c bytes: 01f8
+[run_asm_unicorn.py][isolated] exec @ 0x185e bytes: be2f01
+[run_asm_unicorn.py][isolated] exec @ 0x1861 bytes: 01c6
+[run_asm_unicorn.py][isolated] exec @ 0x1863 bytes: 8a04
+[run_asm_unicorn.py][isolated] exec @ 0x1865 bytes: 88c2
+[run_asm_unicorn.py][isolated] exec @ 0x1867 bytes: 88164a06
+[run_asm_unicorn.py][isolated] exec @ 0x186b bytes: 8a0e2b01
+[run_asm_unicorn.py][isolated] exec @ 0x186f bytes: 880e4b06
+[run_asm_unicorn.py][isolated] exec @ 0x1873 bytes: 89f8
+[run_asm_unicorn.py][isolated] exec @ 0x1875 bytes: a24c06
+[run_asm_unicorn.py][isolated] mov [imm],al at 0x64c (linear 0x164c) AL=69
+[run_asm_unicorn.py][isolated][DBG] MEMWRITE SEQ=10 @ 0x164c offset 7 val 0x45 pc 0x1875
+[run_asm_unicorn.py][isolated] exec @ 0x1878 bytes: 89e8
+[run_asm_unicorn.py][isolated] exec @ 0x187a bytes: a24d06
+[run_asm_unicorn.py][isolated] mov [imm],al at 0x64d (linear 0x164d) AL=1
+[run_asm_unicorn.py][isolated][DBG] MEMWRITE SEQ=11 @ 0x164d offset 8 val 0x1 pc 0x187a
+[run_asm_unicorn.py][isolated] exec @ 0x187d bytes: c6064e0610
+[run_asm_unicorn.py][isolated] mov byte [imm16],imm8 at 0x64e (linear 0x164e) -> 0x10
+[run_asm_unicorn.py][isolated][DBG] MEMWRITE SEQ=12 @ 0x164e offset 9 val 0x10 pc 0x187d
+[run_asm_unicorn.py][isolated] exec @ 0x1882 bytes: b044
+[run_asm_unicorn.py][isolated] exec @ 0x1884 bytes: a23306
+[run_asm_unicorn.py][isolated] mov [imm],al at 0x633 (linear 0x1633) AL=68
+[run_asm_unicorn.py][isolated] exec @ 0x1887 bytes: 38ca
+[run_asm_unicorn.py][isolated] exec @ 0x1889 bytes: 7716
+[run_asm_unicorn.py][isolated] exec @ 0x188b bytes: 47
+[run_asm_unicorn.py][isolated] exec @ 0x188c bytes: 89f8
+[run_asm_unicorn.py][isolated] exec @ 0x188e bytes: 39d8
+[run_asm_unicorn.py][isolated] exec @ 0x1890 bytes: 7ec8
+[run_asm_unicorn.py][isolated] exec @ 0x1892 bytes: 45
+[run_asm_unicorn.py][isolated] exec @ 0x1893 bytes: 89e8
+[run_asm_unicorn.py][isolated] exec @ 0x1895 bytes: 39c8
+[run_asm_unicorn.py][isolated] exec @ 0x1897 bytes: 7e98
+[run_asm_unicorn.py][isolated] exec @ 0x1899 bytes: c6064e0655
+[run_asm_unicorn.py][isolated] mov byte [imm16],imm8 at 0x64e (linear 0x164e) -> 0x55
+[run_asm_unicorn.py][isolated][DBG] MEMWRITE SEQ=13 @ 0x164e offset 9 val 0x55 pc 0x1899
+[run_asm_unicorn.py][isolated] exec @ 0x189e bytes: f8
+[run_asm_unicorn.py][isolated] exec @ 0x189f bytes: eb08
+[run_asm_unicorn.py][isolated] exec @ 0x18a9 bytes: c606450677
+[run_asm_unicorn.py][isolated] mov byte [imm16],imm8 at 0x645 (linear 0x1645) -> 0x77
+[run_asm_unicorn.py][isolated][DBG] MEMWRITE SEQ=14 @ 0x1645 offset 0 val 0x77 pc 0x18a9
+[run_asm_unicorn.py][isolated] exec @ 0x18ae bytes: b077
+[run_asm_unicorn.py][isolated] exec @ 0x18b0 bytes: a23306
+[run_asm_unicorn.py][isolated] mov [imm],al at 0x633 (linear 0x1633) AL=119
+[run_asm_unicorn.py][isolated] exec @ 0x18b3 bytes: 5d
+[run_asm_unicorn.py][isolated] exec @ 0x18b4 bytes: 5f
+[run_asm_unicorn.py][isolated] exec @ 0x18b5 bytes: 5e
+[run_asm_unicorn.py][isolated] exec @ 0x18b6 bytes: 5a
+[run_asm_unicorn.py][isolated] exec @ 0x18b7 bytes: 59
+[run_asm_unicorn.py][isolated] exec @ 0x18b8 bytes: 5b
+[run_asm_unicorn.py][isolated] exec @ 0x18b9 bytes: 58
+[run_asm_unicorn.py][isolated] exec @ 0x18ba bytes: c3
+[run_asm_unicorn.py][isolated] exec @ 0x1100 bytes: 4d
+[run_asm_unicorn.py][isolated] exec @ 0x1101 bytes: 44
+[run_asm_unicorn.py][isolated] exec @ 0x1102 bytes: 00494e
+[run_asm_unicorn.py][isolated] exec @ 0x1105 bytes: 58
+[run_asm_unicorn.py][isolated] exec @ 0x1106 bytes: 02494e
+[run_asm_unicorn.py][isolated] exec @ 0x1109 bytes: 59
+[run_asm_unicorn.py][isolated] exec @ 0x110a bytes: 02454e
+[run_asm_unicorn.py][isolated] exec @ 0x110d bytes: 58
+[run_asm_unicorn.py][isolated] exec @ 0x110e bytes: 00454e
+[run_asm_unicorn.py][isolated] exec @ 0x1111 bytes: 59
+[run_asm_unicorn.py][isolated] exec @ 0x1112 bytes: 004542
+[run_asm_unicorn.py][isolated] exec @ 0x1115 bytes: 48
+[run_asm_unicorn.py][isolated] exec @ 0x1116 bytes: 00504c
+[run_asm_unicorn.py][isolated] exec @ 0x1119 bytes: 58
+[run_asm_unicorn.py][isolated] exec @ 0x111a bytes: 00504c
+[run_asm_unicorn.py][isolated] exec @ 0x111d bytes: 59
+[run_asm_unicorn.py][isolated] exec @ 0x111e bytes: 004642
+[run_asm_unicorn.py][isolated] exec @ 0x111e bytes: 004642
+[run_asm_unicorn.py][isolated] exec @ 0x1121 bytes: 58
+[run_asm_unicorn.py][isolated] exec @ 0x1122 bytes: 004642
+[run_asm_unicorn.py][isolated] exec @ 0x1122 bytes: 004642
+[run_asm_unicorn.py][isolated] exec @ 0x1125 bytes: 59
+[run_asm_unicorn.py][isolated] exec @ 0x1126 bytes: 004642
+[run_asm_unicorn.py][isolated] exec @ 0x1126 bytes: 004642
+[run_asm_unicorn.py][isolated] exec @ 0x1129 bytes: 56
+[run_asm_unicorn.py][isolated] exec @ 0x112a bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x112c bytes: 4d
+[run_asm_unicorn.py][isolated] exec @ 0x112d bytes: 41
+[run_asm_unicorn.py][isolated] exec @ 0x112e bytes: 50
+[run_asm_unicorn.py][isolated] exec @ 0x112f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1131 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1133 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1135 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1137 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1139 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x113b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x113d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x113f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1141 bytes: 0900
+[run_asm_unicorn.py][isolated] exec @ 0x1143 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1145 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1147 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1149 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x114b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x114d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x114f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1151 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1153 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1155 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1157 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1159 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x115b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x115d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x115f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1161 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1163 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1165 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1167 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1169 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x116b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x116d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x116f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1171 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1173 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1175 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1177 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1179 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x117b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x117d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x117f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1181 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1183 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1185 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1187 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1189 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x118b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x118d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x118f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1191 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1193 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1195 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1197 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1199 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x119b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x119d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x119f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11a1 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11a3 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11a5 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11a7 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11a9 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11ab bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11ad bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11af bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11b1 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11b3 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11b5 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11b7 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11b9 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11bb bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11bd bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11bf bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11c1 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11c3 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11c5 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11c7 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11c9 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11cb bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11cd bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11cf bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11d1 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11d3 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11d5 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11d7 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11d9 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11db bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11dd bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11df bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11e1 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11e3 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11e5 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11e7 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11e9 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11eb bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11ed bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11ef bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11f1 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11f3 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11f5 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11f7 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11f9 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11fb bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11fd bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x11ff bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1201 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1203 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1205 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1207 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1209 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x120b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x120d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x120f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1211 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1213 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1215 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1217 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1219 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x121b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x121d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x121f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1221 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1223 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1225 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1227 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1229 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x122b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x122d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x122f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1231 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1233 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1235 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1237 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1239 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x123b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x123d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x123f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1241 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1243 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1245 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1247 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1249 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x124b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x124d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x124f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1251 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1253 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1255 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1257 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1259 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x125b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x125d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x125f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1261 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1263 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1265 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1267 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1269 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x126b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x126d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x126f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1271 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1273 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1275 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1277 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1279 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x127b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x127d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x127f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1281 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1283 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1285 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1287 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1289 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x128b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x128d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x128f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1291 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1293 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1295 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1297 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x1299 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x129b bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x129d bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x129f bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12a1 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12a3 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12a5 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12a7 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12a9 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12ab bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12ad bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12af bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12b1 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12b3 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12b5 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12b7 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12b9 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12bb bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12bd bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12bf bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12c1 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12c3 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12c5 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12c7 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12c9 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12cb bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12cd bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12cf bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12d1 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12d3 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12d5 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12d7 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12d9 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12db bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12dd bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12df bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12e1 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12e3 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12e5 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12e7 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12e9 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12eb bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12ed bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12ef bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12f1 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12f3 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12f5 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12f7 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12f9 bytes: 0000
+[run_asm_unicorn.py][isolated] exec @ 0x12fb bytes: 0002
+[run_asm_unicorn.py] isolated DBG @ 0x1645 = [119, 1, 1, 1, 1, 0, 0, 69, 1, 85, 65, 0, 0, 0, 83, 84, 199, 6, 49, 6]
+[run_asm_unicorn.py] isolated RECENT DBG WRITES (most recent first):
+  - SEQ=14 OFF=0 ADDR=0x1645 SIZE=1 VAL=77 PC=0x18a9
+  - SEQ=13 OFF=9 ADDR=0x164e SIZE=1 VAL=55 PC=0x1899
+  - SEQ=12 OFF=9 ADDR=0x164e SIZE=1 VAL=10 PC=0x187d
+  - SEQ=11 OFF=8 ADDR=0x164d SIZE=1 VAL=01 PC=0x187a
+  - SEQ=10 OFF=7 ADDR=0x164c SIZE=1 VAL=45 PC=0x1875
+  - SEQ=9 OFF=10 ADDR=0x164f SIZE=1 VAL=41 PC=0x1855
+  - SEQ=8 OFF=10 ADDR=0x164f SIZE=1 VAL=31 PC=0x1831
+  - SEQ=7 OFF=3 ADDR=0x1648 SIZE=1 VAL=01 PC=0x1826
+  - SEQ=6 OFF=1 ADDR=0x1646 SIZE=1 VAL=01 PC=0x181d
+  - SEQ=5 OFF=10 ADDR=0x164f SIZE=1 VAL=ee PC=0x1816
+  - SEQ=4 OFF=10 ADDR=0x164f SIZE=1 VAL=21 PC=0x17f9
+  - SEQ=3 OFF=0 ADDR=0x1645 SIZE=1 VAL=33 PC=0x17ef
+  - SEQ=2 OFF=0 ADDR=0x1645 SIZE=1 VAL=22 PC=0x17d8
+  - SEQ=1 OFF=0 ADDR=0x1645 SIZE=1 VAL=12 PC=0x17bd
+[run_asm_unicorn.py] isolated LAST DBG WRITES (per-offset):
+  - offset 0: SEQ=14 VAL=77 PC=0x18a9
+  - offset 1: SEQ=6 VAL=01 PC=0x181d
+  - offset 3: SEQ=7 VAL=01 PC=0x1826
+  - offset 7: SEQ=10 VAL=45 PC=0x1875
+  - offset 8: SEQ=11 VAL=01 PC=0x187a
+  - offset 9: SEQ=13 VAL=55 PC=0x1899
+  - offset 10: SEQ=9 VAL=41 PC=0x1855
+bytearray(b'RS\x00RNE')
+0

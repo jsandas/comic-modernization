@@ -1,0 +1,4 @@
+  File "/Users/hedge/workspace/comic-c/src/tests/asm/run_asm_unicorn.py", line 605
+    global inline_call_active, inline_return_linear
+    ^
+SyntaxError: name 'inline_call_active' is used prior to global declaration

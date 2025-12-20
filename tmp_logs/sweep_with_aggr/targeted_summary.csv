@@ -1,0 +1,10 @@
+x,y,aggr_count,aggr_addrs,log
+48,42,0,,tmp_logs/sweep_with_aggr/targeted/mode1_48_42_forceaggr.log
+48,50,0,,tmp_logs/sweep_with_aggr/targeted/mode1_48_50_forceaggr.log
+48,58,0,,tmp_logs/sweep_with_aggr/targeted/mode1_48_58_forceaggr.log
+56,42,0,,tmp_logs/sweep_with_aggr/targeted/mode1_56_42_forceaggr.log
+56,50,0,,tmp_logs/sweep_with_aggr/targeted/mode1_56_50_forceaggr.log
+56,58,0,,tmp_logs/sweep_with_aggr/targeted/mode1_56_58_forceaggr.log
+64,42,0,,tmp_logs/sweep_with_aggr/targeted/mode1_64_42_forceaggr.log
+64,50,0,,tmp_logs/sweep_with_aggr/targeted/mode1_64_50_forceaggr.log
+64,58,0,,tmp_logs/sweep_with_aggr/targeted/mode1_64_58_forceaggr.log
