@@ -76,6 +76,19 @@ dbg_row_marker: db 0
 dbg_flags_lo: db 0       ; AL
 dbg_flags_hi: db 0       ; AH
 dbg_fire_active: db 0    ; fireball active result
+; Additional snapshot slots for diagnostics (AX/DI/BX/SI/BP/DX)
+dbg_ax_lo: db 0
+dbg_ax_hi: db 0
+dbg_di_lo: db 0
+dbg_di_hi: db 0
+dbg_bx_lo: db 0
+dbg_bx_hi: db 0
+dbg_si_lo: db 0
+dbg_si_hi: db 0
+dbg_bp_lo: db 0
+dbg_bp_hi: db 0
+dbg_dx_lo: db 0
+dbg_dx_hi: db 0
 
 ; Helper macros/constants
 %define MAP_WIDTH_TILES 128
@@ -137,22 +150,16 @@ start:
     mov bl, [pl_x]
     cmp al, bl
     jae .enemy_right
-    ; write -1 into debug slot
+    ; write -1 into the enemy result xvel
     mov al, 0xFF
-    mov si, map_tiles
-    add si, 1283
-    mov [si], al
+    mov [en_res_xvel], al
     jmp .set_leap_y
 .enemy_right:
     mov al, 1
-    mov si, map_tiles
-    add si, 1283
-    mov [si], al
+    mov [en_res_xvel], al
 .set_leap_y:
     mov al, 0xF9   ; -7 as unsigned byte
-    mov si, map_tiles
-    add si, 1284
-    mov [si], al
+    mov [en_res_yvel], al
     jmp .finish
 
 ; mode 3: simplified fireball tick
@@ -232,15 +239,13 @@ start:
     add ax, bx
 
     mov bx, map_tiles
-    ; store pointer read and memory at pointer for debugging
-    mov ax, bx
-    mov [probe_index], ax
+    ; add row/col offset (in AX) to base pointer in BX
+    add bx, ax
+    ; store pointer read for debugging
+    mov [probe_index], bx
+    ; read the tile at map_tiles + offset into AL
     mov al, [bx]
     mov [probe_val], al
-
-    add bx, ax
-
-    mov al, [bx]
     ; store raw tile value to a debug slot immediately after the map region
     mov [dbg_tile_val], al
     mov [result], al
@@ -362,7 +367,7 @@ check_vertical_enemy_map_collision:
     mov bp, ax      ; BP = ty
 .v_row_loop2:
     mov byte [dbg_row_marker], 0x31
-    ; row_base = bp * 128
+    ; row_base = bp * 128 (bp << 7)
     mov ax, bp
     shl ax, 1
     shl ax, 1
@@ -371,42 +376,35 @@ check_vertical_enemy_map_collision:
     shl ax, 1
     shl ax, 1
     shl ax, 1
-    mov dx, ax      ; DX = row_base
-
-    ; columns: tx from left (load from debug left slot) to right (BX)
-    mov si, map_tiles
-    add si, 1290
-    mov al, [si]
-    mov ah, 0
-    mov di, ax
-    mov byte [dbg_row_marker], 0x41
+    ; left tile in DI (low byte)
+    mov di, dx
+    ; set SI = left_tile (we stored left in DI earlier)
+    mov si, di
+    ; right tile = BX (was computed earlier as right)
+    ; columns: tx from SI (left) to BX (right)
 .v_col_loop2:
-    mov ax, dx
-    add ax, di      ; AX = index
-    mov si, map_tiles
-    add si, ax
-    mov al, [si]
-    ; save tile value into DL
-    mov dl, al
+    mov bx, ax      ; BX = row_base
+    add bx, si      ; BX = row_base + tx
+    mov di, map_tiles
+    add di, bx
+    mov dl, [di]
     ; debug: tile value
     mov [dbg_tile_val], dl
     ; threshold into CL and debug
     mov cl, [tileset_last_passable]
     mov [dbg_threshold], cl
     ; cur tx low -> dbg_cur_tx
-    mov ax, di
-    mov [dbg_cur_tx], al
+    mov [dbg_cur_tx], si
     ; cur ty low -> dbg_cur_ty
-    mov ax, bp
-    mov [dbg_cur_ty], al
+    mov [dbg_cur_ty], bp
     ; compare tile (DL) vs threshold (CL)
     mov byte [dbg_collision_marker], 0x10
     mov al, 0x44
     mov [probe_val], al
     cmp dl, cl
     ja .v_collision_found2
-    inc di
-    mov ax, di
+    inc si
+    mov ax, si
     cmp ax, bx
     jle .v_col_loop2
     ; next row
@@ -453,84 +451,175 @@ check_horizontal_enemy_map_collision:
     push bx
     push cx
     push dx
+    push si
+    push di
+    push bp
     ; marker: horizontal entry
     mov byte [dbg_entry], 0x21
     ; trace: mark probe_val for horizontal entry
     mov al, 0x21
     mov [probe_val], al
 
-    mov cx, ax    ; CX = original AX (CH = orig in_x, CL = orig in_y)
-    mov bl, ah
-    xor bh, bh
-    xor ah, ah
+    ; Compute tile_x = in_x >> 1 into SI
+    mov al, [in_x]
+    shr al, 1
+    mov si, ax
+    and si, 0x00FF
 
-    ; compute tile coords (tile_x = x>>1, tile_y = y>>1)
-    shr bx, 1      ; BX = tile_x
-    shr ax, 1      ; AX = tile_y
+    ; Compute tile_y = in_y >> 1 into BP
+    mov al, [in_y]
+    shr al, 1
+    mov bp, ax
+    and bp, 0x00FF
 
-    ; compute right and bottom bounds based on span bits
-    mov si, bx     ; SI = left_tile
-    mov di, ax     ; DI = top_tile
-    test ch, 1
-    jz .h_no_right
-    inc si
-.h_no_right:
-    test cl, 1
-    jz .h_no_bottom
-    inc di
-.h_no_bottom:
+    ; compute span bits: span_x in DL, span_y in DH
+    mov al, [in_x]
+    and al, 1
+    mov dl, al
+    mov al, [in_y]
+    and al, 1
+    mov dh, al
 
-    ; iterate rows from tile_y (AX) to DI (bottom_tile)
-    mov cx, ax
+    ; compute right = left + span_x into BX
+    mov bx, si
+    mov al, dl
+    cbw
+    add bx, ax
+
+    ; compute bottom = top + span_y into CX
+    mov cx, bp
+    mov al, dh
+    cbw
+    add cx, ax
+
+    ; rows: BP = tile_y, CX = bottom
+    mov ax, bp
+    mov bp, ax      ; BP = current row (ty)
+
 .h_row_loop:
     mov byte [dbg_row_marker], 0x51
-    ; compute base = cx * 128
-    mov dx, cx
-    shl dx, 1
-    shl dx, 1
-    shl dx, 1
-    shl dx, 1
-    shl dx, 1
-    shl dx, 1
-    shl dx, 1
+    ; row_base = bp * 128
+    mov ax, bp
+    shl ax, 1
+    shl ax, 1
+    shl ax, 1
+    shl ax, 1
+    shl ax, 1
+    shl ax, 1
+    shl ax, 1
 
-    ; loop columns tx from left (in BX) to SI (right_tile)
-    mov bp, bx
-    mov byte [dbg_row_marker], 0x61
+    ; columns: tx from SI (left) to BX (right)
 .h_col_loop:
-    mov ax, dx
-    add ax, bp
-    mov bx, map_tiles
-    add bx, ax
-    mov byte [dbg_collision_marker], 0x20
-    mov al, [bx]
-    mov [dbg_tile_val], al
-    ; mark compare point in horizontal
-    mov al, 0x44
+    ; DI = row_base + tx (don't clobber BX)
+    mov di, ax
+    add di, si
+    ; AX = di + map_tiles (file offset)
+    mov ax, di
+    ; dump DI low/high into debug top/bottom
+    mov dx, di
+    mov [dbg_top], dl
+    mov [dbg_bottom], dh
+    ; add base pointer via DX
+    mov dx, map_tiles
+    add ax, dx
+    ; convert runtime pointer (ORG + file_offset) -> file offset by subtracting ORG (0x100)
+    sub ax, 0x100
+    ; dump AX (file offset) into debug left/right
+    mov [dbg_left], al
+    mov [dbg_right], ah
+    ; snapshot registers immediately before storing the file offset to probe_index
+    mov [dbg_ax_lo], al
+    mov [dbg_ax_hi], ah
+    push ax                 ; preserve file offset while we snapshot other regs
+    mov dx, di
+    mov [dbg_di_lo], dl
+    mov [dbg_di_hi], dh
+    mov ax, bx
+    mov [dbg_bx_lo], al
+    mov [dbg_bx_hi], ah
+    mov ax, si
+    mov [dbg_si_lo], al
+    mov [dbg_si_hi], ah
+    mov ax, bp
+    mov [dbg_bp_lo], al
+    mov [dbg_bp_hi], ah
+    mov dx, map_tiles
+    mov [dbg_dx_lo], dl
+    mov [dbg_dx_hi], dh
+    pop ax                  ; restore file offset into AX
+    ; self-check: compute expected file offset = (bp * 128) + si + (map_tiles - 0x100)
+    push ax                 ; preserve file offset on stack for comparison
+    mov bx, bp
+    shl bx, 1
+    shl bx, 1
+    shl bx, 1
+    shl bx, 1
+    shl bx, 1
+    shl bx, 1
+    shl bx, 1             ; BX = bp * 128
+    add bx, si            ; BX += tx
+    mov dx, map_tiles
+    sub dx, 0x100
+    add bx, dx            ; BX = expected file offset
+    cmp bx, word [sp]
+    je .pidx_ok
+    ; mismatch: write marker and snapshot expected/actual
+    mov byte [dbg_collision_marker], 0xEE
+    ; store actual into dbg_ax_lo/hi
+    mov ax, word [sp]
+    mov [dbg_ax_lo], al
+    mov [dbg_ax_hi], ah
+    ; store expected into dbg_bx_lo/hi
+    mov ax, bx
+    mov [dbg_bx_lo], al
+    mov [dbg_bx_hi], ah
+.pidx_ok:
+    pop ax                  ; restore file offset into AX
+    mov [probe_index], ax
+    ; capture AL at time of store into probe_val and mark collision write
     mov [probe_val], al
-    mov cl, [tileset_last_passable]
-    cmp al, cl
-    jg .h_collision_found
-    inc bp
-    cmp bp, si
+    mov byte [dbg_collision_marker], 0x7E
+    ; pointer DI = map_tiles + row_base + tx
+    add di, dx
+    mov dl, [di]
+    ; debug: tile value
+    mov [dbg_tile_val], dl
+    ; threshold into AL and debug
+    mov al, [tileset_last_passable]
+    mov [dbg_threshold], al
+    ; cur tx low -> dbg_cur_tx
+    mov [dbg_cur_tx], si
+    ; cur ty low -> dbg_cur_ty
+    mov [dbg_cur_ty], bp
+    ; compare tile (DL) vs threshold (AL)
+    mov byte [dbg_collision_marker], 0x20
+    cmp dl, al
+    ja .h_collision_found
+    inc si
+    mov ax, si
+    cmp ax, bx
     jle .h_col_loop
 
-    inc cx
-    cmp cx, di
+    inc bp
+    mov ax, bp
+    cmp ax, cx
     jle .h_row_loop
 
     ; no collision found: write debug marker 0x55 (named)
     mov byte [dbg_collision_marker], 0x55
     clc
-    jmp .h_ret
+    jmp .h_cleanup
 
 .h_collision_found:
     ; collision found: write debug marker 0x99 (named)
     mov byte [dbg_collision_marker], 0x99
     stc
-    jmp .h_ret
+    jmp .h_cleanup
 
-.h_ret:
+.h_cleanup:
+    pop bp
+    pop di
+    pop si
     pop dx
     pop cx
     pop bx

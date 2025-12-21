@@ -37,6 +37,11 @@ jobs:
           echo "Running inline parity python test..."
           python3 src/tests/asm/test_inline_parity.py
 
+      - name: Run ASM probe_index regression test
+        run: |
+          echo "Running ASM probe_index regression..."
+          python3 src/tests/asm/test_probe_index_regression.py
+
       - name: Run tests (tests dir)
         run: ctest --test-dir build/src/tests --output-on-failure -V
 
