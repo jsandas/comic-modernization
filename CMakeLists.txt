@@ -32,14 +32,22 @@ else()
     )
 endif()
 
-# Copy assets to build directory
-add_custom_command(
-    TARGET build_assets POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/assets/extracted
-        ${CMAKE_BINARY_DIR}/data
-    COMMENT "Copying assets to ${CMAKE_BINARY_DIR}/data"
-)
+# Copy assets to build directory (only if extracted assets exist)
+if(EXISTS ${CMAKE_SOURCE_DIR}/assets/extracted)
+    add_custom_command(
+        TARGET build_assets POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_SOURCE_DIR}/assets/extracted
+            ${CMAKE_BINARY_DIR}/data
+        COMMENT "Copying assets to ${CMAKE_BINARY_DIR}/data"
+    )
+else()
+    add_custom_command(
+        TARGET build_assets POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "No extracted assets found; skipping copy to ${CMAKE_BINARY_DIR}/data"
+        COMMENT "Skipping asset copy (no extracted assets present)"
+    )
+endif()
 
 # Enable testing and add source and test subdirectories
 enable_testing()
