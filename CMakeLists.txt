@@ -44,7 +44,9 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/assets/extracted)
 else()
     add_custom_command(
         TARGET build_assets POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo "No extracted assets found; skipping copy to ${CMAKE_BINARY_DIR}/data"
+        # Avoid using a semicolon in the message which can be interpreted as a shell
+        # command separator when the generator wraps the call. Use a comma instead.
+        COMMAND ${CMAKE_COMMAND} -E echo "No extracted assets found, skipping copy to ${CMAKE_BINARY_DIR}/data"
         COMMENT "Skipping asset copy (no extracted assets present)"
     )
 endif()
