@@ -8,6 +8,14 @@ To assemble the files, you will need NASM (https://nasm.us/) and djlink
 (http://www.delorie.com/djgpp/16bit/djlink/). A copy of djlink with a
 slightly patched makefile is included.
 
+Note: On macOS or other systems without a suitable DJGPP toolchain, building
+`djlink` may fail. You can either:
+- put a prebuilt `djlink` binary at `reference/disassembly/djlink/djlink`, or
+- set the `DJLINK` environment variable to the path of a working `djlink`
+  executable.
+
+This will allow `make` in `reference/disassembly` to complete successfully.
+
 The reassembled executables are not byte-for-byte identical to the
 originals, because NASM assembles some instructions differently than
 whatever the original assembler was (probably MASM). For example, NASM

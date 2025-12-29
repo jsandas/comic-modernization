@@ -1,6 +1,6 @@
-; Commented disassembly of The Adventures of Captain Comic, Revision 3.
-;   nasm -f obj -o R3sw1989.obj R3sw1989.asm
-;   djlink -o R3sw1989.exe R3sw1989.obj
+; Commented disassembly of The Adventures of Captain Comic, Revision 5.
+;   nasm -f obj -o R5sw1991.obj R5sw1991.asm
+;   djlink -o R5sw1991.exe R5sw1991.obj
 
 bits	16
 
@@ -168,10 +168,8 @@ TERMINAL_VELOCITY	equ	23	; in units of 1/8 game units per tick, as in comic_y_ve
 section code
 sectalign	16
 
-; Dead code: executable actually starts at ..start below, according to the EXE
-; header.
-	jmp main
-	nop
+db `\n\r\n\rCaptain Comic I - Planet of Death, Version SH1.0\n\r`
+db `Copyright 1990 by Michael A. Denio\n\r\x1a`
 
 ; The program leaves the programmable interrupt handler channel 0 (IRQ 0)
 ; running with its default frequency divider of 65536, giving a frequency of
@@ -188,6 +186,10 @@ sound_priority		db	0	; priority of the currently playing sound (0 if no sound is
 sound_data_offset	dw	0	; offset of the address of the currently playing sound
 sound_note_counter	dw	0	; how many IRQ 0 cycles remain in the current note
 sound_data_segment	dw	0	; segment of the address of the currently playing sound
+
+; How many `in` instructions to wait for joystick inputs to converge. Set by
+; main.cpu_speed_loop and used by read_joystick_axis.
+max_joystick_reads	dw	0
 
 ; Keyboard state variables, set by int9_handler.
 key_state_esc		db	0
@@ -212,14 +214,38 @@ scancode_right		db	SCANCODE_RIGHT
 scancode_open		db	SCANCODE_ALT
 scancode_teleport	db	SCANCODE_CAPSLOCK
 
-; The scancode of the most recent key press event (set in int9_handler).
+; Temporary storage used by int8_handler. The default values are not
+; meaningful.
+key_state_jump_tmp	db	1
+key_state_fire_tmp	db	2
+key_state_right_tmp	db	3
+key_state_left_tmp	db	4
+key_state_open_tmp	db	5
+key_state_teleport_tmp	db	6
+
+; The scancode of the most recent key press event (set in int9_handler), or
+; 0xff in the case of a joystick input event (set in int8_handler).
 recent_scancode		db	0
 
+; Joystick calibration settings, set by calibrate_joystick and used in
+; int8_handler.
+joystick_x_zero		dw	0
+joystick_y_zero		dw	0
+joystick_x_low		dw	0
+joystick_x_high		dw	0
+joystick_y_low		dw	0
+joystick_y_high		dw	0
+joystick_is_calibrated	dw	0
 
-; Install interrupt handlers and load the keymap from KEYS.DEF if present. Jump
-; to display_startup_notice when done.
+
+; Install interrupt handlers, run a CPU speed loop to calibrate joystick read
+; timing, check for sufficient EGA support, and load the keymap from KEYS.DEF if
+; present. Jump to display_startup_notice when done.
 ; Output:
 ;   keymap = loaded from KEYS.DEF if present
+;   max_joystick_reads = calibrated counter for joystick axis reads
+;   saved_video_mode = upper 8 bits are 0x00, lower 8 bits are the video mode at
+;                      program startup
 ..start:
 main:
 	cld
@@ -236,9 +262,6 @@ main:
 	and al, 0xfc	; unset the 2 low bits to disconnect PIT channel 2 from the speaker
 	out 0x61, al
 
-	mov ax, 0x0002	; ah=0x00: set video mode; al=2: 80×25 text
-	int 0x10
-
 	; Install our custom interrupt handlers. We store a magic value in
 	; interrupt_handler_install_sentinel and expect int3_handler to
 	; bit-flip it. Later, at .check_interrupt_handler_install_sentinel, we
@@ -252,6 +275,71 @@ main:
 	; and returns it in al.
 	int3	; call int3_handler
 	mov [interrupt_handler_install_sentinel], al	; al should be bit-flipped here
+
+	; Measure the CPU speed in order to calibrate the joystick. First, wait
+	; until the beginning of a tick interval.
+	mov ax, 1
+	call wait_n_ticks	; sets game_tick_flag = 0
+
+	; Count how many `in` instructions we can run in a loop during one game
+	; tick.
+	mov cx, -1	; the counter starts at -1 and counts downward
+.cpu_speed_loop:
+	in al, dx	; dummy `in` instruction
+	cmp byte [cs:game_tick_flag], 1	; has a game tick elapsed yet?
+	je .finished	; just turned over a new game tick
+	loop .cpu_speed_loop
+	; If no tick happened before cx made a full cycle, assign a default.
+	mov word [cs:max_joystick_reads], 1280
+	jmp .save_video_mode
+
+.finished:
+	neg cx		; flip count from negative to positive
+	mov ax, cx	; ax = count
+	xor dx, dx	; dividend is 32-bit dx:ax
+	mov cx, 28	; divide by 28
+	div cx		; ax = floor(dx:ax / cx)
+	mov [cs:max_joystick_reads], ax	; max_joystick_reads = count/28
+	; Inflate the (divided) count by 25% of the interval between it and
+	; 1280, unless already greater than 1280. We are computing this
+	; weighted average:
+	;   max_joystick_reads = max(count/28, 0.75 * (count/28) + 0.25 * 1280)
+	mov cx, 1280
+	sub cx, ax	; 1280 - count/28
+	jb .save_video_mode	; count/28 >= 1280, don't average
+	shr cx, 1
+	shr cx, 1	; 0.25 * (1280 - count/28)
+	add [cs:max_joystick_reads], cx	; max_joystick_reads = count/28 + 0.25 * (1280 - count/28)
+					;                    = count/28 - 0.25 * count/28 + 0.25 * 1280
+					;                    = 0.75 * count/28 + 0.25 * 1280
+
+.save_video_mode:
+	mov ax, 0x0f00	; ah=0x0f: get video mode
+	int 0x10
+	cmp al, 13	; useless instruction; looks like a copy-paste error from below
+	xor ah, ah	; store ah=0x00 (set video mode) in saved_video_mode along with the video mode itself
+	mov [saved_video_mode], ax	; the video mode to be restored by terminate_program
+
+	; Check for sufficient EGA support.
+	mov ax, 0x000d	; ah=0x00: set video mode; al=13: 320×200 16-color EGA
+	int 0x10
+	mov ax, 0x0f00	; ah=0x0f: get video mode
+	int 0x10
+	cmp al, 13	; was video mode 13 actually set?
+	jne .video_mode_error	; if not, it's a fatal error
+	mov ax, 0x1200	; ah=0x12, bl=0x10: get EGA info
+	mov bx, 0x0010
+	int 0x10
+	cmp bl, 3	; bl=3: 256K installed memory
+	jge .try_load_keymap_file	; all good with EGA support
+
+.video_mode_error:
+	mov ax, 0x0002	; ah=0x00: set video mode; al=2: 80×25 text
+	int 0x10
+	mov ah, 0x09	; ah=0x09: write string to standard output
+	lea dx, [VIDEO_MODE_ERROR_MESSAGE]	; "This program requires an EGA adapter with 256K installed\n\r"
+	int 0x21
+	jmp terminate_program.no_audiovideo_cleanup
 
 ; Load key mappings from KEYS.DEF, if present.
 .try_load_keymap_file:
@@ -279,31 +367,97 @@ main:
 	; checking the value that should have been modified by int3_handler in
 	; the `int3` call above.
 	xor byte [interrupt_handler_install_sentinel], 0xff	; undo the bit-flip that int3_handler should have done
-	lea bx, [STARTUP_NOTICE_TEXT]
 	cmp byte [interrupt_handler_install_sentinel], .INTERRUPT_HANDLER_INSTALL_SENTINEL	; as expected?
 	je display_startup_notice	; all good, continue
-	jmp title_sequence
+	jmp terminate_program	; our interrupt handlers were not installed; terminate
 
 ; Display STARTUP_NOTICE_TEXT and wait for a keypress to configure the
-; keyboard, quit, or begin the game.
+; keyboard, configure the joystick, see the registration information, quit, or
+; begin the game.
 display_startup_notice:
-	call display_xor_decrypt	; decrypt and display STARTUP_NOTICE_TEXT
+	mov ax, 0x0003	; ah=0x00: set video mode; al=3: 80×25 text
+	int 0x10
+	mov si, STARTUP_NOTICE_TEXT
+	; STARTUP_NOTICE_TEXT is stored with XOR obfuscation. This loop
+	; deobfuscates and displays the text.
+.loop:
+	lodsb		; get next byte into al
+	xor al, XOR_ENCRYPTION_KEY	; decrypt
+	mov ah, 0x0e	; ah=0x0e: teletype output
+	or al, al	; hit a nul byte?
+	jz .finished	; if so, break
+	int 0x10	; otherwise, output al
+	jmp .loop	; and try the next byte
+.finished:
+	; Clear the BIOS keyboard buffer: http://www.fysnet.net/kbuffio.htm.
+	xor ax, ax
+	push es
+	mov es, ax	; temporarily set es = 0x0000
+	mov al, [cs:recent_scancode]	; useless instruction; looks like a copy-paste error from wait_for_keypress
+	cli		; disable interrupts
+	mov cl, [es:BIOS_KEYBOARD_BUFFER_HEAD]
+	mov [es:BIOS_KEYBOARD_BUFFER_TAIL], cl	; assign tail = head
+	sti		; enable interrupts
+	pop es		; restore es
 
-	xor ax, ax	; ah=0x00: get keystroke; returned al is ASCII code
-	int 0x16
+	int 0x16	; ah=0x00: get keystroke; returned al is ASCII code
 	cmp al, 'k'
 	je setup_keyboard
 	cmp al, 'K'
 	je setup_keyboard
+	cmp al, 'j'
+	je calibrate_joystick_trampoline
+	cmp al, 'J'
+	je calibrate_joystick_trampoline
+	cmp al, 'r'
+	je display_registration_notice
+	cmp al, 'R'
+	jne display_startup_notice_any_other_key
+
+; Display REGISTRATION_NOTICE_TEXT and wait for any keystroke to return to
+; display_startup_notice.
+display_registration_notice:
+	mov ax, 0x0003	; ah=0x00: set video mode; al=3: 80×25 text
+	int 0x10
+	mov si, REGISTRATION_NOTICE_TEXT
+	; REGISTRATION_NOTICE_TEXT is stored with XOR obfuscation. This loop
+	; deobfuscates and displays the text.
+.loop:
+	lodsb		; get next byte into al
+	xor al, XOR_ENCRYPTION_KEY	; decrypt
+	mov ah, 0x0e	; ah=0x0e: teletype output
+	or al, al	; hit a nul byte?
+	jz .finished	; if so, break
+	int 0x10	; otherwise, output al
+	jmp .loop	; and try the next byte
+.finished:
+	xor ax, ax	; ah=0x00: get keystroke
+	int 0x16	; wait for any keystroke
+	jmp display_startup_notice
+
+; If the key pressed was Escape, jump to terminate_program. Otherwise, jump to
+; title_sequence.
+; Input:
+;   al = ASCII code of key pressed
+display_startup_notice_any_other_key:
 	cmp al, 27	; Escape
 	jne .not_esc
 	jmp terminate_program	; Escape allows exiting directly from the startup notice screen
 .not_esc:
-	jmp check_ega_support
+	jmp title_sequence	; let the game begin
+
+calibrate_joystick_trampoline:
+	jmp calibrate_joystick
 
 ; Do the interactive keyboard setup. Optionally save the configured key mapping
 ; to KEYS.DEF. Jump to title_sequence when done.
 setup_keyboard:
+	jmp .l1
+	nop		; dead code
+.l1:
+	mov ax, 0x0002	; ah=0x00: set video mode; al=2: 80×25 text
+	int 0x10
+
 	push ds		; temporarily work relative the data segment containing input-related strings
 	mov ax, input_config_strings
 	mov ds, ax
@@ -385,7 +539,7 @@ setup_keyboard:
 	; Any key other than 'y'/'Y' means don't save the keymap.
 
 	pop ds		; revert the temporary data segment
-	jmp check_ega_support
+	jmp title_sequence
 
 .start_over:
 	pop ds		; revert the temporary data segment
@@ -411,11 +565,10 @@ setup_keyboard:
 	mov ax, 0x3e00	; ah=0x3e: close file
 	int 0x21
 
-	jmp check_ega_support
-	nop		; dead code
+	jmp title_sequence
 
 .create_failed:
-	jmp terminate_program.no_audiovideo_cleanup
+	jmp terminate_program
 
 ; Wait for a key to be pressed whose scancode has not already been assigned to
 ; scancode_jump, scancode_left, scancode_right, scancode_fire, or
@@ -463,9 +616,10 @@ input_unmapped_scancode:
 	mov ax, si	; return the scancode in al
 	ret
 
-; Wait for a keypress. Additionally clear the BIOS keyboard buffer.
+; Wait for an input event (keypress or joystick input). Additionally clear the
+; BIOS keyboard buffer.
 ; Output:
-;   al = scancode of key pressed
+;   al = scancode of key pressed, or 0xff for a joystick input
 wait_for_keypress:
 	; Set recent_scancode to 0 and loop until int9_handler makes it
 	; nonzero.
@@ -476,41 +630,192 @@ wait_for_keypress:
 
 	; Clear the BIOS keyboard buffer.
 	xor ax, ax
+	push es
 	mov es, ax	; set es = 0x0000
 	mov al, [cs:recent_scancode]	; return the scancode in al
 	cli		; disable interrupts
 	mov cl, [es:BIOS_KEYBOARD_BUFFER_HEAD]
 	mov [es:BIOS_KEYBOARD_BUFFER_TAIL], cl	; assign tail = head
 	sti		; enable interrupts
+	pop es		; restore es
 	ret
 
-check_ega_support:
-	; Check for sufficient EGA support.
-	mov ax, 0x000d	; ah=0x00: set video mode; al=13: 320×200 16-color EGA
-	int 0x10
-	mov ax, 0x0f00	; ah=0x0f: get video mode
-	int 0x10
-	cmp al, 13	; was video mode 13 actually set?
-	jne .video_mode_error	; if not, it's a fatal error
-	mov ax, 0x1200	; ah=0x12, bl=0x10: get EGA info
-	mov bx, 0x0010
-	int 0x10
-	cmp bl, 3	; bl=3: 256K installed memory
-	jge title_sequence	; all good with EGA support
-
-.video_mode_error:
+; Do the interactive joystick calibration setup. Jump to title_sequence when
+; done, or back to display_startup_notice if calibration is cancelled.
+;
+; It looks like the code intends to set the left/right/up/down thresholds to be
+; halfway between the zero value and the respective extreme value. But it gets
+; the calculation wrong in the left and up cases. Instead of the correct
+;   joystick_x_low  = 1/2 * joystick_x_zero + 1/2 * extreme_left
+;   joystick_y_low  = 1/2 * joystick_y_zero + 1/2 * extreme_up
+; it does the incorrect
+;   joystick_x_low  = 1/2 * joystick_x_zero - 1/2 * extreme_left
+;   joystick_y_low  = 1/2 * joystick_y_zero - 1/2 * extreme_up
+; which means that the threshold values may be even smaller than the extreme
+; values. The right and down cases are done correctly:
+;   joystick_x_high = 1/2 * joystick_x_zero + 1/2 * extreme_right
+;   joystick_y_high = 1/2 * joystick_y_zero + 1/2 * extreme_down
+;
+; Output:
+;   joystick_x_zero = joystick horizontal neutral value
+;   joystick_y_zero = joystick vertical neutral value
+;   joystick_x_low = joystick left threshold
+;   joystick_x_high = joystick right threshold
+;   joystick_y_low = joystick up threshold
+;   joystick_y_high = joystick down threshold
+;   joystick_is_calibrated = 0 if cancelled, 1 if calibrated
+calibrate_joystick:
 	mov ax, 0x0002	; ah=0x00: set video mode; al=2: 80×25 text
 	int 0x10
+
+	push ds		; temporarily work relative the data segment containing input-related strings
+	mov ax, input_config_strings
+	mov ds, ax
+
+	; wait_for_joystick_button_or_keypress interprets recent_scancode != 0
+	; to mean that a key was pressed, so initialize it to a no-keypress
+	; state.
+	mov byte [cs:recent_scancode], 0
+
+	lea dx, [STR_JOYSTICK_CENTER]	; "Center Joystick and Press Button"
 	mov ah, 0x09	; ah=0x09: write string to standard output
-	lea dx, [VIDEO_MODE_ERROR_MESSAGE]	; "This program requires an EGA adapter with 256K installed\n\r"
 	int 0x21
-	jmp terminate_program.no_audiovideo_cleanup
+	call wait_for_joystick_button_or_keypress
+	or ax, ax	; was it a joystick button?
+	jnz .center
+	jmp .cancel	; a keyboard press cancels joystick calibration
+.center:
+	mov ah, 0x84	; ah=0x84: joystick
+	mov dx, 1	; dx=1: read joystick axes
+	int 0x15	; call int21_handler
+	mov [cs:joystick_x_zero], ax
+	mov [cs:joystick_y_zero], bx
+
+	lea dx, [STR_JOYSTICK_LEFT]	; "Press Joystick Left and Press Button"
+	mov ah, 0x09	; ah=0x09: write string to standard output
+	int 0x21
+	call wait_for_joystick_button_or_keypress
+	or ax, ax	; was it a joystick button?
+	jnz .x_low
+	jmp .cancel	; a keypress cancels joystick calibration
+.x_low:
+	mov ah, 0x84	; ah=0x84: joystick
+	mov dx, 1	; dx=1: read joystick axes
+	int 0x15	; x-axis is in ax.
+	mov bx, [cs:joystick_x_zero]
+	sub bx, ax	; joystick_x_zero - x
+	shr bx, 1	; (joystick_x_zero - x) / 2
+	; missing `add bx, ax` here
+	mov [cs:joystick_x_low], bx	; threshold is half the difference between zero and extreme left (looks like a bug)
+
+	lea dx, [STR_JOYSTICK_RIGHT]	; "Press Joystick Right and Press Button"
+	mov ah, 0x09	; ah=0x09: write string to standard output
+	int 0x21
+	call wait_for_joystick_button_or_keypress
+	or ax, ax	; was it a joystick button?
+	jnz .x_high
+	jmp .cancel	; a keypress cancels joystick calibration
+	nop		; dead code
+.x_high:
+	mov ah, 0x84	; ah=0x84: joystick
+	mov dx, 1	; dx=1: read joystick axes
+	int 0x15	; x-axis is in ax.
+	mov bx, [cs:joystick_x_zero]
+	sub ax, bx	; x - joystick_x_zero
+	shr ax, 1	; (x - joystick_x_zero) / 2
+	add bx, ax	; joystick_x_zero + (x - joystick_x_zero) / 2 = (joystick_x_zero + x) / 2
+	mov [cs:joystick_x_high], bx	; threshold is halfway between zero and extreme right
+
+	lea dx, [STR_JOYSTICK_UP]	; "Press Joystick Up and Press Buttton"
+	mov ah, 0x09	; ah=0x09: write string to standard output
+	int 0x21
+	call wait_for_joystick_button_or_keypress
+	or ax, ax	; was it a joystick button?
+	jnz .y_low
+	jmp .cancel	; a keypress cancels joystick calibration
+	nop		; dead code
+.y_low:
+	mov ah, 0x84	; ah=0x84: joystick
+	mov dx, 1	; dx=1: read joystick axes
+	int 0x15	; y-axis is in bx.
+	mov ax, [cs:joystick_y_zero]
+	sub ax, bx	; joystick_y_zero - y
+	shr ax, 1	; (joystick_y_zero - y) / 2
+	; missing `add ax, bx` here
+	mov [cs:joystick_y_low], ax	; threshold is half the difference between zero and extreme up (looks like a bug)
+
+	lea dx, [STR_JOYSTICK_DOWN]	; "Press Joystick Down and Press Button"
+	mov ah, 0x09	; ah=0x09: write string to standard output
+	int 0x21
+	call wait_for_joystick_button_or_keypress
+	or ax, ax	; was it a joystick button?
+	jnz .y_high
+	jmp .cancel	; a keypress cancels joystick calibration
+	nop		; dead code
+.y_high:
+	mov ah, 0x84	; ah=0x84: joystick
+	mov dx, 1	; dx=1: read joystick axes
+	int 0x15	; y-axis is in bx.
+	mov ax, [cs:joystick_y_zero]
+	sub bx, ax	; y - joystick_y_zero
+	shr bx, 1	; (y - joystick_y_zero) / 2
+	add ax, bx	; joystick_y_zero + (y - joystick_y_zero) / 2 = (joystick_y_zero + y) / 2
+	mov [cs:joystick_y_high], ax	; threshold is halfway between zero and extreme down
+
+	pop ds		; restore the original data segment
+	mov word [cs:joystick_is_calibrated], 1
+	jmp title_sequence
+	nop		; dead code
+
+.cancel:
+	pop ds
+	jmp display_startup_notice
+
+; Wait for a joystick switch press and release, or for a keypress, whichever
+; happens first.
+; Output:
+;   ax = 0 if a keypress, 1 if a joystick switch press and release
+wait_for_joystick_button_or_keypress:
+.press:
+	; Wait for a switch press.
+	mov ax, 2	; wait 2 ticks
+	call wait_n_ticks	; sets ax = 0
+	cmp byte [cs:recent_scancode], 0	; was a key pressed?
+	jne .return_key
+
+	mov ah, 0x84	; ah=0x84: joystick
+	xor dx, dx	; dx=0: read joystick switches
+	int 0x15	; call int21_handler
+	test al, 0x10	; fire switch pressed?
+	je .press
+	test al, 0x20	; jump switch pressed?
+	je .press
+
+.release:
+	; Wait for a switch release.
+	xor ax, ax	; ax = 0
+	cmp byte [cs:recent_scancode], 0	; was a key pressed?
+	jne .return_key
+
+	mov ah, 0x84	; ah=0x84: joystick
+	xor dx, dx	; dx=0: read joystick switches
+	int 0x15	; call int21_handler
+	test al, 0x10	; fire switch released?
+	je .return_joystick
+	test al, 0x20	; jump switch released?
+	jne .release
+
+.return_joystick:
+	mov ax, 1
+.return_key:
+	ret
 
 ; Switch into graphics mode. Show the title graphic and await keypresses to
 ; advance through the story screen and items/enemies screen. Jump to
 ; initialize_lives_sequence when done.
 title_sequence:
-	lea dx, [FILENAME_TITLE_GRAPHIC]	; "sys000.ega"
+	mov ax, 0x000d	; ah=0x00: set video mode; al=13: 320×200 16-color EGA
+	int 0x10
 
 	mov ax, 0xa000
 	mov es, ax	; es points to video memory
@@ -525,15 +830,14 @@ title_sequence:
 	; The title sequence juggles a few video buffers, loading fullscreen
 	; graphics from .EGA files into memory and switching to them as
 	; appropriate. sys000.ega is loaded into a000:8000 and displayed
-	; immediately. sys001.ega is loaded into a000:a000 after 10 ticks have
-	; elapsed, but not immediately displayed. Then sys003.ega is loaded
-	; into *both* buffers a000:0000 and a000:2000, but also not immediately
-	; displayed. sys003.ega contains the gameplay UI and so needs to be in
-	; the double buffers. Then video buffer switches to a000:a000 to
-	; display sys001.ega. sys004.ega is loaded into a000:8000 (replacing
-	; sys000.ega) and displayed after a keypress. Finally, we switch to the
-	; buffer a000:2000, which contains sys003.ega, after another keypress,
-	; in preparation for starting gameplay.
+	; immediately. sys001.ega is loaded into a000:a000 and displayed after
+	; 14 ticks have elapsed. Then sys003.ega is loaded into *both* buffers
+	; a000:0000 and a000:2000, but not immediately displayed. sys003.ega
+	; contains the gameplay UI and so needs to be in the double buffers.
+	; sys004.ega is loaded into a000:8000 (replacing sys000.ega) and
+	; displayed after a keypress. Finally, we switch to the buffer
+	; a000:2000, which contains sys003.ega, after another keypress, in
+	; preparation for starting gameplay.
 	;
 	; The complete rendered map for the current stage also lives in video
 	; memory, between a000:4000 and a000:dfff. That happens after the title
@@ -541,6 +845,7 @@ title_sequence:
 	; of memory here. See render_map and blit_map_playfield_offscreen.
 
 	; Load the title graphic into video buffer 0x8000.
+	lea dx, [FILENAME_TITLE_GRAPHIC]	; "sys000.ega"
 	mov di, 0x8000
 	call load_fullscreen_graphic
 
@@ -556,15 +861,18 @@ title_sequence:
 	call switch_video_buffer
 	call palette_fade_in
 
-	mov ax, 10	; linger on the title screen for 10 ticks
+	mov ax, 14	; linger on the title screen for 14 ticks
 	call wait_n_ticks
 
 	; Load the story graphic into video buffer 0xa000.
 	lea dx, [FILENAME_STORY_GRAPHIC]	; "sys001.ega"
-	mov ax, 0xa000
-	mov es, ax	; es points to video memory
 	mov di, 0xa000
 	call load_fullscreen_graphic
+	; Switch to the story graphic and fade in.
+	call palette_darken
+	mov cx, 0xa000	; switch to video buffer 0xa000, into which we loaded the story graphic
+	call switch_video_buffer
+	call palette_fade_in
 
 	; Load the UI graphic into video buffer 0x0000.
 	lea dx, [FILENAME_UI_GRAPHIC]	; "sys003.ega"
@@ -614,30 +922,15 @@ title_sequence:
 	rep movsw	; copy from ds:si to es:di
 	pop ds
 
-	; Switch to the story graphic and fade in.
-	call palette_darken
-	mov cx, 0xa000	; switch to video buffer 0xa000, into which we loaded the story graphic
-	call switch_video_buffer
-	call palette_fade_in
-
 	; Load the items graphic into video buffer 0x8000 (over the title
 	; screen graphic).
 	lea dx, [FILENAME_ITEMS_GRAPHIC]	; "sys004.ega"
-	mov ax, 0xa000
-	mov es, ax	; es points to video memory
 	mov di, 0x8000
 	call load_fullscreen_graphic
 
-	; Clear the BIOS keyboard buffer.
-	xor ax, ax
-	mov es, ax	; es = 0x0000
-	cli		; disable interrupts
-	mov cl, [es:BIOS_KEYBOARD_BUFFER_HEAD]
-	mov [es:BIOS_KEYBOARD_BUFFER_TAIL], cl	; assign tail = head
-	sti		; enable interrupts
-
 	; Wait for a keystroke at the story screen.
-	int 0x16	; ah=0x00: get keystroke
+	xor ax, ax	; ah=0x00: get keystroke
+	int 0x16	; wait for any keystroke
 
 	; Switch to the items graphic.
 	mov cx, 0x8000
@@ -685,12 +978,6 @@ initialize_lives_sequence:
 	mov ax, 3
 	call wait_n_ticks	; wait 3 ticks before subtracting the initial life
 	call lose_a_life	; subtract 1 life
-
-	; Start playing the title music recapitulation.
-	lea bx, [SOUND_TITLE_RECAP]
-	mov ax, SOUND_PLAY
-	mov cx, 1	; priority 1
-	int3
 
 	cmp byte [comic_num_lives], MAX_NUM_LIVES - 1	; is the number of lives 1 less than the max?
 	je .num_lives_ok	; always true
@@ -811,42 +1098,20 @@ wait_n_ticks:
 	jne .loop	; wait again, until counter is zero
 	ret
 
-; Mute the sound, restore video mode 2, restore the original interrupt
+; Mute the sound, restore saved_video_mode, restore the original interrupt
 ; handlers, and exit.
+; Input:
+;   saved_video_mode = upper 8 bits are 0x00, lower 8 bits are video mode
 terminate_program:
 	mov ax, SOUND_MUTE
 	int3
-	mov ax, 0x0002	; ah=0x00: set video mode; al=2: 80×25 text
+	mov ax, [saved_video_mode]	; ah is 0x00 (set video mode), al is video mode
 	int 0x10
-
-	lea bx, [TERMINATE_PROGRAM_TEXT]
-	call display_xor_decrypt
-
 ; Just restore original interrupt handlers and terminate.
 .no_audiovideo_cleanup:
 	call restore_interrupt_handlers
 	mov ah, 0x4c	; ah=0x4c: terminate with return code
 	int 0x21
-
-; Decrypt an obfuscated string and display it on the console. The end of the
-; string is marked by the byte value 0x1a (encrypted value 0x3f).
-; Input:
-;   bx = pointer to encrypted string
-display_xor_decrypt:
-.loop:
-	mov al, [bx]	; get next byte into al
-	inc bx
-	xor al, XOR_ENCRYPTION_KEY	; decrypt
-	cmp al, 0x1a	; terminator sentinel?
-	je .finished
-	push bx
-	mov bx, 0x0007	; bh=0x00: page number 0, bl=0x0c: color 7
-	mov ah, 0x0e	; ah=0x0e: teletype output
-	int 0x10	; output al
-	pop bx
-	jmp .loop	; and try the next byte
-.finished:
-	ret
 
 saved_int9_handler_offset	dw	0
 saved_int9_handler_segment	dw	0
@@ -949,11 +1214,16 @@ int35_handler:
 saved_int8_handler_offset	dw	0
 saved_int8_handler_segment	dw	0
 ; INT 8 is called for every cycle of the programmable interval timer (IRQ 0).
-; Poll the F1 and F2 keys (on odd interrupts only) and advance the current
-; sound playback. Tail call into the original INT 8 handler.
+; Poll the joystick and F1 and F2 keys (on odd interrupts only) and advance the
+; current sound playback. Tail call into the original INT 8 handler.
 ; Input:
 ;   saved_int8_handler_offset:saved_int8_handler_segment = address of original INT 8 handler
 ;   irq0_parity = even/odd counter of calls to this interrupt handler
+;   joystick_is_calibrated = boolean controlling whether to read the joystick
+;   joystick_x_low = joystick left threshold
+;   joystick_x_high = joystick right threshold
+;   joystick_y_low = joystick up threshold
+;   joystick_y_high = joystick down threshold
 ;   key_state_f1 = if 1, unmute the sound
 ;   key_state_f2 = if 1, mute the sound
 ;   sound_is_playing = if 1, deal with the currently playing sound
@@ -963,11 +1233,22 @@ saved_int8_handler_segment	dw	0
 ; Output:
 ;   irq0_parity = opposite of its input value
 ;   game_tick_flag = set to 1 if irq0_parity was odd
+;   key_state_jump = set to 1 if the joystick jump switch is pressed
+;   key_state_fire = set to 1 if the joystick fire switch is pressed
+;   key_state_right = set to 1 if the joystick is pressed right
+;   key_state_left = set to 1 if the joystick is pressed left
+;   key_state_open = set to 1 if the joystick is pressed up
+;   key_state_teleport = set to 1 if the joystick is pressed down
+;   recent_scancode = set to 0xff if the joystick caused any key_state_* to change
 ;   sound_data_offset = advanced by 4 bytes if a note transition occurred
 ;   sound_is_playing = set to 0 if the current sound finished playing
 ;   sound_priority = set to 0 if the current sound finished playing
 int8_handler:
 	push ax
+	push bx
+	push cx
+	push dx
+	push es
 
 	; irq0_parity keeps track of whether we are in an even or an odd call
 	; to this interrupt handler. irq0_parity advances 0→1 or 1→0 on each
@@ -975,12 +1256,101 @@ int8_handler:
 	mov al, [cs:irq0_parity]
 	inc al
 	cmp al, 2	; did irq0_parity overflow to 2?
-	jl .store_irq0_parity	; irq0_parity was 0, now is 1
-	; Otherwise irq0_parity was 1, now is 2 (and will become 1→0 at .wrap_irq0_parity below).
+	jge .irq0_parity_odd	; irq0_parity was 1, now is 2 (and will become 1→0 at .wrap_irq0_parity below)
+	jmp .store_irq0_parity	; irq0_parity was 0, now is 1
 
 .irq0_parity_odd:
-	; On odd interrupts, poll the F1/F2 keys.
+	; On odd interrupts, poll the joystick and F1/F2 keys.
 	mov byte [cs:game_tick_flag], 1	; flag the beginning of a game tick
+	cmp word [cs:joystick_is_calibrated], 1	; is the joystick calibrated?
+	je .joystick	; if so, read it
+	jmp .try_F1	; if not, go straight to checking F1/F2
+
+.joystick:
+	; Save all key_state_* in key_state_*_tmp, then set all to 0.
+	mov al, [cs:key_state_jump]
+	mov [cs:key_state_jump_tmp], al
+	mov byte [cs:key_state_jump], 0
+	mov al, [cs:key_state_fire]
+	mov [cs:key_state_fire_tmp], al
+	mov byte [cs:key_state_fire], 0
+	mov al, [cs:key_state_right]
+	mov [cs:key_state_right_tmp], al
+	mov byte [cs:key_state_right], 0
+	mov al, [cs:key_state_left]
+	mov [cs:key_state_left_tmp], al
+	mov byte [cs:key_state_left], 0
+	mov al, [cs:key_state_open]
+	mov [cs:key_state_open_tmp], al
+	mov byte [cs:key_state_open], 0
+	mov al, [cs:key_state_teleport]
+	mov [cs:key_state_teleport_tmp], al
+	mov byte [cs:key_state_teleport], 0
+
+.joystick_switches:
+	mov ah, 0x84	; ah=0x84: joystick
+	xor dx, dx	; dx=0: read joystick switches
+	int 0x15	; call int21_handler
+.joystick_try_jump_switch:
+	test al, 0x20	; al=0x20: test switch state
+	jne .joystick_try_fire_switch
+	mov byte [cs:key_state_jump], 1
+.joystick_try_fire_switch:
+	test al, 0x10	; al=0x10: test switch state
+	jne .joystick_axes
+	mov byte [cs:key_state_fire], 1
+
+.joystick_axes:
+	mov ah, 0x84	; ah=0x84: joystick
+	mov dx, 1	; dx=1: read joystick axes
+	int 0x15	; call int21_handler
+	; ax is the x-axis position
+	; bx is the y-axis position
+.joystick_try_left:
+	cmp ax, [cs:joystick_x_low]
+	jg .joystick_try_right
+	mov byte [cs:key_state_left], 1
+	jmp .joystick_try_up
+.joystick_try_right:
+	cmp ax, [cs:joystick_x_high]
+	jl .joystick_try_up
+	mov byte [cs:key_state_right], 1
+
+.joystick_try_up:
+	cmp bx, [cs:joystick_y_low]
+	jg .joystick_try_down
+	mov byte [cs:key_state_open], 1
+	jmp .merge_joystick_inputs
+.joystick_try_down:
+	cmp bx, [cs:joystick_y_high]
+	jl .merge_joystick_inputs
+	mov byte [cs:key_state_teleport], 1
+
+.merge_joystick_inputs:
+	; Compare the new joystick inputs that are in key_state_* with the
+	; saved values in key_state_*_tmp. Set recent_scancode to 0xff if any
+	; of them differ (meaning that the joystick changed the input state in
+	; some way).
+	mov al, [cs:key_state_jump]
+	xor [cs:key_state_jump_tmp], al
+	mov al, [cs:key_state_fire]
+	xor [cs:key_state_fire_tmp], al
+	mov al, [cs:key_state_right]
+	xor [cs:key_state_right_tmp], al
+	mov al, [cs:key_state_left]
+	xor [cs:key_state_left_tmp], al
+	mov al, [cs:key_state_open]
+	xor [cs:key_state_open_tmp], al
+	mov al, [cs:key_state_teleport]
+	xor [cs:key_state_teleport_tmp], al
+	mov al, [cs:key_state_jump_tmp]
+	or al, [cs:key_state_fire_tmp]
+	or al, [cs:key_state_right_tmp]
+	or al, [cs:key_state_left_tmp]
+	or al, [cs:key_state_open_tmp]
+	or al, [cs:key_state_teleport_tmp]
+	jz .try_F1
+	mov byte [cs:recent_scancode], 0xff	; signal that the input state changed somehow
 
 .try_F1:
 	cmp byte [cs:key_state_f1], 1
@@ -1002,9 +1372,6 @@ int8_handler:
 	mov [cs:irq0_parity], al
 
 .sound:
-	push es
-	push bx
-	push dx
 	; Deal with sound on both even and odd interrupts.
 	mov ax, [cs:sound_data_segment]
 	mov es, ax
@@ -1066,9 +1433,10 @@ int8_handler:
 	out 0x61, al
 
 .return:
-	pop dx
-	pop bx
 	pop es
+	pop dx
+	pop cx
+	pop bx
 	pop ax
 	jmp far [cs:saved_int8_handler_offset]	; tail call into the original interrupt handler
 
@@ -1154,13 +1522,177 @@ int3_handler:
 .return:
 	iret
 
+saved_int21_handler_offset	dw	0
+saved_int21_handler_segment	dw	0
+; INT 21 is for joystick support. INT 21, ah=0x84 is the BIOS call for joystick
+; support. This interrupt hijacks calls that have ah=0x84, and passes all
+; others through to the original INT 21 handler. This may be because INT 21, as
+; https://wiki.osdev.org/Game_port#Programming_the_game_port says, "is poorly
+; supported, and most BIOSes have a buggy implementation."
+; Input:
+;   saved_int21_handler_segment:saved_int21_handler_offset = address of original INT 21 handler
+;   ah = 0x84
+;   dx = 0 to read joystick switches, 1 to read joystick axes
+; Output for ah=0x84, dx=0:
+;   al = bitmap of switch status
+;        0x10 = joystick A fire switch
+;        0x20 = joystick A jump switch
+;        0x40 = joystick B fire switch
+;        0x80 = joystick B jump switch
+; Output for ah=0x84, dx=1:
+;   ax = joystick A x-axis
+;   bx = joystick A y-axis
+;   cx = joystick B x-axis
+;   dx = joystick B y-axis
+int21_handler:
+	cmp ah, 0x84	; we only handle ah=0x84: joystick support
+	je .ok
+	jmp goto_saved_int21_handler	; all other values of ah we pass to the original handler
+.ok:
+	cmp dl, 1	; dx is the subfunction: 0 = read joystick switches; 1 = read joystick axes
+	jg .return	; if dx != 0 && dx != 1, return
+	mov dx, 0x201	; read/write joystick status: https://wiki.osdev.org/Game_port#Programming_the_game_port
+	je .axes	; if dl == 1, read axes, otherwise read switches
+.switches:
+	in al, dx	; read switches from the joystick port
+	and al, 0xf0
+	jmp .return
+	nop		; dead code
+.axes:
+	mov bl, 1	; joystick A x-axis
+	call read_joystick_axis
+	push cx
+	shl bl, 1	; joystick A y-axis
+	call read_joystick_axis
+	push cx
+	shl bl, 1	; joystick B x-axis
+	call read_joystick_axis
+	push cx
+	shl bl, 1	; joystick B y-axis
+	call read_joystick_axis
+	mov dx, cx	; dx = joystick B y-axis
+	pop cx		; cx = joystick B x-axis
+	pop bx		; bx = joystick A y-axis
+	pop ax		; ax = joystick A x-axis
+.return:
+	iret
+
+; Read a single joystick axis.
+; Input:
+;   bl = axis selection:
+;     bl=1: joystick A x-axis
+;     bl=2: joystick A y-axis
+;     bl=4: joystick B x-axis
+;     bl=8: joystick B y-axis
+;   dx = I/O port to use, should be 0x0201.
+; Output:
+;   cx = 1/16 of the number of PIT oscillations it took for the selected
+;     axis reading to settle in, or 0 if max_joystick_reads was reached
+read_joystick_axis:
+	; The overall procedure is:
+	;   1. read the current value of the PIT counter
+	;   2. `out` to port 0x201, to set all axis bits to 1
+	;   3. loop until the bit for the selected axis becomes 0
+	;   4. read the new value of the PIT counter
+	;   5. subtract the two counter values and divide by 16
+	;   6. keep looping until the other axes also become 0
+	; https://www.dsi.unive.it/~franz/c_program/joystick.htm
+	; https://wiki.osdev.org/Game_port#Programming_the_game_port
+	cli
+.pre:
+	call pit_count	; get the pre-read PIT counter in ax
+	push ax
+	out dx, al	; write to the port to start the procedure (the value doesn't matter)
+
+	mov cx, [cs:max_joystick_reads]	; bail out after this many iterations even if the bit has not become 0
+.selected_axis_loop:
+	in al, dx	; get the joystick bits
+	test al, bl	; has the bit for the selected axis become 0?
+	loopne .selected_axis_loop
+
+	or cx, cx	; was max_joystick_reads exhausted?
+	jnz .post
+	pop ax		; if so, discard the pre-read PIT counter and take the difference to be 0
+	jmp .finish	; looks like a bug here: this branch skips the `sti` that undoes the earlier `cli`
+
+.post:
+	call pit_count	; get the post-read PIT counter in ax
+	; Subtract the pre-read PIT counter from the post-read PIT counter,
+	; accounting for wraparound.
+	; (I actually don't know why the wraparound case is checked separately;
+	; two's complement should make both paths below the same.)
+	pop cx
+	cmp cx, ax
+	jg .no_wraparound
+.wraparound:
+	neg ax
+	add cx, ax	; cx = cx + (-ax)
+	jmp .l1
+.no_wraparound:
+	sub cx, ax	; cx = cx - ax
+.l1:
+	; cx contains the difference of counters. Divide by 16.
+	shr cx, 1
+	shr cx, 1
+	shr cx, 1
+	shr cx, 1
+	and ch, 0x01	; throw away the 3 high bits after shifting (not sure what this is for)
+	sti
+
+.finish:
+	push cx		; divided difference of PIT counters
+	mov cx, [cs:max_joystick_reads]
+.all_axes_loop:
+	in al, dx
+	test al, 0xf
+	loopne .all_axes_loop
+	pop cx		; divided difference of PIT counters
+	ret
+
+; Get the current value of the PIT counter. The counter increments once every
+; (approximately) 1/1.193e6 seconds = 0.84 microseconds. It wraps every 5.5
+; milliseconds.
+; Output:
+;   ax = counter value
+pit_count:
+	; https://wiki.osdev.org/Programmable_Interval_Timer#Reading_The_Current_Count
+	; https://wiki.osdev.org/Programmable_Interval_Timer#I.2FO_Ports
+	; al = 0b00000000
+	;        00 = channel 0
+	;          00 = latch count value command
+	;            000 = mode 0
+	;               0 = 16-bit binary
+	mov al, 0
+	out 0x43, al	; send the latch command
+	; I don't know the purpose of these jumps. To cause a delay?
+	jmp .l1
+.l1:
+	jmp .l2
+.l2:
+	in al, 0x40	; low byte of count
+	mov ah, al
+	jmp .l3
+.l3:
+	jmp .l4
+.l4:
+	in al, 0x40	; high byte of count
+	xchg ah, al
+	ret
+
+; Call the original INT 21 handler.
+; Input:
+;   saved_int21_handler_segment:saved_int21_handler_offset = address of original INT 21 handler
+goto_saved_int21_handler:
+	jmp far [cs:saved_int21_handler_offset]
+
 ; Install the custom interrupt handlers int3_handler, int8_handler,
-; int9_handler, and int35_handler. Store the addresses of the original
-; handlers.
+; int9_handler, int21_handler, and int35_handler. Store the addresses of the
+; original handlers.
 ; Output:
 ;   saved_int3_handler_segment:saved_int3_handler_offset = address of original INT 3 handler
 ;   saved_int8_handler_segment:saved_int8_handler_offset = address of original INT 8 handler
 ;   saved_int9_handler_segment:saved_int9_handler_offset = address of original INT 9 handler
+;   saved_int21_handler_segment:saved_int21_handler_offset = address of original INT 21 handler
 ;   saved_int35_handler_segment:saved_int35_handler_offset = address of original INT 35 handler
 install_interrupt_handlers:
 	; The interrupt vector table starts at 0000:0000. Each entry is 4
@@ -1211,16 +1743,27 @@ install_interrupt_handlers:
 	mov [3*4+0], ax		; overwrite offset
 	mov [3*4+2], cs		; overwrite segment
 
+	; INT 21
+	lea bx, [saved_int21_handler_offset]
+	mov ax, [21*4+2]	; original segment
+	mov [cs:bx+2], ax	; save it
+	mov ax, [21*4+0]	; original offset
+	mov [cs:bx+0], ax	; save it
+	lea ax, [int21_handler]
+	mov [21*4+0], ax	; overwrite offset
+	mov [21*4+2], cs	; overwrite segment
+
 	sti
 	pop ds
 	ret
 
-; Restore the original handlers for INT 3, INT 8, INT 9, and INT 31 that were
-; replaced in install_interrupt_handlers.
+; Restore the original handlers for INT 3, INT 8, INT 9, INT 21, and INT 31
+; that were replaced in install_interrupt_handlers.
 ; Input:
 ;   saved_int3_handler_segment:saved_int3_handler_offset = address of original INT 3 handler
 ;   saved_int8_handler_segment:saved_int8_handler_offset = address of original INT 8 handler
 ;   saved_int9_handler_segment:saved_int9_handler_offset = address of original INT 9 handler
+;   saved_int21_handler_segment:saved_int21_handler_offset = address of original INT 21 handler
 ;   saved_int35_handler_segment:saved_int35_handler_offset = address of original INT 35 handler
 restore_interrupt_handlers:
 	; The interrupt vector table starts at 0000:0000. Each entry is 4
@@ -1259,9 +1802,21 @@ restore_interrupt_handlers:
 	mov ax, [cs:bx+0]	; saved offset
 	mov [3*4+0], ax		; restore it
 
+	; INT 21
+	lea bx, [saved_int21_handler_offset]
+	mov ax, [cs:bx+2]	; saved segment
+	mov [21*4+2], ax	; restore it
+	mov ax, [cs:bx+0]	; saved offset
+	mov [21*4+0], ax	; restore it
+
 	sti
 	pop ds
 	ret
+
+; rle_decode_size is effectively an extra parameter passed to rle_decode. It
+; stores the first word in a .EGA file, which is the number of bytes to read
+; out of the run-length encoding. (Which happens to always be 8000.)
+rle_decode_size		dw	0
 
 ; Load a fullscreen graphic from a .EGA file and decode its to a specified
 ; destination buffer.
@@ -1269,6 +1824,17 @@ restore_interrupt_handlers:
 ;   ds:dx = address of filename
 ;   es:di = 32000-byte destination buffer
 load_fullscreen_graphic:
+	push ds
+	call .load	; ds:si points to un-decoded file contents
+	call .decode
+	pop ds
+	ret
+; Sub-subroutine to load the file contents.
+; Input:
+;   ds:dx = filename
+; Output:
+;   ds:si = destination buffer
+.load:
 	; Load the entire file into load_fullscreen_graphic_buffer, without
 	; decoding.
 	mov ax, 0x3d00	; ah=0x3d: open existing file
@@ -1277,45 +1843,44 @@ load_fullscreen_graphic:
 	jmp title_sequence.terminate_program_trampoline
 .open_ok:
 	mov bx, ax	; bx = file handle
-	push ds
 	mov ax, input_config_strings
 	mov ds, ax	; load_fullscreen_graphic_buffer is in the input_config_strings segment
-	lea dx, [load_fullscreen_graphic_buffer]	; ds:dx = destination buffer
-	mov cx, 0x7fff	; cx = number of bytes to read (overflow possible here; buffer is only 0x3e82 bytes)
+	mov dx, load_fullscreen_graphic_buffer	; ds:dx = destination buffer
+	mov cx, 0x7fff	; cx = number of bytes to read (overflow possible here; buffer is only 0x7d02 bytes)
 	mov ax, 0x3f00	; ah=0x3f: read from file or device
 	int 0x21	; no error check
 	mov ax, 0x3e00	; ah=0x3e: close file
 	int 0x21
-
-	; Decode file contents as RLE.
+	mov si, load_fullscreen_graphic_buffer	; return ds:si = load_fullscreen_graphic_buffer back to load_fullscreen_graphic
+	ret
+; Sub-subroutine to decode file contents as RLE.
+; Input:
+;   ds:si = address of file contents
+;   es:di = destination of decoding
+.decode:
 	; http://www.shikadi.net/moddingwiki/Captain_Comic_Image_Format#File_format
-	; Ignore the first word, which is the plane size, always 8000.
-	lea ax, [load_fullscreen_graphic_buffer + 2]
-	mov si, ax
-	mov ah, 1	; blue plane mask
-	xor bx, bx	; blue plane index
-	call enable_ega_plane_write
+	; The first word is the plane size, always 8000.
+	lodsw		; read plane size from [ds:si] into ax
+	mov [cs:rle_decode_size], ax	; rle_decode reads from this memory location
+	mov cl, 0	; blue plane
+	call enable_ega_plane_read_write
 	call rle_decode
-	mov ah, 2	; green plane mask
-	mov bx, 1	; green plane index
-	call enable_ega_plane_write
+	mov cl, 1	; green plane
+	call enable_ega_plane_read_write
 	call rle_decode
-	mov ah, 4	; red plane mask
-	mov bx, 2	; red plane index
-	call enable_ega_plane_write
+	mov cl, 2	; red plane
+	call enable_ega_plane_read_write
 	call rle_decode
-	mov ah, 8	; intensity plane mask
-	mov bx, 3	; intensity plane index
-	call enable_ega_plane_write
+	mov cl, 3	; intensity plane
+	call enable_ega_plane_read_write
 	call rle_decode
-	pop ds
 	ret
 
 ; Decode RLE data until a certain number of bytes have been decoded.
 ; Input:
 ;   ds:si = input RLE data
 ;   es:di = output buffer
-;   load_fullscreen_graphic_buffer = first word is the number of bytes to decode
+;   rle_decode_size = number of bytes to decode
 ;     (returns when at least that many bytes have been written to es:di)
 ; Output:
 ;   ds:si = advanced
@@ -1343,7 +1908,7 @@ rle_decode:
 .next:
 	mov ax, di
 	sub ax, bx	; how many bytes have been written so far?
-	cmp ax, [load_fullscreen_graphic_buffer]	; compare with the plane size at the beginning of the buffer
+	cmp ax, [cs:rle_decode_size]
 	jl .loop	; loop until we have decoded enough
 	mov di, bx
 	ret
@@ -2215,24 +2780,69 @@ blit_16xH_plane_with_mask:
 	pop di
 	ret
 
-; Change the video start offset.
+; Change the high byte of the video start offset. Leaves the low byte of the
+; pointer unchanged.
 ; Input:
-;   cx = new video start offset
+;   ch = new high byte of video start offset
 switch_video_buffer:
+	; Bit 3 of port 0x3da is set while vertical retrace is in progress.
 	; https://www.jagregory.com/abrash-black-book/#at-the-core
-	mov dx, 0x3d4	; CRTC Index register
-	mov al, 0x0c	; CRTC Start Address High register
-	out dx, al
-	inc dx		; CRTC Data register
-	mov al, ch
-	out dx, al	; write high byte
+	; https://www.jagregory.com/abrash-black-book/#page-flipping
+	mov dx, 0x3da	; Input Status 1 register
+.wait_for_vsync_start:
+	in al, dx
+	test al, 0x08
+	jnz .wait_for_vsync_start
 
 	mov dx, 0x3d4	; CRTC Index register
-	mov al, 0x0d	; CRTC Start Address Low register
+	mov al, 0x0c	; CRTC Start Address High register
+	mov ah, ch
 	out dx, al
 	inc dx		; CRTC Data register
-	mov al, cl
-	out dx, al	; write low byte
+	xchg al, ah
+	out dx, al	; write high byte
+	dec dx		; useless instruction
+	xchg al, ah	; useless instruction
+
+	mov dx, 0x3da	; Input Status 1 register
+.wait_for_vsync_end:
+	in al, dx
+	test al, 0x08
+	jz .wait_for_vsync_end
+	ret
+
+; Enable an EGA plane for read/write.
+; Input:
+;   cl = plane index (0, 1, 2, 3)
+enable_ega_plane_read_write:
+	; https://www.jagregory.com/abrash-black-book/#at-the-core
+	; https://www.jagregory.com/abrash-black-book/#color-plane-manipulation
+	; https://wiki.osdev.org/VGA_Hardware#Read.2FWrite_logic
+	; Compute plane mask.
+	mov ah, 1
+	shl ah, cl	; mask = 1 << index
+
+	; Enable write.
+	mov al, 2	; SC Map Mask register: https://sourceforge.net/p/dosbox/code-0/HEAD/tree/dosbox/tags/RELEASE_0_74_3/src/hardware/vga_seq.cpp#l66
+	mov dx, 0x3c4	; SC Index register
+	out dx, al
+	inc dx		; SC Data register
+	xchg al, ah
+	out dx, al	; write plane mask
+	dec dx		; useless instruction
+	xchg al, ah	; useless instruction
+
+	mov ah, cl	; plane index
+
+	; Enable read.
+	mov al, 4	; GC Read Map Select register: https://sourceforge.net/p/dosbox/code-0/HEAD/tree/dosbox/tags/RELEASE_0_74_3/src/hardware/vga_gfx.cpp#l90
+	mov dx, 0x3ce	; GC Index register
+	out dx, al
+	inc dx		; GC Data register
+	xchg al, ah
+	out dx, al
+	dec dx		; useless instruction
+	xchg al, ah	; useless instruction
 
 	ret
 
@@ -3172,7 +3782,9 @@ beam_in:
 	pop cx
 	loop .delay_loop
 
-	; Then additionally wait until SOUND_TITLE_RECAP stops playing.
+	; Then additionally wait until sound stops playing. This has no effect
+	; in Revision 5 because initialize_lives_sequence stops the title music
+	; and there's no introductory music played before beaming in.
 	mov ax, SOUND_QUERY
 	int3		; get whether a sound is playing in al
 	or ax, ax
@@ -3633,6 +4245,7 @@ comic_dies:
 	mov byte [comic_y_vel], 0
 	mov byte [comic_jump_counter], 4	; bug: jumping immediately after respawning acts as if comic_jump_power were 4, even if Comic has the Boots
 	mov byte [comic_animation], COMIC_STANDING
+	mov byte [comic_hp], 0	; set HP to zero, so there won't be any bonus points for surplus HP when comic_hp_pending_increase takes effect
 	mov byte [comic_hp_pending_increase], MAX_HP	; let the HP fill up from zero after respawning
 	mov byte [fireball_meter_counter], 2
 	; comic_is_teleporting is set to 0 in load_new_stage.comic_located.
@@ -6312,6 +6925,9 @@ sectalign	16
 VIDEO_MODE_ERROR_MESSAGE	db `This program requires an EGA adapter with 256K installed\n\r$`
 
 interrupt_handler_install_sentinel	db	0
+; saved_video_mode's lower byte is the video mode and the upper byte is 0x00,
+; so you can call `int 0x10` right after loading the value into ax.
+saved_video_mode	dw	0
 ; source_door_level_number and source_door_stage_number are set to the
 ; level/stage we just came from, if we are entering the current stage via a
 ; door. The special value source_door_level_number == -1 means that we are
@@ -6352,85 +6968,92 @@ resb	16
 ; https://en.wikipedia.org/wiki/Piano_key_frequencies#List
 ; Convert a divisor D into a frequency as 1193182 / D.
 SOUND_TERMINATOR	equ	0x0000
-NOTE_REST		equ	0x0028	; 29829.550 Hz
-NOTE_C3			equ	0x2394	; 131.004 Hz
-NOTE_D3			equ	0x1fb5	; 146.998 Hz
-NOTE_E3			equ	0x1c3f	; 165.009 Hz
-NOTE_F3			equ	0x1aa2	; 175.005 Hz
+NOTE_C3			equ	0x23a1	; 130.817 Hz
+NOTE_D3			equ	0x1fbe	; 146.835 Hz
+NOTE_E3			equ	0x1c48	; 164.804 Hz
+NOTE_F3			equ	0x1ab1	; 174.621 Hz
 NOTE_G3			equ	0x17c8	; 195.989 Hz
 NOTE_A3			equ	0x1530	; 219.982 Hz
-NOTE_B3			equ	0x12df	; 246.984 Hz
-NOTE_C4			equ	0x11ca	; 262.007 Hz
+NOTE_B3			equ	0x12e0	; 246.933 Hz
+NOTE_C4			equ	0x11d1	; 261.605 Hz
+NOTE_D4			equ	0x0fdf	; 293.670 Hz
+NOTE_E4			equ	0x0e24	; 329.608 Hz
+NOTE_F4			equ	0x0d59	; 349.190 Hz
+NOTE_Fsharp4		equ	0x0c99	; 369.979 Hz
+NOTE_G4			equ	0x0be4	; 391.978 Hz
+NOTE_A4			equ	0x0a98	; 439.964 Hz
 NOTE_B4			equ	0x0974	; 493.050 Hz
 NOTE_C5			equ	0x08e9	; 523.096 Hz
 NOTE_D5			equ	0x07f1	; 586.907 Hz
-NOTE_E5			equ	0x0713	; 658.853 Hz
-NOTE_F5			equ	0x06ad	; 698.176 Hz
-NOTE_G5			equ	0x05f2	; 783.957 Hz
-NOTE_A5			equ	0x054b	; 880.577 Hz
 
 SOUND_TITLE:
+dw	NOTE_D3, 3
 dw	NOTE_E3, 3
-dw	NOTE_F3, 3
-dw	NOTE_G3, 4
-dw	NOTE_REST, 1
-dw	NOTE_G3, 4
-dw	NOTE_REST, 1
-dw	NOTE_G3, 4
-dw	NOTE_REST, 1
-dw	NOTE_G3, 4
-dw	NOTE_REST, 1
-dw	NOTE_G3, 7
-dw	NOTE_C4, 3
-dw	NOTE_G3, 5
-dw	NOTE_E3, 3
-dw	NOTE_F3, 3
-dw	NOTE_G3, 4
-dw	NOTE_REST, 1
-dw	NOTE_G3, 5
-dw	NOTE_F3, 3
-dw	NOTE_D3, 8
-dw	NOTE_C3, 10
-dw	NOTE_REST, 3
-dw	NOTE_C4, 3
-dw	NOTE_B3, 3
-dw	NOTE_A3, 7
-dw	NOTE_F3, 3
+dw	NOTE_F3, 6
+dw	NOTE_A3, 3
 dw	NOTE_A3, 6
-dw	NOTE_C4, 5
-dw	NOTE_G3, 8
+dw	NOTE_A3, 3
+dw	NOTE_A3, 3
 dw	NOTE_A3, 3
 dw	NOTE_G3, 6
-dw	NOTE_C4, 3
-dw	NOTE_B3, 3
+dw	NOTE_F3, 6
+dw	NOTE_E3, 6
+dw	NOTE_D3, 3
+dw	NOTE_E3, 3
+dw	NOTE_F3, 6
+dw	NOTE_G3, 3
+dw	NOTE_G3, 5
+dw	NOTE_G3, 3
+dw	NOTE_G3, 3
+dw	NOTE_G3, 3
+dw	NOTE_F3, 6
+dw	NOTE_E3, 6
+dw	NOTE_D3, 6
+dw	NOTE_D3, 3
+dw	NOTE_E3, 3
+dw	NOTE_F3, 6
+dw	NOTE_A3, 3
+dw	NOTE_A3, 5
+dw	NOTE_A3, 3
+dw	NOTE_A3, 3
+dw	NOTE_A3, 3
+dw	NOTE_G3, 6
+dw	NOTE_F3, 7
+dw	NOTE_E3, 12
 dw	NOTE_A3, 6
-dw	NOTE_F3, 5
-dw	NOTE_A3, 3
-dw	NOTE_C4, 10
-dw	NOTE_G3, 10
-dw	NOTE_REST, 3
+dw	NOTE_G3, 3
+dw	NOTE_F3, 6
 dw	NOTE_E3, 3
+dw	NOTE_D3, 9
 dw	NOTE_F3, 3
-dw	NOTE_G3, 4
-dw	NOTE_REST, 1
-dw	NOTE_G3, 4
-dw	NOTE_REST, 1
-dw	NOTE_G3, 4
-dw	NOTE_REST, 1
-dw	NOTE_G3, 4
-dw	NOTE_REST, 1
-dw	NOTE_G3, 7
-dw	NOTE_C4, 3
-dw	NOTE_G3, 5
+dw	NOTE_E3, 6
+dw	NOTE_D3, 12
+dw	NOTE_A3, 14
+dw	NOTE_G3, 3
+dw	NOTE_F3, 3
 dw	NOTE_E3, 3
+dw	NOTE_F3, 13
+dw	NOTE_D3, 13
+dw	NOTE_G3, 15
 dw	NOTE_F3, 3
-dw	NOTE_G3, 4
-dw	NOTE_REST, 1
-dw	NOTE_G3, 5
-dw	NOTE_A3, 3
-dw	NOTE_B3, 8
-dw	NOTE_C4, 10
-dw	NOTE_REST, 3
+dw	NOTE_E3, 3
+dw	NOTE_D3, 3
+dw	NOTE_E3, 13
+dw	NOTE_C3, 13
+dw	NOTE_A3, 16
+dw	NOTE_G3, 3
+dw	NOTE_F3, 3
+dw	NOTE_E3, 3
+dw	NOTE_F3, 13
+dw	NOTE_D3, 11
+dw	NOTE_A3, 6
+dw	NOTE_G3, 3
+dw	NOTE_F3, 6
+dw	NOTE_E3, 3
+dw	NOTE_D3, 10
+dw	NOTE_F3, 3
+dw	NOTE_E3, 6
+dw	NOTE_D3, 10
 dw	SOUND_TERMINATOR, 0
 
 ; Some strings are stored in an obfuscated form, with every byte xored with
@@ -6447,73 +7070,67 @@ XOR_ENCRYPTION_KEY	equ	0x25
 %endmacro
 
 STARTUP_NOTICE_TEXT:	xor_encrypt `\
-                The Adventures of Captain Comic  --  Revision 3\r\n\
-                     Copyright 1988, 1989 by Michael Denio\r\n\
+                The Adventures of Captain Comic  --  Revision 5\r\n\
+                     Copyright 1988 - 91 by Michael A. Denio\r\n\
 \r\n\
   This software is being distributed under the Shareware concept, where you as\r\n\
   the user  are  allowed  to use the program on a "trial" basis.  If you enjoy\r\n\
-  playing  Captain  Comic,  you  are encouraged to register yourself as a user\r\n\
-  with a $10 to $20 contribution. Registered users will be given access to the\r\n\
-  official Captain Comic  question hotline (my home phone number), and will be\r\n\
-  the first in line to receive new Comic adventures.\r\n\
+  playing  Captain  Comic,  you are encouraged to register yourself as a user.\r\n\
+  Registered users will be given access to the official Captain Comic question\r\n\
+  hotline (my home phone number).  Press [R] for registration details.\r\n\
 \r\n\
-        This product is copyrighted material, but may be re-distributed\r\n\
-                 by complying to these two simple restrictions:\r\n\
+              For those agile enough to complete this adventure...\r\n\
+                  CAPTAIN COMIC EPISODE II: FRACTURED REALITY\r\n\
+                  is now available. (Press [R] for details.)\r\n\
 \r\n\
-        1. The program and graphics (including world maps) may not be\r\n\
-           distributed in any modified form.\r\n\
-        2. No form of compensation is be collected from the distribution\r\n\
-           of this program, including any disk handling costs or BBS\r\n\
-           file club fees.\r\n\
+   This software may be freely re-distributed by complying to the following:\r\n\
+\r\n\
+    1. The  program,  graphics,  and  document  files may not be modified.\r\n\
+    2. No  form  of  compensation  (other  than  handling  costs)  may  be\r\n\
+       collected  from  the  distribution or publication of this software.\r\n\
+\r\n\
+  ---------------------------------- Select ----------------------------------\r\n\
+\r\n\
+    [K]eyboard Definition    [J]oystick Play     [R]egistration Information\r\n\
+\r\n\
+  -------------------------- any other key to begin --------------------------\
+\0\0\0`
+
+REGISTRATION_NOTICE_TEXT:	xor_encrypt `\
+           The Adventures of Captain Comic  --  Registration Details\r\n\
+\r\n\
+  If you enjoy playing Captain Comic,  you are encouraged to register yourself\r\n\
+  as a user with a $10 to $20 contribution.  Registered users are given access\r\n\
+  to  the official Captain Comic question hotline (my home phone number),  and\r\n\
+  are supplied with a hint sheet for solving Episode I: Planet of Death.\r\n\
+\r\n\
+         Catpain Comic Episode II: Fractured Reality is now available!\r\n\
+\r\n\
+   * Advanced Puzzle Solving           * Save / Continue Game Feature\r\n\
+   * Hundreds of objects to discover   * Mutiple hidden rooms & bonus objects\r\n\
+   * 4 Way Scrolling Playfield         * Multi-terrain worlds\r\n\
+   * Fully Definable Keyboard          * Big! (3 times the size of Comic I)\r\n\
+\r\n\
+     * Multiple Tools for Comic to Use (Blastola, Pick, Jet Pack and Wand)\r\n\
+              * Walk, swim, jump, fly, ride a mine car and a sled!\r\n\
+\r\n\
+  Captain Comic II comes with printed documentation and is available for $20.\r\n\
+       Register Comic I, get the Comic I hint sheet and Comic II for $25.\r\n\
+      (Outside the U.S. - Please add $5 for shipping on Comic II orders.)\r\n\
 \r\n\
     Questions and contributions can be sent to me at the following address:\r\n\
                                 Michael A. Denio\r\n\
-                             1420 W. Glen Ave #202\r\n\
-                                Peoria, IL 61614\r\n\
-\r\n\
-      Press \'K\' to define the keyboard  ---  Press any other key to begin\
+                              3106 Twin Oaks Drive\r\n\
+                                Joliet, IL 60435\
 \0\0`
-
-; The first byte of SOUND_TITLE_RECAP is simultaneously the terminator for
-; STARTUP_NOTICE_TEXT. NOTE_E3 is 0x1c3f, whose little-endian first byte is
-; 0x3f, which is the terminator sentinel value that display_xor_decrypt looks
-; for.
-SOUND_TITLE_RECAP:
-dw	NOTE_E3, 6
-dw	NOTE_F3, 6
-dw	NOTE_G3, 9
-dw	NOTE_REST, 1
-dw	NOTE_G3, 9
-dw	NOTE_REST, 1
-dw	NOTE_G3, 9
-dw	NOTE_REST, 1
-dw	NOTE_G3, 9
-dw	NOTE_REST, 1
-dw	NOTE_G3, 14
-dw	NOTE_C4, 7
-dw	NOTE_G3, 18
-dw	NOTE_B3, 20
-dw	NOTE_C4, 20
-dw	SOUND_TERMINATOR, 0
-
-; Unused garbage bytes? They vaguely resemble the format of a sound, a 1193.182
-; Hz tone played three times. The final 0x0000, 0x0000 is the same as
-; SOUND_TERMINATOR. But 0x0001 for a rest does not match the convention of
-; 0x0028 for NOTE_REST used elsewhere in the program.
-db	0xe8, 0x03, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00
-db	0xe8, 0x03, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00
-db	0xe8, 0x03, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00
-
-; This string (an xor-encrypted empty string) is displayed by
-; terminate_program.
-TERMINATE_PROGRAM_TEXT:	xor_encrypt `\x1a`
-	xor_encrypt `\x1a`	; an unused xor-encrypted empty string
 
 FILENAME_TITLE_GRAPHIC	db	`sys000.ega\0`
 FILENAME_UI_GRAPHIC	db	`sys003.ega\0`
 FILENAME_STORY_GRAPHIC	db	`sys001.ega\0`
 FILENAME_ITEMS_GRAPHIC	db	`sys004.ega\0`
 FILENAME_KEYMAP		db	`KEYS.DEF\0`
+			db	`sys006.ega\0`	; unused
+			db	`sys007.ega\0`	; unused
 			db	`File Error\n\r$`	; unused
 
 alignb	16
@@ -6658,16 +7275,16 @@ comic_x_checkpoint	db	14
 
 alignb	16
 GRAPHICS_COMIC:
-incbin	"graphics/comic_standing_right_16x32m.ega"
-incbin	"graphics/comic_running_1_right_16x32m.ega"
-incbin	"graphics/comic_running_2_right_16x32m.ega"
-incbin	"graphics/comic_running_3_right_16x32m.ega"
-incbin	"graphics/comic_jumping_right_16x32m.ega"
-incbin	"graphics/comic_standing_left_16x32m.ega"
-incbin	"graphics/comic_running_1_left_16x32m.ega"
-incbin	"graphics/comic_running_2_left_16x32m.ega"
-incbin	"graphics/comic_running_3_left_16x32m.ega"
-incbin	"graphics/comic_jumping_left_16x32m.ega"
+incbin	"graphics/R4_comic_standing_right_16x32m.ega"
+incbin	"graphics/R4_comic_running_1_right_16x32m.ega"
+incbin	"graphics/R4_comic_running_2_right_16x32m.ega"
+incbin	"graphics/R4_comic_running_3_right_16x32m.ega"
+incbin	"graphics/R4_comic_jumping_right_16x32m.ega"
+incbin	"graphics/R4_comic_standing_left_16x32m.ega"
+incbin	"graphics/R4_comic_running_1_left_16x32m.ega"
+incbin	"graphics/R4_comic_running_2_left_16x32m.ega"
+incbin	"graphics/R4_comic_running_3_left_16x32m.ega"
+incbin	"graphics/R4_comic_jumping_left_16x32m.ega"
 
 GRAPHIC_FIREBALL_0:
 incbin	"graphics/fireball_0_16x8m.ega"
@@ -6818,10 +7435,10 @@ GRAPHIC_METER_FULL:
 incbin	"graphics/meter_full_8x16.ega"
 
 GRAPHIC_PAUSE:
-incbin	"graphics/pause_128x48.ega"
+incbin	"graphics/R4_pause_128x48.ega"
 
 GRAPHIC_GAME_OVER:
-incbin	"graphics/game_over_128x48.ega"
+incbin	"graphics/R4_game_over_128x48.ega"
 
 alignb	16
 door_blit_offset	dw	0	; used as an extra pointer parameter by exit_door and enter_door
@@ -6932,23 +7549,15 @@ dw	SOUND_FREQ_94HZ, 1
 dw	SOUND_TERMINATOR, 0
 
 SOUND_GAME_OVER:
-dw	NOTE_B3, 6
-dw	NOTE_A3, 3
-dw	NOTE_G3, 4
-dw	NOTE_REST, 1
-dw	NOTE_G3, 4
-dw	NOTE_B3, 6
-dw	NOTE_A3, 3
-dw	NOTE_G3, 4
-dw	NOTE_REST, 1
-dw	NOTE_G3, 4
-dw	NOTE_B3, 6
-dw	NOTE_A3, 3
-dw	NOTE_G3, 4
-dw	NOTE_E3, 4
-dw	NOTE_F3, 4
-dw	NOTE_D3, 5
-dw	NOTE_C3, 5
+dw	NOTE_B3, 2
+dw	NOTE_C4, 4
+dw	NOTE_D4, 2
+dw	NOTE_E4, 6
+dw	NOTE_G4, 7
+dw	NOTE_Fsharp4, 5
+dw	NOTE_E4, 2
+dw	NOTE_D4, 4
+dw	NOTE_E4, 15
 dw	SOUND_TERMINATOR, 0
 
 alignb	16
@@ -6979,13 +7588,13 @@ win_counter		db	0
 fireball_meter_counter	db	2
 
 SOUND_STAGE_EDGE_TRANSITION:
-dw	NOTE_F5, 3
-dw	NOTE_A5, 3
-dw	NOTE_G5, 5
-dw	NOTE_F5, 5
-dw	NOTE_E5, 5
-dw	NOTE_F5, 5
-dw	NOTE_G5, 5
+dw	NOTE_C4, 3
+dw	NOTE_D4, 3
+dw	NOTE_F4, 6
+dw	NOTE_F4, 6
+dw	NOTE_G4, 3
+dw	NOTE_A4, 6
+dw	NOTE_G4, 6
 dw	SOUND_TERMINATOR, 0
 
 SOUND_TOO_BAD:
@@ -7119,18 +7728,20 @@ sectalign	16
 section input_config_strings
 sectalign	16
 
-load_fullscreen_graphic_buffer:
-	resb	16002
-
-STR_DEFINE_KEYS		db	`\n\n\n\n\n\n\r                                   Define Keys\n$`
-STR_MOVE_LEFT		db	`\n\r                                Move Left  : $`
-STR_MOVE_RIGHT		db	`\n\r                                Move Right : $`
-STR_JUMP		db	`\n\r                                Jump       : $`
-STR_FIREBALL		db	`\n\r                                Fireball   : $`
-STR_OPEN_DOOR		db	`\n\r                                Open Door  : $`
-STR_TELEPORT		db	`\n\r                                Teleport   : $`
-STR_THIS_SETUP_OK	db	`\n\n\r                                This setup OK? (y/n)$`
-STR_SAVE_SETUP_TO_DISK	db	`\n\r                             Save setup to disk? (y/n)$`
+STR_JOYSTICK_CENTER	db	`\n\n\n\n\n\n\r                               Calibrate Joystick\r\n                             Press any key to abort\n\n\r                       Center Joystick and Press Button$`
+STR_JOYSTICK_LEFT	db	`\n\r                       Press Joystick Left and Press Button$`
+STR_JOYSTICK_RIGHT	db	`\n\r                       Press Joystick Right and Press Button$`
+STR_JOYSTICK_UP		db	`\n\r                       Press Joystick Up and Press Buttton$`
+STR_JOYSTICK_DOWN	db	`\n\r                       Press Joystick Down and Press Button$`
+STR_DEFINE_KEYS		db	`\n\n\n\n\n\n\r                                  Define Keys\n$`
+STR_MOVE_LEFT		db	`\n\r                               Move Left  : $`
+STR_MOVE_RIGHT		db	`\n\r                               Move Right : $`
+STR_JUMP		db	`\n\r                               Jump       : $`
+STR_FIREBALL		db	`\n\r                               Fireball   : $`
+STR_OPEN_DOOR		db	`\n\r                               Open Door  : $`
+STR_TELEPORT		db	`\n\r                               Teleport   : $`
+STR_THIS_SETUP_OK	db	`\n\n\r                               This setup OK? (y/n)$`
+STR_SAVE_SETUP_TO_DISK	db	`\n\r                            Save setup to disk? (y/n)$`
 
 ; Indices are off by one: SCANCODE_LABELS[0] is the label for scancode 1.
 SCANCODE_LABELS:
@@ -7218,8 +7829,10 @@ SCANCODE_LABELS:
 	db	"Ins    $"
 	db	"Del    $"
 
-	times	14	db	0
+load_fullscreen_graphic_buffer:
+	times	32002	db	0
 
+	times	7	db	0
 
 ; This sets the init_ss and init_sp fields in the MZ header.
 section _ stack
