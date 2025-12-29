@@ -26,43 +26,21 @@ This document describes the organization of the Captain Comic C++ SDL2 port.
 │       ├── Constants.h            # Game constants (from assembly)
 │       ├── GameState.h/cpp        # Game state structures
 │
-├── assets/                        # GAME ASSETS AND EXTRACTION
-│   ├── extraction/
-│   │   ├── Makefile               # Asset extraction orchestration
-│   │   ├── tools/
-│   │   │   ├── fetch_orig_version.sh
-│   │   │   └── rebuild_r1sw1988.sh
-│   │   └── programs/              # Extraction tools (Go programs)
-│   │       ├── unpack-ega/        # EGA graphics extraction
-│   │       ├── unpack-pt/         # Map data extraction
-│   │       ├── unpack-shp/        # Enemy sprite extraction
-│   │       ├── unpack-tt2/        # Tileset extraction
-│   │       ├── unpack-game-graphic/
-│   │       ├── extract-sound/
-│   │       └── ... (other tools)
-│   │
-│   ├── original/                  # ORIGINAL GAME FILES
-│   │   └── R3sw1989/
-│   │       ├── COMIC.EXE
-│   │       ├── *.EGA (graphics)
-│   │       ├── *.PT (maps)
-│   │       ├── *.SHP (sprites)
-│   │       ├── *.TT2 (tilesets)
-│   │       └── ... (other files)
-│   │
-│   ├── extracted/                 # GENERATED ASSETS (gitignored)
-│   │   ├── R3sw1989/
-│   │   │   ├── *.png (extracted graphics)
-│   │   │   ├── *.wav (extracted sounds)
-│   │   │   └── *.gif (extracted animations)
+├── reference/                        # GAME ASSETS AND EXTRACTION
+│   ├── assets/                 # GENERATED ASSETS (gitignored)
+│   │   ├── *.png (extracted graphics)
+│   │   ├── *.wav (extracted sounds)
+│   │   └── *.gif (extracted animations)
 │   │   └── zip/ (archived downloads)
-│   │
-│   └── downloaded/                # DOWNLOADED FILES (gitignored)
-│       └── [game archives from archive.org]
-│
-├── reference/                     # REFERENCE MATERIALS
+│   ├── original/                  # ORIGINAL GAME FILES
+│   │   ├── COMIC.EXE
+│   │   ├── *.EGA (graphics)
+│   │   ├── *.PT (maps)
+│   │   ├── *.SHP (sprites)
+│   │   ├── *.TT2 (tilesets)
+│   │   └── ... (other files)
 │   ├── disassembly/
-│   │   ├── R3sw1989.asm           # Original DOS assembly code
+│   │   ├── R5sw1991.asm           # Original DOS assembly code
 │   │   ├── R3_levels.asm
 │   │   ├── gen_levels.go
 │   │   ├── README
@@ -83,14 +61,14 @@ This document describes the organization of the Captain Comic C++ SDL2 port.
 ## Key Points
 
 ### Assets Workflow
-1. **Original files**: `assets/original/R3sw1989/` contains the original DOS game files
-2. **Extraction**: `assets/extraction/Makefile` orchestrates asset extraction via Go tools
-3. **Generated assets**: `assets/extracted` contains PNG, WAV, GIF files
+1. **Original files**: `reference/assets/original/R5sw1991/` contains the original DOS game files
+2. **Extraction**: `reference/assets/extraction/Makefile` orchestrates asset extraction via Go tools
+3. **Generated assets**: `reference/assets/extracted` contains PNG, WAV, GIF files
 4. **Build copy**: CMake copies assets to `build/data/` for the executable
 
 ### Git Tracking
 - **Committed**: Source code (`src/`), build configuration, original game files, extraction tools
-- **Ignored**: Build artifacts (`build/`), extracted assets (`assets/extracted/`), downloaded files
+- **Ignored**: Build artifacts (`build/`), extracted assets (`reference/assets/extracted/`), downloaded files
 
 ### Reference Materials
 - Original DOS assembly code in `reference/disassembly/`
@@ -98,7 +76,7 @@ This document describes the organization of the Captain Comic C++ SDL2 port.
 - These are for understanding the original implementation, not used for building the port
 
 ### Extraction Tools
-Located in `assets/extraction/programs/`:
+Located in `reference/assets/extraction/programs/`:
 - `unpack-ega/` - Extracts EGA full-screen graphics to PNG
 - `unpack-tt2/` - Extracts tileset graphics to PNG (one per tile)
 - `unpack-pt/` - Extracts level maps and renders preview PNG
@@ -109,7 +87,7 @@ Located in `assets/extraction/programs/`:
 ### Build Process
 1. `cmake ..` - Reads CMakeLists.txt
 2. `make` - Executes:
-   - `build_assets` target runs `make -C assets/extraction`
+   - `build_assets` target copies `reference/assets` to the build data directory
    - Asset extraction runs Go tools
    - Generated assets copied to `build/data/`
    - C++ source compiled and linked

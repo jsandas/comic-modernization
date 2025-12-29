@@ -206,7 +206,7 @@ Assets are extracted from the original DOS game via the existing tools:
 
 ## Original Assembly Reference
 
-The original DOS assembly code is available in [disassembly/R3sw1989.asm](disassembly/R3sw1989.asm) with extensive comments documenting:
+The original DOS assembly code is available in [disassembly/R5sw1991.asm](disassembly/R5sw1991.asm) with extensive comments documenting:
 - Game loop structure and fixed-timestep timing
 - Graphics rendering using EGA planar format
 - Sound system via PC speaker (INT 8 and INT 3 handlers)

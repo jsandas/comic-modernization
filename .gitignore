@@ -6,8 +6,8 @@ CMakeCache.txt
 # Makefile
 
 # Generated/Extracted assets
-assets/extracted/
-assets/downloaded/
+reference/assets/extracted/
+reference/assets/downloaded/
 
 # IDE/Editor files
 .vscode/
@@ -67,5 +67,12 @@ assets/downloaded/
 # deriv/**/*.png
 # deriv/**/*.wav
 reference/disassembly/graphics/*.ega
-assets/original/*
+reference/assets/original/*
+*.zip
+
+reference/disassembly/graphics/*.ega
+reference/deriv/*
+!reference/deriv/Makefile
+reference/orig/*
+!reference/orig/Makefile
 *.zip

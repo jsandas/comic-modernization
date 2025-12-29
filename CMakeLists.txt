@@ -17,19 +17,12 @@ if(NOT SDL2_image_FOUND)
     endif()
 endif()
 
-# Add custom target to build assets
+# Add custom target to copy reference assets
 add_custom_target(build_assets
-    COMMAND make -C ${CMAKE_SOURCE_DIR}/assets/extraction
-    COMMENT "Building game assets..."
-)
-
-# Copy assets to build directory
-add_custom_command(
-    TARGET build_assets POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/assets/extracted
+        ${CMAKE_SOURCE_DIR}/reference/assets
         ${CMAKE_BINARY_DIR}/data
-    COMMENT "Copying assets to ${CMAKE_BINARY_DIR}/data"
+    COMMENT "Copying reference assets to ${CMAKE_BINARY_DIR}/data"
 )
 
 # Add source subdirectory
