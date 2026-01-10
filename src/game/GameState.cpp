@@ -349,5 +349,61 @@ void GameState::update(const Input& input) {
                 break;
         }
     }
+
+    // Enemy-player collision and enemy-enemy overlap resolution
+    // Apply invulnerability ticks for the player
+    if (comic_invuln_ticks > 0) --comic_invuln_ticks;
+
+    // 1) Enemy-player collisions: decrement HP when overlapping and not invulnerable
+    auto rects_overlap = [](int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh) {
+        return !(ax + aw - 1 < bx || bx + bw - 1 < ax || ay + ah - 1 < by || by + bh - 1 < ay);
+    };
+
+    for (auto &e : enemies) {
+        int ex = static_cast<int>(e.x);
+        int ey = static_cast<int>(e.y);
+        bool overlap = rects_overlap(comic_x, comic_y, player_w, player_h, ex, ey, GameConstants::TILE_SIZE, GameConstants::TILE_SIZE);
+        if (comic_invuln_ticks == 0 && overlap) {
+            if (comic_hp > 0) --comic_hp;
+
+            // Apply knockback: push player away from the enemy and give a small upward kick
+            int px = comic_x;
+            int ex_px = ex;
+            if (ex_px > px) {
+                comic_x_vel = -4;
+            } else if (ex_px < px) {
+                comic_x_vel = 4;
+            } else {
+                // Enemy exactly overlapping horizontally; push upward only
+                comic_x_vel = 0;
+            }
+            comic_y_vel = -4;
+
+            // Set brief invulnerability after taking damage
+            comic_invuln_ticks = 10;
+
+            // If HP has dropped to zero, set game_over
+            if (comic_hp == 0) {
+                game_over = true;
+            }
+        }
+    }
+
+    // 2) Enemy-enemy overlap: if two enemies overlap, reverse their x velocities to separate
+    for (size_t i = 0; i < enemies.size(); ++i) {
+        for (size_t j = i + 1; j < enemies.size(); ++j) {
+            auto &a = enemies[i];
+            auto &b = enemies[j];
+            int ax = static_cast<int>(a.x);
+            int ay = static_cast<int>(a.y);
+            int bx = static_cast<int>(b.x);
+            int by = static_cast<int>(b.y);
+            if (rects_overlap(ax, ay, GameConstants::TILE_SIZE, GameConstants::TILE_SIZE, bx, by, GameConstants::TILE_SIZE, GameConstants::TILE_SIZE)) {
+                a.x_vel = -a.x_vel;
+                b.x_vel = -b.x_vel;
+            }
+        }
+    }
 }
+
 
