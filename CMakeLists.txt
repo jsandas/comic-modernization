@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Find SDL2. Try cmake package first, fall back to pkg-config on macOS/Homebrew if needed
 find_package(SDL2)
 if(NOT SDL2_FOUND)
+    # Try pkg-config via CMake's PkgConfig module first
     find_package(PkgConfig)
     if(PkgConfig_FOUND)
         pkg_check_modules(SDL2_PKG sdl2)
@@ -14,7 +15,6 @@ if(NOT SDL2_FOUND)
             message(STATUS "Found SDL2 via pkg-config: ${SDL2_PKG_INCLUDE_DIRS}")
             set(SDL2_LIBRARIES ${SDL2_PKG_LIBRARIES})
             set(SDL2_INCLUDE_DIRS ${SDL2_PKG_INCLUDE_DIRS})
-            # Provide an imported target so the rest of the CMakeLists can link against SDL2::SDL2
             if(NOT TARGET SDL2::SDL2)
                 add_library(SDL2::SDL2 UNKNOWN IMPORTED)
                 set_target_properties(SDL2::SDL2 PROPERTIES
@@ -22,6 +22,35 @@ if(NOT SDL2_FOUND)
                     INTERFACE_LINK_LIBRARIES "${SDL2_LIBRARIES}")
             endif()
             set(SDL2_FOUND TRUE)
+        endif()
+    endif()
+
+    # As a more direct fallback, call pkg-config binary to gather flags and include dirs
+    if(NOT SDL2_FOUND)
+        execute_process(COMMAND pkg-config --cflags sdl2
+                        OUTPUT_VARIABLE PKG_SDL2_CFLAGS
+                        RESULT_VARIABLE PKG_SDL2_C_RV
+                        OUTPUT_STRIP_TRAILING_WHITESPACE)
+        if(PKG_SDL2_C_RV EQUAL 0)
+            message(STATUS "pkg-config returned SDL2 cflags: ${PKG_SDL2_CFLAGS}")
+            # Extract -I flags
+            string(REGEX MATCHALL "-I[^ ]+" PKG_SDL2_INCLUDES "${PKG_SDL2_CFLAGS}")
+            if(PKG_SDL2_INCLUDES)
+                foreach(_inc ${PKG_SDL2_INCLUDES})
+                    string(SUBSTRING ${_inc} 2 -1 _incpath)
+                    include_directories(${_incpath})
+                endforeach()
+                set(SDL2_INCLUDE_DIRS "${PKG_SDL2_INCLUDES}")
+            endif()
+            execute_process(COMMAND pkg-config --libs sdl2
+                            OUTPUT_VARIABLE PKG_SDL2_LIBS
+                            RESULT_VARIABLE PKG_SDL2_L_RV
+                            OUTPUT_STRIP_TRAILING_WHITESPACE)
+            if(PKG_SDL2_L_RV EQUAL 0)
+                message(STATUS "pkg-config returned SDL2 libs: ${PKG_SDL2_LIBS}")
+                set(SDL2_LIBRARIES "${PKG_SDL2_LIBS}")
+                set(SDL2_FOUND TRUE)
+            endif()
         endif()
     endif()
 endif()
