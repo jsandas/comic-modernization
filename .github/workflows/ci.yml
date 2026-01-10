@@ -53,17 +53,32 @@ jobs:
           # Help CMake find Homebrew-installed packages by adding brew prefix to CMAKE_PREFIX_PATH
           echo "CMAKE_PREFIX_PATH=$(brew --prefix):$CMAKE_PREFIX_PATH" >> $GITHUB_ENV
 
-      - name: macOS SDL2 diagnostic
+      - name: macOS SDL diagnostics
         if: runner.os == 'macOS'
         run: |
           echo "brew --prefix: $(brew --prefix)"
+
+          echo "--- sdl2 pkg-config ---"
           echo "pkg-config --cflags sdl2:" 
           pkg-config --cflags sdl2 || true
           echo "pkg-config --libs sdl2:"
           pkg-config --libs sdl2 || true
-          echo "ls $(brew --prefix)/include | head -n 50"
-          ls -la "$(brew --prefix)/include" || true
-          echo "ls $(brew --prefix)/lib/pkgconfig | head -n 50"
+
+          echo "--- sdl2_image pkg-config ---"
+          echo "pkg-config --cflags SDL2_image:" 
+          pkg-config --cflags SDL2_image || true
+          echo "pkg-config --libs SDL2_image:"
+          pkg-config --libs SDL2_image || true
+
+          echo "--- SDL2 include dir contents ---"
+          echo "ls $(brew --prefix)/include/SDL2 | head -n 200"
+          ls -la "$(brew --prefix)/include/SDL2" || true
+
+          echo "--- SDL2_image pkgconfig file ---"
+          echo "cat $(brew --prefix)/lib/pkgconfig/SDL2_image.pc"
+          cat "$(brew --prefix)/lib/pkgconfig/SDL2_image.pc" || true
+
+          echo "--- lib pkgconfig dir ---"
           ls -la "$(brew --prefix)/lib/pkgconfig" || true
 
       - name: Configure
