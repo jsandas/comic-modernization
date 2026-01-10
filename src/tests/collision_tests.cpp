@@ -331,6 +331,129 @@ int main() {
         }
     }
 
+    // --- Enemy-sized box parity tests for assembly equivalence ---
+    // These tests reproduce the assembly's per-game-unit behavior: tiles are 2 game units,
+    // so if the coordinate (in game units) is odd the enemy-sized (2-unit) box touches
+    // the neighbor tile (right or below) and must be checked.
+    {
+        auto asm_check_vertical = [](const TileMap& m, int px, int py) {
+            const int unit = GameConstants::TILE_SIZE / 2; // pixels per game unit
+            int gu_x = px / unit;
+            int gu_y = py / unit;
+            int tile_x = gu_x / 2;
+            int tile_y = gu_y / 2;
+            auto in_bounds = [](int tx, int ty) {
+                return tx >= 0 && tx < GameConstants::SCREEN_WIDTH_TILES && ty >= 0 && ty < GameConstants::SCREEN_HEIGHT_TILES;
+            };
+            if (in_bounds(tile_x, tile_y)) {
+                if (m.solidity[tile_y * GameConstants::SCREEN_WIDTH_TILES + tile_x]) return true;
+            }
+            // if gu_x is odd, also check the tile to the right
+            if (gu_x & 1) {
+                if (in_bounds(tile_x + 1, tile_y)) {
+                    if (m.solidity[tile_y * GameConstants::SCREEN_WIDTH_TILES + (tile_x + 1)]) return true;
+                }
+            }
+            return false;
+        };
+
+        auto asm_check_horizontal = [](const TileMap& m, int px, int py) {
+            const int unit = GameConstants::TILE_SIZE / 2; // pixels per game unit
+            int gu_x = px / unit;
+            int gu_y = py / unit;
+            int tile_x = gu_x / 2;
+            int tile_y = gu_y / 2;
+            auto in_bounds = [](int tx, int ty) {
+                return tx >= 0 && tx < GameConstants::SCREEN_WIDTH_TILES && ty >= 0 && ty < GameConstants::SCREEN_HEIGHT_TILES;
+            };
+            if (in_bounds(tile_x, tile_y)) {
+                if (m.solidity[tile_y * GameConstants::SCREEN_WIDTH_TILES + tile_x]) return true;
+            }
+            // if gu_y is odd, also check the tile below
+            if (gu_y & 1) {
+                if (in_bounds(tile_x, tile_y + 1)) {
+                    if (m.solidity[(tile_y + 1) * GameConstants::SCREEN_WIDTH_TILES + tile_x]) return true;
+                }
+            }
+            return false;
+        };
+
+        // Helper to compare asm-style check with isRectSolid using an enemy-sized box
+        auto compare_vertical = [&](TileMap m, int gu_x, int gu_y, const std::string& desc) {
+            const int unit = GameConstants::TILE_SIZE / 2;
+            int px = gu_x * unit;
+            int py = gu_y * unit;
+            bool asm_res = asm_check_vertical(m, px, py);
+            // enemy-sized box: width = TILE_SIZE, height = TILE_SIZE
+            bool cpp_res = GameState().isRectSolid(px, py, GameConstants::TILE_SIZE, GameConstants::TILE_SIZE) ? true : false;
+            // We need to set current_map to m to use isRectSolid: create a GameState with that map
+            GameState g;
+            g.current_map = std::make_unique<TileMap>(m);
+            cpp_res = g.isRectSolid(px, py, GameConstants::TILE_SIZE, GameConstants::TILE_SIZE);
+            if (asm_res != cpp_res) {
+                std::cerr << "Vertical parity mismatch (" << desc << ") at gu=(" << gu_x << "," << gu_y << ") px=(" << px << "," << py << ") asm=" << asm_res << " cpp=" << cpp_res << "\n";
+                return false;
+            }
+            return true;
+        };
+
+        auto compare_horizontal = [&](TileMap m, int gu_x, int gu_y, const std::string& desc) {
+            const int unit = GameConstants::TILE_SIZE / 2;
+            int px = gu_x * unit;
+            int py = gu_y * unit;
+            bool asm_res = asm_check_horizontal(m, px, py);
+            GameState g;
+            g.current_map = std::make_unique<TileMap>(m);
+            bool cpp_res = g.isRectSolid(px, py, GameConstants::TILE_SIZE, GameConstants::TILE_SIZE);
+            if (asm_res != cpp_res) {
+                std::cerr << "Horizontal parity mismatch (" << desc << ") at gu=(" << gu_x << "," << gu_y << ") px=(" << px << "," << py << ") asm=" << asm_res << " cpp=" << cpp_res << "\n";
+                return false;
+            }
+            return true;
+        };
+
+        // Setup map and test cases
+        TileMap m;
+        // Base: no solids
+        if (!compare_vertical(m, 4, 6, "no solids, even x")) return 1;
+        if (!compare_vertical(m, 5, 6, "no solids, odd x")) return 1;
+        if (!compare_horizontal(m, 6, 4, "no solids, even y")) return 1;
+        if (!compare_horizontal(m, 6, 5, "no solids, odd y")) return 1;
+
+        // Current tile solid
+        int tx = 10, ty = 3;
+        m.solidity[ty * GameConstants::SCREEN_WIDTH_TILES + tx] = 1;
+        // pick gu coordinates that map to tile (tx,ty)
+        // tile_x = gu_x / 2 -> gu_x in [tx*2, tx*2+1]
+        if (!compare_vertical(m, tx * 2, ty * 2, "current tile solid, even x")) return 1;
+        if (!compare_vertical(m, tx * 2 + 1, ty * 2, "current tile solid, odd x")) return 1;
+        if (!compare_horizontal(m, tx * 2, ty * 2, "current tile solid, even y")) return 1;
+        if (!compare_horizontal(m, tx * 2, ty * 2 + 1, "current tile solid, odd y")) return 1;
+
+        // Right tile solid but current tile empty: when gu_x even -> no collision, gu_x odd -> collision
+        TileMap m2;
+        int right_tx = tx + 1;
+        m2.solidity[ty * GameConstants::SCREEN_WIDTH_TILES + right_tx] = 1;
+        if (!compare_vertical(m2, tx * 2, ty * 2, "right tile solid, even x (should pass)")) return 1;
+        if (!compare_vertical(m2, tx * 2 + 1, ty * 2, "right tile solid, odd x (should collide)")) return 1;
+
+        // Below tile solid but current tile empty: when gu_y even -> no collision, gu_y odd -> collision
+        TileMap m3;
+        int below_ty = ty + 1;
+        m3.solidity[below_ty * GameConstants::SCREEN_WIDTH_TILES + tx] = 1;
+        if (!compare_horizontal(m3, tx * 2, ty * 2, "below tile solid, even y (should pass)")) return 1;
+        if (!compare_horizontal(m3, tx * 2, ty * 2 + 1, "below tile solid, odd y (should collide)")) return 1;
+
+        // Edge-of-map neighbour checks (no out-of-bounds reads): right neighbor outside map should be treated as passable
+        TileMap m4;
+        int edge_tx = GameConstants::SCREEN_WIDTH_TILES - 1;
+        int edge_ty = 1;
+        m4.solidity[edge_ty * GameConstants::SCREEN_WIDTH_TILES + edge_tx] = 0;
+        // Place right neighbor (out of bounds) would be outside; should not crash and should be passable
+        if (!compare_vertical(m4, edge_tx * 2 + 1, edge_ty * 2, "edge right neighbor OOB")) return 1;
+
+    }
+
     std::cout << "All collision tests passed\n";
     return 0;
 }
