@@ -49,6 +49,21 @@ jobs:
           brew install cmake pkg-config sdl2 sdl2_image ccache
           # Ensure pkg-config can find Homebrew-provided .pc files for SDL2
           echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          # Help CMake find Homebrew-installed packages by adding brew prefix to CMAKE_PREFIX_PATH
+          echo "CMAKE_PREFIX_PATH=$(brew --prefix):$CMAKE_PREFIX_PATH" >> $GITHUB_ENV
+
+      - name: macOS SDL2 diagnostic
+        if: runner.os == 'macOS'
+        run: |
+          echo "brew --prefix: $(brew --prefix)"
+          echo "pkg-config --cflags sdl2:" 
+          pkg-config --cflags sdl2 || true
+          echo "pkg-config --libs sdl2:"
+          pkg-config --libs sdl2 || true
+          echo "ls $(brew --prefix)/include | head -n 50"
+          ls -la "$(brew --prefix)/include" || true
+          echo "ls $(brew --prefix)/lib/pkgconfig | head -n 50"
+          ls -la "$(brew --prefix)/lib/pkgconfig" || true
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache
