@@ -38,6 +38,7 @@ void Audio::shutdown() {
 }
 
 void Audio::playSound(const char* name, uint8_t priority) {
+    (void)name; // placeholder until asset integration
     if (priority < current_priority) {
         return;  // Don't interrupt higher priority sound
     }
@@ -73,9 +74,10 @@ void Audio::audioCallback(void* userData, uint8_t* stream, int len) {
 }
 
 void Audio::synthesizeSquareWave(uint8_t* buffer, int length, uint16_t frequency_divisor) {
-    // Convert DOS timer frequency divisor to Hz
-    // DOS timer frequency: 1193182 Hz
+    (void)buffer; (void)length; (void)frequency_divisor;
+    // Convert DOS timer frequency divisor to Hz (placeholder)
     float frequency = 1193182.0f / frequency_divisor;
+    (void)frequency; // silence unused variable warning until implemented
 
     // Generate square wave at the given frequency
     // Placeholder for implementation

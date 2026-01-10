@@ -13,6 +13,8 @@
 #include "game/Constants.h"
 
 int main(int argc, char* argv[]) {
+    (void)argc; (void)argv; // suppress unused parameter warnings when running tests
+
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) < 0) {
         std::cerr << "Failed to initialize SDL: " << SDL_GetError() << std::endl;
@@ -96,7 +98,6 @@ int main(int argc, char* argv[]) {
     // Game loop
     bool running = true;
     bool paused = false;
-    std::chrono::high_resolution_clock::time_point last_tick = std::chrono::high_resolution_clock::now();
     std::chrono::high_resolution_clock::time_point last_frame = std::chrono::high_resolution_clock::now();
 
     const float tick_interval = 1.0f / GameConstants::TICK_RATE;
