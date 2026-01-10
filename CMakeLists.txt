@@ -26,7 +26,7 @@ if(NOT SDL2_FOUND)
     endif()
 
     # As a more direct fallback, call pkg-config binary to gather flags and include dirs
-    if(NOT SDL2_FOUND)
+    if(NOT SDL2_FOUND OR NOT SDL2_INCLUDE_DIRS)
         execute_process(COMMAND pkg-config --cflags sdl2
                         OUTPUT_VARIABLE PKG_SDL2_CFLAGS
                         RESULT_VARIABLE PKG_SDL2_C_RV
@@ -39,18 +39,20 @@ if(NOT SDL2_FOUND)
                 foreach(_inc ${PKG_SDL2_INCLUDES})
                     string(SUBSTRING ${_inc} 2 -1 _incpath)
                     include_directories(${_incpath})
+                    list(APPEND SDL2_INCLUDE_DIRS ${_incpath})
                 endforeach()
-                set(SDL2_INCLUDE_DIRS "${PKG_SDL2_INCLUDES}")
+                message(STATUS "Added SDL2 include directories: ${SDL2_INCLUDE_DIRS}")
             endif()
-            execute_process(COMMAND pkg-config --libs sdl2
-                            OUTPUT_VARIABLE PKG_SDL2_LIBS
-                            RESULT_VARIABLE PKG_SDL2_L_RV
-                            OUTPUT_STRIP_TRAILING_WHITESPACE)
-            if(PKG_SDL2_L_RV EQUAL 0)
-                message(STATUS "pkg-config returned SDL2 libs: ${PKG_SDL2_LIBS}")
-                set(SDL2_LIBRARIES "${PKG_SDL2_LIBS}")
-                set(SDL2_FOUND TRUE)
-            endif()
+        endif()
+
+        execute_process(COMMAND pkg-config --libs sdl2
+                        OUTPUT_VARIABLE PKG_SDL2_LIBS
+                        RESULT_VARIABLE PKG_SDL2_L_RV
+                        OUTPUT_STRIP_TRAILING_WHITESPACE)
+        if(PKG_SDL2_L_RV EQUAL 0)
+            message(STATUS "pkg-config returned SDL2 libs: ${PKG_SDL2_LIBS}")
+            set(SDL2_LIBRARIES "${PKG_SDL2_LIBS}")
+            set(SDL2_FOUND TRUE)
         endif()
     endif()
 endif()
