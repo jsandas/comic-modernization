@@ -188,21 +188,22 @@ void GameState::update(const Input& input) {
     const int player_w = GameConstants::PLAYER_WIDTH_TILES * GameConstants::TILE_SIZE;
     const int player_h = GameConstants::PLAYER_HEIGHT_TILES * GameConstants::TILE_SIZE;
 
-    // Horizontal input
-    if (input.moveLeft()) {
-        comic_x_vel = -2;
-        comic_facing = 0;
-    } else if (input.moveRight()) {
-        comic_x_vel = 2;
-        comic_facing = 1;
-    } else {
-        comic_x_vel = 0;
+    // Horizontal input — disabled during invulnerability/recovery
+    if (comic_invuln_ticks == 0) {
+        if (input.moveLeft()) {
+            comic_x_vel = -2;
+            comic_facing = 0;
+        } else if (input.moveRight()) {
+            comic_x_vel = 2;
+            comic_facing = 1;
+        } else {
+            comic_x_vel = comic_x_vel; // leave physics-driven velocity (e.g., knockback) to be handled by friction
+        }
     }
 
 
-
     // Jump
-    if (input.jump() && isOnGround()) {
+    if (comic_invuln_ticks == 0 && input.jump() && isOnGround()) {
         comic_y_vel = -6;
     }
 
@@ -252,6 +253,10 @@ void GameState::update(const Input& input) {
     if (camera_x > (GameConstants::SCREEN_WIDTH_TILES * GameConstants::TILE_SIZE - GameConstants::SCREEN_WIDTH)) {
         camera_x = GameConstants::SCREEN_WIDTH_TILES * GameConstants::TILE_SIZE - GameConstants::SCREEN_WIDTH;
     }
+
+    // Friction: decay horizontal velocity toward zero (applies during knockback/recovery)
+    if (comic_x_vel > 0) comic_x_vel = static_cast<int16_t>(comic_x_vel - 1);
+    else if (comic_x_vel < 0) comic_x_vel = static_cast<int16_t>(comic_x_vel + 1);
 
     // Minimal enemy AI update (Phase 3 stub implementations)
     // Each enemy is treated as a rectangle of size 1 tile x 1 tile for collision purposes.
@@ -382,9 +387,22 @@ void GameState::update(const Input& input) {
             // Set brief invulnerability after taking damage
             comic_invuln_ticks = 10;
 
-            // If HP has dropped to zero, set game_over
+            // If HP has dropped to zero, either respawn (if lives remain) or set game_over
             if (comic_hp == 0) {
-                game_over = true;
+                if (comic_num_lives > 0) {
+                    // consume a life and respawn at sensible default
+                    --comic_num_lives;
+                    comic_hp = GameConstants::MAX_HP;
+                    const int player_h = GameConstants::PLAYER_HEIGHT_TILES * GameConstants::TILE_SIZE;
+                    comic_x = 16 + 1;
+                    comic_y = GameConstants::SCREEN_HEIGHT - player_h - 16;
+                    comic_x_vel = 0;
+                    comic_y_vel = 0;
+                    comic_invuln_ticks = 60; // longer recovery on respawn
+                    game_over = false;
+                } else {
+                    game_over = true;
+                }
             }
         }
     }

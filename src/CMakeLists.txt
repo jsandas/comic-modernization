@@ -125,10 +125,25 @@ else()
 endif()
 
 add_test(NAME player-damage-knockback-tests COMMAND player-damage-knockback-tests)
+add_executable(player-respawn-tests tests/player_respawn_tests.cpp game/GameState.cpp assets/MapLoader.cpp input/Input.cpp)
+set_target_properties(player-respawn-tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+target_include_directories(player-respawn-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+if(TARGET SDL2::SDL2)
+    target_link_libraries(player-respawn-tests SDL2::SDL2)
+else()
+    if(SDL2_INCLUDE_DIRS)
+        target_include_directories(player-respawn-tests PRIVATE ${SDL2_INCLUDE_DIRS})
+    endif()
+    if(SDL2_LIBRARIES)
+        target_link_libraries(player-respawn-tests ${SDL2_LIBRARIES})
+    endif()
+endif()
+
+add_test(NAME player-respawn-tests COMMAND player-respawn-tests)
 # Add a convenience target 'check' to build and run tests: `cmake --build build --target check`
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-    DEPENDS collision-tests enemy-ai-tests enemy-player-tests player-damage-knockback-tests
+    DEPENDS collision-tests enemy-ai-tests enemy-player-tests player-damage-knockback-tests player-respawn-tests
 )
 
 # If pkg-config provided explicit SDL2 include dirs, ensure all relevant targets get them
@@ -165,16 +180,19 @@ if(TARGET SDL2_image::SDL2_image)
     target_link_libraries(enemy-ai-tests SDL2_image::SDL2_image)
     target_link_libraries(enemy-player-tests SDL2_image::SDL2_image)
     target_link_libraries(player-damage-knockback-tests SDL2_image::SDL2_image)
+    target_link_libraries(player-respawn-tests SDL2_image::SDL2_image)
 else()
     target_link_libraries(collision-tests ${SDL2_image_LIBRARIES})
     target_link_libraries(enemy-ai-tests ${SDL2_image_LIBRARIES})
     target_link_libraries(enemy-player-tests ${SDL2_image_LIBRARIES})
     target_link_libraries(player-damage-knockback-tests ${SDL2_image_LIBRARIES})
+    target_link_libraries(player-respawn-tests ${SDL2_image_LIBRARIES})
     if(SDL2_image_INCLUDE_DIRS)
         target_include_directories(collision-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
         target_include_directories(enemy-ai-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
         target_include_directories(enemy-player-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
         target_include_directories(player-damage-knockback-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
+        target_include_directories(player-respawn-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
     endif()
 endif()
 

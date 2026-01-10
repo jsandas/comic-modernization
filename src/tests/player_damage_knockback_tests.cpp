@@ -36,10 +36,11 @@ int main() {
         }
     }
 
-    // 3) Player death handling: HP reaches 0 -> game_over = true
+    // 3) Player death handling: HP reaches 0 -> game_over = true when no lives remain
     {
         GameState g;
         g.current_map = std::make_unique<TileMap>();
+        g.comic_num_lives = 0; // ensure no respawn
         g.comic_hp = 1;
         g.comic_x = 200; g.comic_y = 200;
 
