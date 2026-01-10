@@ -1,1 +1,1 @@
-# comic-c
+# comic-modernization

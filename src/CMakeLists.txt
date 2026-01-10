@@ -1,7 +1,9 @@
 set(SOURCES
     main.cpp
     assets/AssetManager.cpp
+    assets/MapLoader.cpp
     graphics/Graphics.cpp
+    graphics/UI.cpp
     audio/Audio.cpp
     input/Input.cpp
     game/GameState.cpp
@@ -10,6 +12,7 @@ set(SOURCES
 set(HEADERS
     assets/AssetManager.h
     graphics/Graphics.h
+    graphics/UI.h
     audio/Audio.h
     input/Input.h
     game/GameState.h

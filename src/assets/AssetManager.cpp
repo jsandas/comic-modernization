@@ -39,19 +39,33 @@ bool AssetManager::initialize() {
 }
 
 std::filesystem::path AssetManager::findDataDirectory() {
-    // Get the directory where the executable is running
-    // Assuming the executable is in the build/ directory
-    // and data is in build/data/
-    std::filesystem::path executablePath = std::filesystem::current_path();
-    std::filesystem::path dataDir = executablePath / "data";
-    
-    // If that doesn't exist, try relative path from executable location
-    if (!std::filesystem::exists(dataDir)) {
-        // Try ../data relative to build directory
-        dataDir = executablePath.parent_path() / "data";
+    // Allow explicit override for testing or non-standard runs
+    if (const char* env = std::getenv("COMIC_DATA")) {
+        return std::filesystem::path(env);
     }
-    
-    return dataDir;
+
+    // Start at current working directory and search upward for a `data` directory
+    std::filesystem::path cwd = std::filesystem::current_path();
+    for (int i = 0; i < 6; ++i) {
+        std::filesystem::path candidate = cwd / "data";
+        if (std::filesystem::exists(candidate)) {
+            return candidate;
+        }
+        if (cwd.has_parent_path()) {
+            cwd = cwd.parent_path();
+        } else {
+            break;
+        }
+    }
+
+    // As a fallback, check `reference/assets` used for project layout
+    std::filesystem::path refAssets = std::filesystem::current_path() / "reference" / "assets";
+    if (std::filesystem::exists(refAssets)) {
+        return refAssets;
+    }
+
+    // Last resort: return ./data (even if it doesn't exist) so callers see the computed path
+    return std::filesystem::path("data");
 }
 
 SDL_Texture* AssetManager::getTexture(const std::string& name) {

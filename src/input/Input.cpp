@@ -45,11 +45,13 @@ bool Input::isKeyUp(SDL_Scancode key) const {
 }
 
 bool Input::moveLeft() const {
-    return isPressed(key_left);
+    // Support arrow key *and* A for left
+    return isPressed(key_left) || isPressed(SDL_SCANCODE_A);
 }
 
 bool Input::moveRight() const {
-    return isPressed(key_right);
+    // Support arrow key *and* D for right
+    return isPressed(key_right) || isPressed(SDL_SCANCODE_D);
 }
 
 bool Input::jump() const {

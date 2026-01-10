@@ -66,6 +66,8 @@ This document describes the organization of the Captain Comic C++ SDL2 port.
 3. **Generated assets**: `reference/assets/extracted` contains PNG, WAV, GIF files
 4. **Build copy**: CMake copies assets to `build/data/` for the executable
 
+> Tip: The game searches upwards from the current working directory to find `data/`. Either run the executable from `build/` or set `COMIC_DATA` to the full path of the data directory (for example: `export COMIC_DATA=$(pwd)/build/data`).
+
 ### Git Tracking
 - **Committed**: Source code (`src/`), build configuration, original game files, extraction tools
 - **Ignored**: Build artifacts (`build/`), extracted assets (`reference/assets/extracted/`), downloaded files

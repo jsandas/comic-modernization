@@ -6,6 +6,7 @@
 #include <chrono>
 #include "assets/AssetManager.h"
 #include "graphics/Graphics.h"
+#include "graphics/UI.h"
 #include "audio/Audio.h"
 #include "input/Input.h"
 #include "game/GameState.h"
@@ -68,8 +69,29 @@ int main(int argc, char* argv[]) {
     // Set asset manager for graphics
     graphics.setAssetManager(&assets);
 
+    // Initialize UI system
+    UI ui;
+    if (!ui.initialize(&graphics, &assets)) {
+        std::cerr << "Failed to initialize UI system" << std::endl;
+        audio.shutdown();
+        graphics.shutdown();
+#ifdef HAVE_SDL2_IMAGE
+        IMG_Quit();
+#endif
+        SDL_Quit();
+        return 1;
+    }
+
     // Initialize game state
     GameState game_state;
+
+    // Load initial level from data directory
+    std::cerr << "Loading initial level " << game_state.current_level_number << " from: " << assets.getDataPath() << std::endl;
+    if (!game_state.loadLevel(game_state.current_level_number, assets.getDataPath())) {
+        std::cerr << "Warning: failed to load initial level; starting with empty map" << std::endl;
+    } else {
+        std::cerr << "Initial level loaded." << std::endl;
+    }
 
     // Game loop
     bool running = true;
@@ -120,13 +142,12 @@ int main(int argc, char* argv[]) {
             // Update input state at the start of each tick
             input.update();
 
-            // Game logic tick would go here
-            // For now, just a placeholder
+            // Game logic tick
+            game_state.update(input);
 
             time_accumulator -= tick_interval;
         }
 
-        // Rendering
         graphics.clear();
 
         // Render the tilemap based on current level and stage
@@ -166,6 +187,9 @@ int main(int argc, char* argv[]) {
         for (const auto& fireball : game_state.fireballs) {
             graphics.drawSpriteByName(fireball.x - game_state.camera_x, fireball.y, "sprite-fireball_0");
         }
+
+        // Render UI overlay (HP, fireball meter, lives, etc.)
+        ui.render(game_state);
 
         graphics.present();
 

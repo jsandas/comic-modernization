@@ -24,6 +24,7 @@ namespace GameConstants {
     // Game mechanics
     constexpr int MAX_HP = 6;
     constexpr int MAX_FIREBALL_METER = 12;
+    constexpr int MAX_SHIELD_METER = 8;  // Shield protection meter
     constexpr int MAX_NUM_LIVES = 5;
     constexpr int MAX_NUM_ENEMIES = 4;
     constexpr int MAX_NUM_FIREBALLS = 5;
@@ -63,6 +64,10 @@ namespace GameConstants {
         LEVEL_NUMBER_CASTLE = 6,
         LEVEL_NUMBER_BASE = 7
     };
+
+    // Player sprite dimensions (in tiles)
+    constexpr int PLAYER_WIDTH_TILES = 1;
+    constexpr int PLAYER_HEIGHT_TILES = 4; // player occupies 4 tiles vertically (sprite height)
 
     // Enemy behaviors
     enum EnemyBehavior {

@@ -20,6 +20,9 @@ public:
     // Initialize asset manager with data directory
     bool initialize();
 
+    // Return detected data directory (after initialize)
+    std::filesystem::path getDataPath() const { return dataPath; }
+
     // Load and cache textures from PNG files
     SDL_Texture* getTexture(const std::string& name);
     
@@ -29,8 +32,7 @@ public:
     // Load and cache audio buffers from WAV files
     SDL_AudioSpec* getAudioSpec(const std::string& name);
 
-    // Get the data directory path
-    const std::filesystem::path& getDataPath() const { return dataPath; }
+
 
     // SDL renderer for creating textures
     void setRenderer(SDL_Renderer* renderer) { this->renderer = renderer; }
