@@ -39,11 +39,6 @@ else()
     endif()
 endif()
 
-# Ensure collision-tests (unit tests) also get SDL include dirs if set
-if(SDL2_INCLUDE_DIRS)
-    message(STATUS "Adding SDL2 include dirs to tests: ${SDL2_INCLUDE_DIRS}")
-    target_include_directories(collision-tests PRIVATE ${SDL2_INCLUDE_DIRS})
-endif()
 
 # Link SDL2_image if found
 if(TARGET SDL2_image::SDL2_image)
