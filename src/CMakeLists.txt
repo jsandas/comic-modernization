@@ -79,6 +79,13 @@ else()
     endif()
 endif()
 
+# If pkg-config provided explicit SDL2 include dirs, ensure both targets get them
+if(SDL2_INCLUDE_DIRS)
+    message(STATUS "Adding SDL2 include dirs to targets (explicit): ${SDL2_INCLUDE_DIRS}")
+    target_include_directories(comic-c PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_include_directories(collision-tests PRIVATE ${SDL2_INCLUDE_DIRS})
+endif()
+
 if(TARGET SDL2_image::SDL2_image)
     target_link_libraries(collision-tests SDL2_image::SDL2_image)
 else()
