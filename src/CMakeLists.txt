@@ -77,6 +77,30 @@ else()
     endif()
 endif()
 
+# Enemy AI unit tests
+add_executable(enemy-ai-tests tests/enemy_ai_tests.cpp game/GameState.cpp assets/MapLoader.cpp input/Input.cpp)
+set_target_properties(enemy-ai-tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+target_include_directories(enemy-ai-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+if(TARGET SDL2::SDL2)
+    target_link_libraries(enemy-ai-tests SDL2::SDL2)
+else()
+    if(SDL2_INCLUDE_DIRS)
+        target_include_directories(enemy-ai-tests PRIVATE ${SDL2_INCLUDE_DIRS})
+    endif()
+    if(SDL2_LIBRARIES)
+        target_link_libraries(enemy-ai-tests ${SDL2_LIBRARIES})
+    endif()
+endif()
+
+enable_testing()
+add_test(NAME collision-tests COMMAND collision-tests)
+add_test(NAME enemy-ai-tests COMMAND enemy-ai-tests)
+# Add a convenience target 'check' to build and run tests: `cmake --build build --target check`
+add_custom_target(check
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+    DEPENDS collision-tests enemy-ai-tests
+)
+
 # If pkg-config provided explicit SDL2 include dirs, ensure both targets get them
 if(SDL2_INCLUDE_DIRS)
     target_include_directories(comic-c PRIVATE ${SDL2_INCLUDE_DIRS})

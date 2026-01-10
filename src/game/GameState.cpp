@@ -252,5 +252,102 @@ void GameState::update(const Input& input) {
     if (camera_x > (GameConstants::SCREEN_WIDTH_TILES * GameConstants::TILE_SIZE - GameConstants::SCREEN_WIDTH)) {
         camera_x = GameConstants::SCREEN_WIDTH_TILES * GameConstants::TILE_SIZE - GameConstants::SCREEN_WIDTH;
     }
+
+    // Minimal enemy AI update (Phase 3 stub implementations)
+    // Each enemy is treated as a rectangle of size 1 tile x 1 tile for collision purposes.
+    const int enemy_w = GameConstants::TILE_SIZE;
+    const int enemy_h = GameConstants::TILE_SIZE;
+    for (auto &e : enemies) {
+        if (e.spawn_timer > 0) {
+            if (e.spawn_timer > 0) --e.spawn_timer;
+            continue;
+        }
+
+        int ex = static_cast<int>(e.x);
+        int ey = static_cast<int>(e.y);
+
+        switch (e.behavior) {
+            case GameConstants::ENEMY_BEHAVIOR_BOUNCE: {
+                // Simple horizontal patrol that reverses when hitting a wall
+                if (e.x_vel == 0) e.x_vel = 1;
+                int target_x = ex + e.x_vel;
+                if (!isRectSolid(target_x, ey, enemy_w, enemy_h)) {
+                    e.x = static_cast<uint8_t>(target_x);
+                } else {
+                    e.x_vel = -e.x_vel;
+                }
+                break;
+            }
+            case GameConstants::ENEMY_BEHAVIOR_LEAP: {
+                // If state==0, initiate a jump; otherwise use state as cooldown
+                if (e.state == 0) {
+                    e.y_vel = -6;
+                    e.state = 12; // cooldown ticks
+                } else if (e.state > 0) {
+                    --e.state;
+                }
+                // Apply vertical movement with simple gravity
+                int new_y_vel = static_cast<int>(e.y_vel) + 1;
+                if (new_y_vel > 8) new_y_vel = 8;
+                e.y_vel = static_cast<int8_t>(new_y_vel);
+                int target_y = ey + e.y_vel;
+                if (!isRectSolid(ex, target_y, enemy_w, enemy_h)) {
+                    e.y = static_cast<uint8_t>(target_y);
+                } else {
+                    if (e.y_vel > 0) {
+                        int ty = (target_y + enemy_h) / GameConstants::TILE_SIZE;
+                        e.y = static_cast<uint8_t>(ty * GameConstants::TILE_SIZE - enemy_h);
+                    } else if (e.y_vel < 0) {
+                        int ty = target_y / GameConstants::TILE_SIZE;
+                        e.y = static_cast<uint8_t>((ty + 1) * GameConstants::TILE_SIZE);
+                    }
+                    e.y_vel = 0;
+                }
+                break;
+            }
+            case GameConstants::ENEMY_BEHAVIOR_ROLL: {
+                // Continuous horizontal movement; reverse on obstacle similar to bounce
+                if (e.x_vel == 0) e.x_vel = 2;
+                int target_x = ex + e.x_vel;
+                if (!isRectSolid(target_x, ey, enemy_w, enemy_h)) {
+                    e.x = static_cast<uint8_t>(target_x);
+                } else {
+                    e.x_vel = -e.x_vel;
+                }
+                break;
+            }
+            case GameConstants::ENEMY_BEHAVIOR_SEEK: {
+                // Move horizontally toward player
+                if (comic_x > ex) e.x_vel = 1;
+                else if (comic_x < ex) e.x_vel = -1;
+                else e.x_vel = 0;
+                int target_x = ex + e.x_vel;
+                if (!isRectSolid(target_x, ey, enemy_w, enemy_h)) {
+                    e.x = static_cast<uint8_t>(target_x);
+                } else {
+                    e.x_vel = 0;
+                }
+                break;
+            }
+            case GameConstants::ENEMY_BEHAVIOR_SHY: {
+                // If player is within 32 pixels, move away horizontally
+                int dx = comic_x - ex;
+                if (std::abs(dx) < 32) {
+                    e.x_vel = (dx > 0) ? -1 : 1;
+                    int target_x = ex + e.x_vel;
+                    if (!isRectSolid(target_x, ey, enemy_w, enemy_h)) {
+                        e.x = static_cast<uint8_t>(target_x);
+                    } else {
+                        e.x_vel = 0;
+                    }
+                } else {
+                    e.x_vel = 0;
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
 }
 
