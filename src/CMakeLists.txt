@@ -178,12 +178,38 @@ if(APPLE)
     set(HOMEBREW_INCLUDE ${BREW_PREFIX}/include)
     set(HOMEBREW_INCLUDE_SDL2 ${BREW_PREFIX}/include/SDL2)
     if(EXISTS ${HOMEBREW_INCLUDE} AND NOT "${HOMEBREW_INCLUDE}" IN_LIST CMAKE_SYSTEM_INCLUDEDIR)
+        # core target
         target_include_directories(comic-c PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        # always-present tests
         target_include_directories(collision-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
         target_include_directories(enemy-ai-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        target_include_directories(player-damage-knockback-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        target_include_directories(player-respawn-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        # optional test (guarded in some checkouts)
+        if(TARGET enemy-player-tests)
+            target_include_directories(enemy-player-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        endif()
     endif()
 endif()
 
+
+# Apply -Werror (and extra warnings) to project-built targets only (safer than global flags)
+if(NOT MSVC)
+    set(PROJECT_WERROR_FLAGS -Werror -Wall -Wextra)
+else()
+    set(PROJECT_WERROR_FLAGS /WX)
+endif()
+
+foreach(tgt IN ITEMS comic-c collision-tests enemy-ai-tests player-damage-knockback-tests player-respawn-tests)
+    if(TARGET ${tgt})
+        target_compile_options(${tgt} PRIVATE ${PROJECT_WERROR_FLAGS})
+    endif()
+endforeach()
+
+# Optional enemy test — apply flags only if it exists
+if(TARGET enemy-player-tests)
+    target_compile_options(enemy-player-tests PRIVATE ${PROJECT_WERROR_FLAGS})
+endif()
 
 
 if(TARGET SDL2_image::SDL2_image)

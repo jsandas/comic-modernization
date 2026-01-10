@@ -76,6 +76,8 @@ struct GameState {
     bool comic_has_gold;         // Gold item
     uint8_t comic_num_gems;      // Gem count
 
+    // Damage/invulnerability counter (ticks)
+    int comic_invuln_ticks = 0;
     // Current level/stage
     uint8_t current_level_number;
     uint8_t current_stage_number;
