@@ -60,10 +60,49 @@ endif()
 # Find SDL2_image (optional, try pkg-config if cmake find fails)
 find_package(SDL2_image)
 if(NOT SDL2_image_FOUND)
-    # Try using pkg-config
     find_package(PkgConfig)
     if(PkgConfig_FOUND)
-        pkg_check_modules(SDL2_image SDL2_image)
+        pkg_check_modules(SDL2_image_PKG SDL2_image)
+        if(SDL2_image_PKG_FOUND)
+            message(STATUS "Found SDL2_image via pkg-config: ${SDL2_image_PKG_INCLUDE_DIRS}")
+            set(SDL2_image_LIBRARIES ${SDL2_image_PKG_LIBRARIES})
+            set(SDL2_image_INCLUDE_DIRS ${SDL2_image_PKG_INCLUDE_DIRS})
+            if(NOT TARGET SDL2_image::SDL2_image)
+                add_library(SDL2_image::SDL2_image UNKNOWN IMPORTED)
+                set_target_properties(SDL2_image::SDL2_image PROPERTIES
+                    INTERFACE_INCLUDE_DIRECTORIES "${SDL2_image_INCLUDE_DIRS}"
+                    INTERFACE_LINK_LIBRARIES "${SDL2_image_LIBRARIES}")
+            endif()
+            set(SDL2_image_FOUND TRUE)
+        endif()
+    endif()
+
+    if(NOT SDL2_image_FOUND)
+        execute_process(COMMAND pkg-config --cflags SDL2_image
+                        OUTPUT_VARIABLE PKG_SDL2_IMAGE_CFLAGS
+                        RESULT_VARIABLE PKG_SDL2_IMAGE_C_RV
+                        OUTPUT_STRIP_TRAILING_WHITESPACE)
+        if(PKG_SDL2_IMAGE_C_RV EQUAL 0)
+            message(STATUS "pkg-config returned SDL2_image cflags: ${PKG_SDL2_IMAGE_CFLAGS}")
+            string(REGEX MATCHALL "-I[^ ]+" PKG_SDL2_IMAGE_INCLUDES "${PKG_SDL2_IMAGE_CFLAGS}")
+            if(PKG_SDL2_IMAGE_INCLUDES)
+                foreach(_inc ${PKG_SDL2_IMAGE_INCLUDES})
+                    string(SUBSTRING ${_inc} 2 -1 _incpath)
+                    list(APPEND SDL2_image_INCLUDE_DIRS ${_incpath})
+                endforeach()
+                message(STATUS "Added SDL2_image include directories: ${SDL2_image_INCLUDE_DIRS}")
+            endif()
+        endif()
+
+        execute_process(COMMAND pkg-config --libs SDL2_image
+                        OUTPUT_VARIABLE PKG_SDL2_IMAGE_LIBS
+                        RESULT_VARIABLE PKG_SDL2_IMAGE_L_RV
+                        OUTPUT_STRIP_TRAILING_WHITESPACE)
+        if(PKG_SDL2_IMAGE_L_RV EQUAL 0)
+            message(STATUS "pkg-config returned SDL2_image libs: ${PKG_SDL2_IMAGE_LIBS}")
+            set(SDL2_image_LIBRARIES "${PKG_SDL2_IMAGE_LIBS}")
+            set(SDL2_image_FOUND TRUE)
+        endif()
     endif()
 endif()
 
