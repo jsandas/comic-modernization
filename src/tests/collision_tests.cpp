@@ -380,6 +380,166 @@ int main() {
             return false;
         };
 
+        // --- Phase 1: Physics edge-case tests ---
+        // 1) Vertical tunneling guard: ensure a fast downward movement can't pass through solids between start and target when target would overlap the solid
+        {
+            GameState g;
+            g.current_map = std::make_unique<TileMap>();
+            // Place a single solid tile somewhere in the middle of a fall
+            int tile_tx = 10;
+            int start_tile_ty = 2;
+            int solid_tile_ty = 3;
+            int below_tile_ty = 5;
+            // Set solidity at solid_tile_ty
+            g.current_map->solidity[solid_tile_ty * GameConstants::SCREEN_WIDTH_TILES + tile_tx] = 1;
+
+            // Place player so a single fast tick would overlap the solid tile (compute starting y so target overlaps)
+            const int player_w = GameConstants::PLAYER_WIDTH_TILES * GameConstants::TILE_SIZE;
+            const int player_h = GameConstants::PLAYER_HEIGHT_TILES * GameConstants::TILE_SIZE;
+            g.comic_x = tile_tx * GameConstants::TILE_SIZE;
+            // Start a bit above such that target_y (start + 8) will land exactly on the solid tile row
+            g.comic_y = solid_tile_ty * GameConstants::TILE_SIZE - player_h - 8; // e.g. -24 for solid_tile_ty=3
+            // Give a large downward velocity (capped in update to 8)
+            g.comic_y_vel = 8;
+
+            // Update once: target_y should land on top of the solid_tile_ty and not pass through to below_tile_ty
+            Input input;
+            g.update(input);
+
+            int expected_y = solid_tile_ty * GameConstants::TILE_SIZE - player_h;
+            if (g.comic_y != expected_y) {
+                std::cerr << "Tunneling test failed: expected y=" << expected_y << " got=" << g.comic_y << "\n";
+                return 1;
+            }
+        }
+
+        // 2) Diagonal corner: faster downward + horizontal movement should not allow overlap into bottom-right tile
+        {
+            GameState g;
+            g.current_map = std::make_unique<TileMap>();
+            int tx = 12; int ty = 6;
+            // Place a solid tile at bottom-right (tx+1, ty+1)
+            g.current_map->solidity[(ty+1) * GameConstants::SCREEN_WIDTH_TILES + (tx+1)] = 1;
+
+            const int player_w = GameConstants::PLAYER_WIDTH_TILES * GameConstants::TILE_SIZE;
+            const int player_h = GameConstants::PLAYER_HEIGHT_TILES * GameConstants::TILE_SIZE;
+            g.comic_x = tx * GameConstants::TILE_SIZE - player_w - 1; // left of the column
+            g.comic_y = ty * GameConstants::TILE_SIZE - player_h - (GameConstants::TILE_SIZE / 2); // slightly above
+            g.comic_y_vel = 6; // falling
+            g.comic_x_vel = 2; // moving right
+
+            Input input;
+            // apply right input once via update's logic
+            g.update(input);
+
+            if (g.isRectSolid(g.comic_x, g.comic_y, player_w, player_h)) {
+                std::cerr << "Diagonal-corner fast move failed: player overlaps bottom-right solid after move\n";
+                return 1;
+            }
+        }
+
+        // 3) Wall-slide alignment across offsets: try starting offsets 0..(TILE_SIZE-1) to ensure final x is clamped correctly
+        {
+            for (int offset = 0; offset < GameConstants::TILE_SIZE; ++offset) {
+                GameState g;
+                g.current_map = std::make_unique<TileMap>(*gs.current_map); // reuse base map with a tile at tx,ty
+                int wall_tx = tx + 4;
+                int wall_ty = ty;
+                int wall_idx = wall_ty * GameConstants::SCREEN_WIDTH_TILES + wall_tx;
+                g.current_map->solidity[wall_idx] = 1;
+
+                const int player_w = GameConstants::PLAYER_WIDTH_TILES * GameConstants::TILE_SIZE;
+                const int player_h = GameConstants::PLAYER_HEIGHT_TILES * GameConstants::TILE_SIZE;
+                int py_for_wall = ty * GameConstants::TILE_SIZE - (player_h - GameConstants::TILE_SIZE);
+                g.comic_y = py_for_wall;
+
+                // Start so targetX will be inside wall depending on offset
+                g.comic_x = wall_tx * GameConstants::TILE_SIZE - player_w - (offset + 1);
+
+                Input input;
+                SDL_Event ev;
+                ev.type = SDL_KEYDOWN;
+                ev.key.keysym.scancode = SDL_SCANCODE_RIGHT;
+                input.handleEvent(ev);
+
+                g.update(input);
+
+                int start_x = wall_tx * GameConstants::TILE_SIZE - player_w - (offset + 1);
+                int right_edge = g.comic_x + player_w - 1;
+                if (right_edge >= wall_tx * GameConstants::TILE_SIZE) {
+                    std::cerr << "Wall alignment failed for offset " << offset << ": player overlaps wall (right_edge=" << right_edge << ", wall_x=" << (wall_tx * GameConstants::TILE_SIZE) << ")\n";
+                    return 1;
+                }
+                if (g.comic_x < start_x) {
+                    std::cerr << "Wall alignment failed for offset " << offset << ": unexpected left movement start_x=" << start_x << " got=" << g.comic_x << "\n";
+                    return 1;
+                }
+            }
+        }
+
+        // 4) Ceiling collision with various upward velocities
+        {
+            for (int vel = -1; vel >= -12; vel -= 3) {
+                GameState g;
+                g.current_map = std::make_unique<TileMap>();
+                int ceiling_tx = 20; int ceiling_ty = 3;
+                g.current_map->solidity[ceiling_ty * GameConstants::SCREEN_WIDTH_TILES + ceiling_tx] = 1;
+
+                const int player_w = GameConstants::PLAYER_WIDTH_TILES * GameConstants::TILE_SIZE;
+                const int player_h = GameConstants::PLAYER_HEIGHT_TILES * GameConstants::TILE_SIZE;
+                g.comic_x = ceiling_tx * GameConstants::TILE_SIZE;
+                g.comic_y = (ceiling_ty + 1) * GameConstants::TILE_SIZE; // just below the ceiling
+                g.comic_y_vel = vel;
+
+                Input input;
+                g.update(input);
+
+                if (g.comic_y_vel != 0) {
+                    std::cerr << "Ceiling collision failed for vel " << vel << ": expected y_vel 0 got " << g.comic_y_vel << "\n";
+                    return 1;
+                }
+                if (g.comic_y < (ceiling_ty + 1) * GameConstants::TILE_SIZE) {
+                    std::cerr << "Ceiling collision alignment failed for vel " << vel << ": y=" << g.comic_y << "\n";
+                    return 1;
+                }
+            }
+        }
+
+        // 5) Out-of-bounds handling: a rectangle overlapping outside map should not crash and isRectSolid should handle it
+        {
+            GameState g;
+            g.current_map = std::make_unique<TileMap>();
+            const int player_w = GameConstants::PLAYER_WIDTH_TILES * GameConstants::TILE_SIZE;
+            const int player_h = GameConstants::PLAYER_HEIGHT_TILES * GameConstants::TILE_SIZE;
+            // Place player partially outside left-top corner
+            g.comic_x = -8;
+            g.comic_y = -4;
+            if (g.isRectSolid(g.comic_x, g.comic_y, player_w, player_h)) {
+                std::cerr << "OOB test failed: expected non-solid for out-of-bounds rect when map empty\n";
+                return 1;
+            }
+        }
+
+        // 6) Determinism: repeated update with same inputs and map should be identical across ticks
+        {
+            GameState g1, g2;
+            g1.current_map = std::make_unique<TileMap>(*gs.current_map);
+            g2.current_map = std::make_unique<TileMap>(*gs.current_map);
+            g1.comic_x = 50; g1.comic_y = 50; g1.comic_x_vel = 2; g1.comic_y_vel = 1;
+            // replicate numeric state into g2 (GameState is not copy-assignable due to unique_ptrs)
+            g2.comic_x = g1.comic_x; g2.comic_y = g1.comic_y; g2.comic_x_vel = g1.comic_x_vel; g2.comic_y_vel = g1.comic_y_vel;
+            Input input;
+            // run 10 ticks
+            for (int i = 0; i < 10; ++i) {
+                g1.update(input);
+                g2.update(input);
+                if (g1.comic_x != g2.comic_x || g1.comic_y != g2.comic_y || g1.comic_x_vel != g2.comic_x_vel || g1.comic_y_vel != g2.comic_y_vel) {
+                    std::cerr << "Determinism failed at tick " << i << "\n";
+                    return 1;
+                }
+            }
+        }
+
         // Helper to compare asm-style check with isRectSolid using an enemy-sized box
         auto compare_vertical = [&](TileMap m, int gu_x, int gu_y, const std::string& desc) {
             const int unit = GameConstants::TILE_SIZE / 2;
