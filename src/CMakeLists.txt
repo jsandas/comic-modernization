@@ -93,6 +93,12 @@ if(SDL2_image_INCLUDE_DIRS)
     target_include_directories(collision-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
 endif()
 
+# Diagnostic: print target include directories for tests and the main target
+get_target_property(TEST_INCLUDES collision-tests INCLUDE_DIRECTORIES)
+message(STATUS "collision-tests target INCLUDE_DIRECTORIES = ${TEST_INCLUDES}")
+get_target_property(MAIN_INCLUDES comic-c INCLUDE_DIRECTORIES)
+message(STATUS "comic-c target INCLUDE_DIRECTORIES = ${MAIN_INCLUDES}")
+
 if(TARGET SDL2_image::SDL2_image)
     target_link_libraries(collision-tests SDL2_image::SDL2_image)
 else()
