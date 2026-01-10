@@ -23,10 +23,8 @@ add_executable(comic-c ${SOURCES} ${HEADERS})
 
 # Link SDL2 and SDL2_image
 if(TARGET SDL2::SDL2)
-    message(STATUS "Using target SDL2::SDL2")
     target_link_libraries(comic-c SDL2::SDL2)
 else()
-    message(STATUS "SDL2::SDL2 target not available; SDL2_INCLUDE_DIRS='${SDL2_INCLUDE_DIRS}' SDL2_LIBRARIES='${SDL2_LIBRARIES}'")
     # Fallback: link and include via SDL2 variables from find_package or pkg-config
     if(SDL2_INCLUDE_DIRS)
         # Normalize list
@@ -81,14 +79,12 @@ endif()
 
 # If pkg-config provided explicit SDL2 include dirs, ensure both targets get them
 if(SDL2_INCLUDE_DIRS)
-    message(STATUS "Adding SDL2 include dirs to targets (explicit): ${SDL2_INCLUDE_DIRS}")
     target_include_directories(comic-c PRIVATE ${SDL2_INCLUDE_DIRS})
     target_include_directories(collision-tests PRIVATE ${SDL2_INCLUDE_DIRS})
 endif()
 
 # If pkg-config provided explicit SDL2_image include dirs, ensure both targets get them
 if(SDL2_image_INCLUDE_DIRS)
-    message(STATUS "Adding SDL2_image include dirs to targets (explicit): ${SDL2_image_INCLUDE_DIRS}")
     target_include_directories(comic-c PRIVATE ${SDL2_image_INCLUDE_DIRS})
     target_include_directories(collision-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
 endif()
@@ -99,17 +95,12 @@ if(APPLE)
     set(HOMEBREW_INCLUDE ${BREW_PREFIX}/include)
     set(HOMEBREW_INCLUDE_SDL2 ${BREW_PREFIX}/include/SDL2)
     if(EXISTS ${HOMEBREW_INCLUDE} AND NOT "${HOMEBREW_INCLUDE}" IN_LIST CMAKE_SYSTEM_INCLUDEDIR)
-        message(STATUS "Adding Homebrew include dirs: ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2}")
         target_include_directories(comic-c PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
         target_include_directories(collision-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
     endif()
 endif()
 
-# Diagnostic: print target include directories for tests and the main target
-get_target_property(TEST_INCLUDES collision-tests INCLUDE_DIRECTORIES)
-message(STATUS "collision-tests target INCLUDE_DIRECTORIES = ${TEST_INCLUDES}")
-get_target_property(MAIN_INCLUDES comic-c INCLUDE_DIRECTORIES)
-message(STATUS "comic-c target INCLUDE_DIRECTORIES = ${MAIN_INCLUDES}")
+
 
 if(TARGET SDL2_image::SDL2_image)
     target_link_libraries(collision-tests SDL2_image::SDL2_image)

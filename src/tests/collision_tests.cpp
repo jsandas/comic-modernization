@@ -1,4 +1,6 @@
 #include <iostream>
+#include <filesystem>
+#include <vector>
 #include <SDL2/SDL.h>
 #include "game/GameState.h"
 #include "input/Input.h"
