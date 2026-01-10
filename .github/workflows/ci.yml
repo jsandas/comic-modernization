@@ -46,7 +46,9 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew update
-          brew install cmake sdl2 sdl2_image ccache
+          brew install cmake pkg-config sdl2 sdl2_image ccache
+          # Ensure pkg-config can find Homebrew-provided .pc files for SDL2
+          echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache
