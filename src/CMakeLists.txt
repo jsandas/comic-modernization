@@ -178,9 +178,17 @@ if(APPLE)
     set(HOMEBREW_INCLUDE ${BREW_PREFIX}/include)
     set(HOMEBREW_INCLUDE_SDL2 ${BREW_PREFIX}/include/SDL2)
     if(EXISTS ${HOMEBREW_INCLUDE} AND NOT "${HOMEBREW_INCLUDE}" IN_LIST CMAKE_SYSTEM_INCLUDEDIR)
+        # core target
         target_include_directories(comic-c PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        # always-present tests
         target_include_directories(collision-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
         target_include_directories(enemy-ai-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        target_include_directories(player-damage-knockback-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        target_include_directories(player-respawn-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        # optional test (guarded in some checkouts)
+        if(TARGET enemy-player-tests)
+            target_include_directories(enemy-player-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        endif()
     endif()
 endif()
 

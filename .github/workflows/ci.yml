@@ -40,7 +40,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake ccache libsdl2-dev libsdl2-image-dev
+          sudo apt-get install -y build-essential cmake ccache pkg-config libsdl2-dev libsdl2-image-dev
 
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
@@ -51,6 +51,33 @@ jobs:
           echo "PKG_CONFIG_PATH=$(brew --prefix)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
           # Help CMake find Homebrew-installed packages by adding brew prefix to CMAKE_PREFIX_PATH
           echo "CMAKE_PREFIX_PATH=$(brew --prefix):$CMAKE_PREFIX_PATH" >> $GITHUB_ENV
+
+      - name: "macOS: SDL / pkg-config diagnostics (pre-configure)"
+        if: runner.os == 'macOS'
+        run: |
+          echo "brew prefix: $(brew --prefix)"
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
+          echo "--- include dir listing ---"
+          ls -la "$(brew --prefix)/include" || true
+          echo "--- SDL2 include listing ---"
+          ls -la "$(brew --prefix)/include/SDL2" || true
+          echo "--- pkg-config sdl2 ---"
+          pkg-config --modversion sdl2 || true
+          pkg-config --cflags sdl2 || true
+          pkg-config --libs sdl2 || true
+          echo "--- pkg-config SDL2_image ---"
+          pkg-config --modversion SDL2_image || true
+          pkg-config --cflags SDL2_image || true
+          pkg-config --libs SDL2_image || true
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache
+
+      - name: "macOS: CMake cache dump (post-configure)"
+        if: runner.os == 'macOS'
+        run: |
+          echo "--- CMake cache (show common SDL vars) ---"
+          cmake -S . -B build -LA | sed -n '1,200p'
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache
