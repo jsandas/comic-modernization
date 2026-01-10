@@ -387,14 +387,11 @@ int main() {
             g.current_map = std::make_unique<TileMap>();
             // Place a single solid tile somewhere in the middle of a fall
             int tile_tx = 10;
-            int start_tile_ty = 2;
             int solid_tile_ty = 3;
-            int below_tile_ty = 5;
             // Set solidity at solid_tile_ty
             g.current_map->solidity[solid_tile_ty * GameConstants::SCREEN_WIDTH_TILES + tile_tx] = 1;
 
             // Place player so a single fast tick would overlap the solid tile (compute starting y so target overlaps)
-            const int player_w = GameConstants::PLAYER_WIDTH_TILES * GameConstants::TILE_SIZE;
             const int player_h = GameConstants::PLAYER_HEIGHT_TILES * GameConstants::TILE_SIZE;
             g.comic_x = tile_tx * GameConstants::TILE_SIZE;
             // Start a bit above such that target_y (start + 8) will land exactly on the solid tile row
@@ -485,8 +482,6 @@ int main() {
                 int ceiling_tx = 20; int ceiling_ty = 3;
                 g.current_map->solidity[ceiling_ty * GameConstants::SCREEN_WIDTH_TILES + ceiling_tx] = 1;
 
-                const int player_w = GameConstants::PLAYER_WIDTH_TILES * GameConstants::TILE_SIZE;
-                const int player_h = GameConstants::PLAYER_HEIGHT_TILES * GameConstants::TILE_SIZE;
                 g.comic_x = ceiling_tx * GameConstants::TILE_SIZE;
                 g.comic_y = (ceiling_ty + 1) * GameConstants::TILE_SIZE; // just below the ceiling
                 g.comic_y_vel = vel;

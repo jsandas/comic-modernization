@@ -234,7 +234,6 @@ int main() {
         int wall_tx = (g.enemies[0].x + (g.comic_x > g.enemies[0].x ? -1 : 1)) / GameConstants::TILE_SIZE; // approximate tile near
         int wall_ty = g.enemies[0].y / GameConstants::TILE_SIZE;
         g.current_map->solidity[wall_ty * GameConstants::SCREEN_WIDTH_TILES + wall_tx] = 1;
-        int prev_x = g.enemies[0].x;
         g.update(input);
         if (g.enemies[0].x == wall_tx * GameConstants::TILE_SIZE) { std::cerr << "Shy moved into blocking wall\n"; return 1; }
     }
