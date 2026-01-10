@@ -93,6 +93,18 @@ if(SDL2_image_INCLUDE_DIRS)
     target_include_directories(collision-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
 endif()
 
+# On macOS with Homebrew, ensure the common brew include paths are present if they exist
+if(APPLE)
+    execute_process(COMMAND brew --prefix OUTPUT_VARIABLE BREW_PREFIX OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(HOMEBREW_INCLUDE ${BREW_PREFIX}/include)
+    set(HOMEBREW_INCLUDE_SDL2 ${BREW_PREFIX}/include/SDL2)
+    if(EXISTS ${HOMEBREW_INCLUDE} AND NOT "${HOMEBREW_INCLUDE}" IN_LIST CMAKE_SYSTEM_INCLUDEDIR)
+        message(STATUS "Adding Homebrew include dirs: ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2}")
+        target_include_directories(comic-c PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        target_include_directories(collision-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+    endif()
+endif()
+
 # Diagnostic: print target include directories for tests and the main target
 get_target_property(TEST_INCLUDES collision-tests INCLUDE_DIRECTORIES)
 message(STATUS "collision-tests target INCLUDE_DIRECTORIES = ${TEST_INCLUDES}")
