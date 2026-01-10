@@ -23,15 +23,26 @@ add_executable(comic-c ${SOURCES} ${HEADERS})
 
 # Link SDL2 and SDL2_image
 if(TARGET SDL2::SDL2)
+    message(STATUS "Using target SDL2::SDL2")
     target_link_libraries(comic-c SDL2::SDL2)
 else()
+    message(STATUS "SDL2::SDL2 target not available; SDL2_INCLUDE_DIRS='${SDL2_INCLUDE_DIRS}' SDL2_LIBRARIES='${SDL2_LIBRARIES}'")
     # Fallback: link and include via SDL2 variables from find_package or pkg-config
     if(SDL2_INCLUDE_DIRS)
+        # Normalize list
+        if(NOT SDL2_INCLUDE_DIRS STREQUAL "${SDL2_INCLUDE_DIRS}")
+        endif()
         target_include_directories(comic-c PRIVATE ${SDL2_INCLUDE_DIRS})
     endif()
     if(SDL2_LIBRARIES)
         target_link_libraries(comic-c ${SDL2_LIBRARIES})
     endif()
+endif()
+
+# Ensure collision-tests (unit tests) also get SDL include dirs if set
+if(SDL2_INCLUDE_DIRS)
+    message(STATUS "Adding SDL2 include dirs to tests: ${SDL2_INCLUDE_DIRS}")
+    target_include_directories(collision-tests PRIVATE ${SDL2_INCLUDE_DIRS})
 endif()
 
 # Link SDL2_image if found
