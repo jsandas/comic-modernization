@@ -193,6 +193,24 @@ if(APPLE)
 endif()
 
 
+# Apply -Werror (and extra warnings) to project-built targets only (safer than global flags)
+if(NOT MSVC)
+    set(PROJECT_WERROR_FLAGS -Werror -Wall -Wextra)
+else()
+    set(PROJECT_WERROR_FLAGS /WX)
+endif()
+
+foreach(tgt IN ITEMS comic-c collision-tests enemy-ai-tests player-damage-knockback-tests player-respawn-tests)
+    if(TARGET ${tgt})
+        target_compile_options(${tgt} PRIVATE ${PROJECT_WERROR_FLAGS})
+    endif()
+endforeach()
+
+# Optional enemy test — apply flags only if it exists
+if(TARGET enemy-player-tests)
+    target_compile_options(enemy-player-tests PRIVATE ${PROJECT_WERROR_FLAGS})
+endif()
+
 
 if(TARGET SDL2_image::SDL2_image)
     target_link_libraries(collision-tests SDL2_image::SDL2_image)

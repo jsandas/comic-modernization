@@ -197,7 +197,8 @@ void GameState::update(const Input& input) {
             comic_x_vel = 2;
             comic_facing = 1;
         } else {
-            comic_x_vel = comic_x_vel; // leave physics-driven velocity (e.g., knockback) to be handled by friction
+            // no horizontal input; keep current velocity so physics-driven effects (e.g., knockback)
+            // continue to be applied and friction will decay the velocity over time
         }
     }
 
