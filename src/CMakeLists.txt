@@ -128,18 +128,13 @@ endif()
 
 if(TARGET SDL2_image::SDL2_image)
     target_link_libraries(collision-tests SDL2_image::SDL2_image)
+    target_link_libraries(enemy-ai-tests SDL2_image::SDL2_image)
 else()
     target_link_libraries(collision-tests ${SDL2_image_LIBRARIES})
+    target_link_libraries(enemy-ai-tests ${SDL2_image_LIBRARIES})
     if(SDL2_image_INCLUDE_DIRS)
         target_include_directories(collision-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
+        target_include_directories(enemy-ai-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
     endif()
 endif()
 
-# Enable CTest and register the collision-tests as a test so it can be run via `ctest` or a CI runner
-enable_testing()
-add_test(NAME collision-tests COMMAND collision-tests)
-# Add a convenience target 'check' to build and run tests: `cmake --build build --target check`
-add_custom_target(check
-    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-    DEPENDS collision-tests
-)

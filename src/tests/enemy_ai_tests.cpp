@@ -15,7 +15,7 @@ int main() {
         Enemy en{};
         en.behavior = GameConstants::ENEMY_BEHAVIOR_BOUNCE;
         en.x = static_cast<uint8_t>(wall_tx * GameConstants::TILE_SIZE - 8);
-        en.y = static_cast<uint8_t>(wall_ty * GameConstants::TILE_SIZE - GameConstants::TILE_SIZE);
+        en.y = static_cast<uint8_t>(wall_ty * GameConstants::TILE_SIZE); // align vertically with wall tile
         en.x_vel = 2;
         g.enemies.clear(); g.enemies.push_back(en);
 
@@ -69,13 +69,16 @@ int main() {
         Enemy en{};
         en.behavior = GameConstants::ENEMY_BEHAVIOR_ROLL;
         en.x = static_cast<uint8_t>(wall_tx * GameConstants::TILE_SIZE - 20);
-        en.y = static_cast<uint8_t>(wall_ty * GameConstants::TILE_SIZE - GameConstants::TILE_SIZE);
+        en.y = static_cast<uint8_t>(wall_ty * GameConstants::TILE_SIZE);
         en.x_vel = 2;
         g.enemies.clear(); g.enemies.push_back(en);
 
         Input input;
         bool reversed = false;
-        for (int i = 0; i < 16; ++i) { g.update(input); if (g.enemies[0].x_vel < 0) { reversed = true; break; } }
+        for (int i = 0; i < 16; ++i) {
+            g.update(input);
+            if (g.enemies[0].x_vel < 0) { reversed = true; break; }
+        }
         if (!reversed) { std::cerr << "Roll didn't reverse on obstacle\n"; return 1; }
     }
 
