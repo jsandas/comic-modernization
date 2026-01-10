@@ -101,10 +101,11 @@ add_custom_target(check
     DEPENDS collision-tests enemy-ai-tests
 )
 
-# If pkg-config provided explicit SDL2 include dirs, ensure both targets get them
+# If pkg-config provided explicit SDL2 include dirs, ensure all relevant targets get them
 if(SDL2_INCLUDE_DIRS)
     target_include_directories(comic-c PRIVATE ${SDL2_INCLUDE_DIRS})
     target_include_directories(collision-tests PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_include_directories(enemy-ai-tests PRIVATE ${SDL2_INCLUDE_DIRS})
 endif()
 
 # If pkg-config provided explicit SDL2_image include dirs, ensure both targets get them
@@ -121,6 +122,7 @@ if(APPLE)
     if(EXISTS ${HOMEBREW_INCLUDE} AND NOT "${HOMEBREW_INCLUDE}" IN_LIST CMAKE_SYSTEM_INCLUDEDIR)
         target_include_directories(comic-c PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
         target_include_directories(collision-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        target_include_directories(enemy-ai-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
     endif()
 endif()
 
