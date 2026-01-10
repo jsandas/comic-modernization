@@ -17,12 +17,16 @@ Initial implementation phase - basic framework and build system established.
 - [x] Asset manager with filesystem::path cross-platform support
 - [x] Fixed-timestep game loop (9.1 Hz tick rate)
 - [x] Successful build with all assets copied to data/
+- [x] Implement tile and sprite rendering
+- [x] Port game physics and collision detection
 
 ### Next Steps
-- [x] Implement tile and sprite rendering
-- [ ] Port game physics and collision detection
 - [ ] Implement enemy AI behaviors (5 types: bounce, leap, roll, seek, shy)
 - [ ] Implement item collection and door mechanics
+- [ ] Audio playback integration
+- [ ] Game state management and level loading
+- [ ] Player movement and animation
+- [ ] UI rendering (HUD, score, lives)
 - [ ] Audio playback integration
 - [ ] Game state management and level loading
 - [ ] Player movement and animation
