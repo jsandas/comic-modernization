@@ -45,3 +45,25 @@ set_target_properties(comic-c PROPERTIES
 
 # Include directories
 target_include_directories(comic-c PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Collision unit tests
+add_executable(collision-tests tests/collision_tests.cpp game/GameState.cpp assets/MapLoader.cpp input/Input.cpp)
+# Put test in build root so it can find data files if needed
+set_target_properties(collision-tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+target_include_directories(collision-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+# Link libraries similar to the main executable (SDL2) so MapLoader and Input link
+target_link_libraries(collision-tests SDL2::SDL2)
+if(SDL2_image_FOUND)
+    target_link_libraries(collision-tests SDL2_image::SDL2_image)
+else()
+    target_link_libraries(collision-tests ${SDL2_image_LIBRARIES})
+endif()
+
+# Enable CTest and register the collision-tests as a test so it can be run via `ctest` or a CI runner
+enable_testing()
+add_test(NAME collision-tests COMMAND collision-tests)
+# Add a convenience target 'check' to build and run tests: `cmake --build build --target check`
+add_custom_target(check
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+    DEPENDS collision-tests
+)

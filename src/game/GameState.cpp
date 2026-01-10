@@ -235,11 +235,11 @@ void GameState::update(const Input& input) {
     } else {
         if (comic_y_vel > 0) {
             // landed on ground: align bottom to just above ground tile
-            int ty = (comic_y + player_h) / GameConstants::TILE_SIZE;
+            int ty = (target_y + player_h) / GameConstants::TILE_SIZE;
             comic_y = ty * GameConstants::TILE_SIZE - player_h;
         } else if (comic_y_vel < 0) {
             // hit ceiling: place just below ceiling
-            int ty = comic_y / GameConstants::TILE_SIZE;
+            int ty = target_y / GameConstants::TILE_SIZE;
             comic_y = (ty + 1) * GameConstants::TILE_SIZE;
         }
         comic_y_vel = 0;
