@@ -93,8 +93,8 @@ else()
 endif()
 
 enable_testing()
-add_test(NAME collision-tests COMMAND collision-tests)
-add_test(NAME enemy-ai-tests COMMAND enemy-ai-tests)
+add_test(NAME collision-tests COMMAND $<TARGET_FILE:collision-tests>)
+add_test(NAME enemy-ai-tests COMMAND $<TARGET_FILE:enemy-ai-tests>)
 # Enemy-player tests (guarded to avoid configure-time failures on checkouts missing the test source)
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/enemy_player_tests.cpp")
     add_executable(enemy-player-tests tests/enemy_player_tests.cpp game/GameState.cpp assets/MapLoader.cpp input/Input.cpp)
@@ -111,7 +111,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/enemy_player_tests.cpp")
         endif()
     endif()
 
-    add_test(NAME enemy-player-tests COMMAND enemy-player-tests)
+    add_test(NAME enemy-player-tests COMMAND $<TARGET_FILE:enemy-player-tests>)
 else()
     message(STATUS "Skipping enemy-player-tests: ${CMAKE_CURRENT_SOURCE_DIR}/tests/enemy_player_tests.cpp not found in checkout")
 endif()
@@ -129,7 +129,7 @@ else()
     endif()
 endif()
 
-add_test(NAME player-damage-knockback-tests COMMAND player-damage-knockback-tests)
+add_test(NAME player-damage-knockback-tests COMMAND $<TARGET_FILE:player-damage-knockback-tests>)
 add_executable(player-respawn-tests tests/player_respawn_tests.cpp game/GameState.cpp assets/MapLoader.cpp input/Input.cpp)
 set_target_properties(player-respawn-tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR})
 target_include_directories(player-respawn-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -144,7 +144,7 @@ else()
     endif()
 endif()
 
-add_test(NAME player-respawn-tests COMMAND player-respawn-tests)
+add_test(NAME player-respawn-tests COMMAND $<TARGET_FILE:player-respawn-tests>)
 
 # Item and door mechanic tests
 add_executable(items-doors-tests tests/items_doors_tests.cpp game/GameState.cpp assets/MapLoader.cpp input/Input.cpp)
@@ -165,8 +165,16 @@ endif()
 # even when the build is out-of-source or CTest runs with a different CWD.
 # (Used by items_doors_tests to find reference/assets and by GameState for sidecar fallback.)
 target_compile_definitions(items-doors-tests PRIVATE PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
-add_test(NAME items-doors-tests COMMAND items-doors-tests)
+add_test(NAME items-doors-tests COMMAND $<TARGET_FILE:items-doors-tests>)
 
+# Ensure tests run with a predictable working directory (build/<config>/src) so relative
+# paths like "reference/assets" are resolved consistently in CI.
+set_tests_properties(collision-tests PROPERTIES WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/src)
+set_tests_properties(enemy-ai-tests PROPERTIES WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/src)
+set_tests_properties(enemy-player-tests PROPERTIES WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/src)
+set_tests_properties(player-damage-knockback-tests PROPERTIES WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/src)
+set_tests_properties(player-respawn-tests PROPERTIES WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/src)
+set_tests_properties(items-doors-tests PROPERTIES WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/src)
 
 # If pkg-config provided explicit SDL2 include dirs, ensure all relevant targets get them
 if(SDL2_INCLUDE_DIRS)
