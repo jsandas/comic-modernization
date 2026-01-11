@@ -29,7 +29,6 @@ Initial implementation phase - basic framework and build system established.
 - [ ] UI rendering (HUD, score, lives)
 - [ ] Audio playback integration
 - [ ] Game state management and level loading
-- [ ] Player movement and animation
 - [ ] UI rendering (HUD, score, lives)
 
 ## Build Instructions
