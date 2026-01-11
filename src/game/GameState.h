@@ -105,6 +105,13 @@ struct GameState {
     // Camera position
     int16_t camera_x;
 
+private:
+    // Helper movement functions for enemies
+    static void stepHorizontal(GameState &gs, Enemy &en, int &px, int py, int enemy_w, int enemy_h);
+    static void stepHorizontalNoReverse(GameState &gs, Enemy &en, int &px, int py, int enemy_w, int enemy_h);
+    static void stepVertical(GameState &gs, Enemy &en, int &py, int px, int enemy_w, int enemy_h);
+
+public:
     GameState() 
         : comic_x(0), comic_y(0), comic_x_vel(0), comic_y_vel(0),
           comic_facing(1), comic_hp(GameConstants::MAX_HP),
