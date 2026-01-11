@@ -460,6 +460,3 @@ void GameState::update(const Input& input) {
         }
     }
 }
-
-
->>>>>>> Stashed changes
