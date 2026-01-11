@@ -230,5 +230,3 @@ else()
         target_include_directories(player-respawn-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
     endif()
 endif()
-
->>>>>>> Stashed changes
