@@ -166,10 +166,15 @@ int main() {
         GameState g;
         std::filesystem::path dpath = std::filesystem::path("reference") / "assets";
         // If the tests are run from the build directory (ctest), the relative path
-        // may not point to the repository source tree. Fall back to locating
-        // the reference assets relative to this source file when necessary.
+        // may not point to the repository source tree. Prefer using the compile-time
+        // PROJECT_SOURCE_DIR if available (set in CMake), otherwise fall back to
+        // deriving the source path from __FILE__.
+#ifndef PROJECT_SOURCE_DIR
+        auto src_root = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path();
+#else
+        auto src_root = std::filesystem::path(PROJECT_SOURCE_DIR);
+#endif
         if (!std::filesystem::exists(dpath)) {
-            auto src_root = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path();
             dpath = src_root / "reference" / "assets";
         }
         std::vector<Item> items;

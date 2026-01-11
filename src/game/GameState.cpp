@@ -171,7 +171,11 @@ bool GameState::loadLevel(int level_number, const std::filesystem::path& dataPat
         // the source tree (used during development) are found when dataPath
         // doesn't contain them.
         std::filesystem::path p3 = std::filesystem::current_path() / "reference" / "levels" / (ptname + ".items");
+#ifdef PROJECT_SOURCE_DIR
+        std::filesystem::path p4 = std::filesystem::path(PROJECT_SOURCE_DIR) / "reference" / "levels" / (ptname + ".items");
+#else
         std::filesystem::path p4 = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path() / "reference" / "levels" / (ptname + ".items");
+#endif
 
         loadStageSidecarFile(p1, lvl->stage_items[si], lvl->stage_doors[si]);
         loadStageSidecarFile(p2, lvl->stage_items[si], lvl->stage_doors[si]);

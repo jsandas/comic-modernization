@@ -161,6 +161,10 @@ else()
     endif()
 endif()
 
+# Provide project source directory to tests so they can locate repository assets
+# even when the build is out-of-source or CTest runs with a different CWD.
+# (Used by items_doors_tests to find reference/assets and by GameState for sidecar fallback.)
+target_compile_definitions(items-doors-tests PRIVATE PROJECT_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 add_test(NAME items-doors-tests COMMAND items-doors-tests)
 
 
