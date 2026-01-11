@@ -1,0 +1,4 @@
+# Level sidecar generated from R3_levels.asm for BASE stage 2
+ITEM BOOTS 230 16
+DOOR 36 2 3 0
+DOOR 218 14 3 1

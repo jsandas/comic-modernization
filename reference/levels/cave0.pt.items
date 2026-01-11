@@ -1,0 +1,5 @@
+# Level sidecar generated from R3_levels.asm for CAVE stage 0
+ITEM SHIELD 41 6
+DOOR 8 12 0 2
+DOOR 40 4 4 1
+DOOR 154 2 4 2

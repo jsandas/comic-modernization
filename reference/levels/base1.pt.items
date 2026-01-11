@@ -1,0 +1,5 @@
+# Level sidecar generated from R3_levels.asm for BASE stage 1
+ITEM CORKSCREW 0 16
+DOOR 0 6 0 2
+DOOR 112 14 3 0
+DOOR 0 0 3 2

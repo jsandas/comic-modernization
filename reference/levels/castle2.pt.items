@@ -1,0 +1,4 @@
+# Level sidecar generated from R3_levels.asm for CASTLE stage 2
+ITEM SHIELD 44 8
+DOOR 8 8 6 1
+DOOR 246 4 6 0
