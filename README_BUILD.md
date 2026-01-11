@@ -19,9 +19,9 @@ Initial implementation phase - basic framework and build system established.
 - [x] Successful build with all assets copied to data/
 - [x] Implement tile and sprite rendering
 - [x] Port game physics and collision detection
+- [x] Implement enemy AI behaviors (5 types: bounce, leap, roll, seek, shy)
 
 ### Next Steps
-- [x] Implement enemy AI behaviors (5 types: bounce, leap, roll, seek, shy)
 - [ ] Implement item collection and door mechanics
 - [ ] Audio playback integration
 - [ ] Game state management and level loading

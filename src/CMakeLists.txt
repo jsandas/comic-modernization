@@ -145,3 +145,90 @@ else()
 endif()
 
 add_test(NAME player-respawn-tests COMMAND player-respawn-tests)
+
+
+# If pkg-config provided explicit SDL2 include dirs, ensure all relevant targets get them
+if(SDL2_INCLUDE_DIRS)
+    target_include_directories(comic-c PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_include_directories(collision-tests PRIVATE ${SDL2_INCLUDE_DIRS})
+    target_include_directories(enemy-ai-tests PRIVATE ${SDL2_INCLUDE_DIRS})
+    if(TARGET enemy-player-tests)
+        target_include_directories(enemy-player-tests PRIVATE ${SDL2_INCLUDE_DIRS})
+    endif()
+    target_include_directories(player-damage-knockback-tests PRIVATE ${SDL2_INCLUDE_DIRS})
+endif()
+
+# If pkg-config provided explicit SDL2_image include dirs, ensure both targets get them
+if(SDL2_image_INCLUDE_DIRS)
+    target_include_directories(comic-c PRIVATE ${SDL2_image_INCLUDE_DIRS})
+    target_include_directories(collision-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
+endif()
+
+# On macOS with Homebrew, ensure the common brew include paths are present if they exist
+if(APPLE)
+    execute_process(COMMAND brew --prefix OUTPUT_VARIABLE BREW_PREFIX OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(HOMEBREW_INCLUDE ${BREW_PREFIX}/include)
+    set(HOMEBREW_INCLUDE_SDL2 ${BREW_PREFIX}/include/SDL2)
+    if(EXISTS ${HOMEBREW_INCLUDE} AND NOT "${HOMEBREW_INCLUDE}" IN_LIST CMAKE_SYSTEM_INCLUDEDIR)
+        # core target
+        target_include_directories(comic-c PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        # always-present tests
+        target_include_directories(collision-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        target_include_directories(enemy-ai-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        target_include_directories(player-damage-knockback-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        target_include_directories(player-respawn-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        # optional test (guarded in some checkouts)
+        if(TARGET enemy-player-tests)
+            target_include_directories(enemy-player-tests PRIVATE ${HOMEBREW_INCLUDE} ${HOMEBREW_INCLUDE_SDL2})
+        endif()
+    endif()
+endif()
+
+
+# Apply -Werror (and extra warnings) to project-built targets only (safer than global flags)
+if(NOT MSVC)
+    set(PROJECT_WERROR_FLAGS -Werror -Wall -Wextra)
+else()
+    set(PROJECT_WERROR_FLAGS /WX)
+endif()
+
+foreach(tgt IN ITEMS comic-c collision-tests enemy-ai-tests player-damage-knockback-tests player-respawn-tests)
+    if(TARGET ${tgt})
+        target_compile_options(${tgt} PRIVATE ${PROJECT_WERROR_FLAGS})
+    endif()
+endforeach()
+
+# Optional enemy test — apply flags only if it exists
+if(TARGET enemy-player-tests)
+    target_compile_options(enemy-player-tests PRIVATE ${PROJECT_WERROR_FLAGS})
+endif()
+
+
+if(TARGET SDL2_image::SDL2_image)
+    target_link_libraries(collision-tests SDL2_image::SDL2_image)
+    target_link_libraries(enemy-ai-tests SDL2_image::SDL2_image)
+    if(TARGET enemy-player-tests)
+        target_link_libraries(enemy-player-tests SDL2_image::SDL2_image)
+    endif()
+    target_link_libraries(player-damage-knockback-tests SDL2_image::SDL2_image)
+    target_link_libraries(player-respawn-tests SDL2_image::SDL2_image)
+else()
+    target_link_libraries(collision-tests ${SDL2_image_LIBRARIES})
+    target_link_libraries(enemy-ai-tests ${SDL2_image_LIBRARIES})
+    if(TARGET enemy-player-tests)
+        target_link_libraries(enemy-player-tests ${SDL2_image_LIBRARIES})
+    endif()
+    target_link_libraries(player-damage-knockback-tests ${SDL2_image_LIBRARIES})
+    target_link_libraries(player-respawn-tests ${SDL2_image_LIBRARIES})
+    if(SDL2_image_INCLUDE_DIRS)
+        target_include_directories(collision-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
+        target_include_directories(enemy-ai-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
+        if(TARGET enemy-player-tests)
+            target_include_directories(enemy-player-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
+        endif()
+        target_include_directories(player-damage-knockback-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
+        target_include_directories(player-respawn-tests PRIVATE ${SDL2_image_INCLUDE_DIRS})
+    endif()
+endif()
+
+>>>>>>> Stashed changes
