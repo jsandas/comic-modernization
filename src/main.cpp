@@ -13,7 +13,7 @@
 #include "game/Constants.h"
 
 int main(int argc, char* argv[]) {
-    (void)argc; (void)argv; // suppress unused parameter warnings when running tests
+    (void)argc; (void)argv; // argc/argv are unused in this implementation; mark explicitly to avoid -Werror unused-parameter
 
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER) < 0) {
