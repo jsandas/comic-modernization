@@ -73,7 +73,7 @@ static const struct LevelDescriptor {
     { "base.tt2",  "base0.pt",  "base1.pt",  "base2.pt" }
 };
 
-bool GameState::loadLevel(int level_number, const std::filesystem::path& dataPath) {
+bool GameState::loadLevel(int level_number, const std::filesystem::path& dataPath, int stage_number) {
     if (level_number < 0 || level_number >= static_cast<int>(sizeof(level_table)/sizeof(level_table[0]))) {
         std::cerr << "Invalid level number: " << level_number << std::endl;
         return false;
@@ -82,9 +82,38 @@ bool GameState::loadLevel(int level_number, const std::filesystem::path& dataPat
     const LevelDescriptor& desc = level_table[level_number];
     MapLoader loader(dataPath);
 
-    // For now, load the pt0 of the level
-    TileMap m = loader.loadTileMap(desc.pt0, desc.tileset);
-    current_map = std::make_unique<TileMap>(m);
+    // Create a Level object and load all three stage PTs into it
+    auto lvl = std::make_unique<Level>();
+    lvl->level_number = static_cast<uint8_t>(level_number);
+    lvl->name = std::string(desc.tileset);
+
+    // Load pt0..pt2 into stages
+    TileMap m0 = loader.loadTileMap(desc.pt0, desc.tileset);
+    TileMap m1 = loader.loadTileMap(desc.pt1, desc.tileset);
+    TileMap m2 = loader.loadTileMap(desc.pt2, desc.tileset);
+
+    lvl->stages.clear();
+    lvl->stages.push_back(m0);
+    lvl->stages.push_back(m1);
+    lvl->stages.push_back(m2);
+
+    // Initialize per-stage containers: enemies, items, doors
+    size_t num_stages = lvl->stages.size();
+    lvl->stage_enemies.clear(); lvl->stage_enemies.resize(num_stages);
+    lvl->stage_items.clear();  lvl->stage_items.resize(num_stages);
+    lvl->stage_doors.clear();  lvl->stage_doors.resize(num_stages);
+
+    // Adopt level into game state
+    current_level = std::move(lvl);
+    this->dataPath = dataPath;
+
+    // Clamp requested stage index
+    if (stage_number < 0) stage_number = 0;
+    if (stage_number >= static_cast<int>(current_level->stages.size())) stage_number = 0;
+
+    current_level_number = static_cast<uint8_t>(level_number);
+    current_stage_number = static_cast<uint8_t>(stage_number);
+    current_map = std::make_unique<TileMap>(current_level->stages[current_stage_number]);
 
     // Reset camera and player position
     camera_x = 0;
@@ -197,8 +226,6 @@ bool GameState::loadLevel(int level_number, const std::filesystem::path& dataPat
         }
     }
 
-
-
     return true;
 }
 
@@ -241,6 +268,8 @@ void GameState::update(const Input& input) {
     // Simple player physics and collision
     const int player_w = GameConstants::PLAYER_WIDTH_TILES * GameConstants::TILE_SIZE;
     const int player_h = GameConstants::PLAYER_HEIGHT_TILES * GameConstants::TILE_SIZE;
+
+    int hp_at_tick_start = comic_hp;
 
     // Horizontal input — disabled during invulnerability/recovery
     if (comic_invuln_ticks == 0) {
@@ -459,4 +488,89 @@ void GameState::update(const Input& input) {
             }
         }
     }
+
+    // 3) Item collection: collect items when the player overlaps an item
+    if (current_level && current_stage_number < current_level->stage_items.size()) {
+        auto &items = current_level->stage_items[current_stage_number];
+        for (auto &it : items) {
+            if (it.collected) continue;
+            if (rects_overlap(comic_x, comic_y, player_w, player_h, static_cast<int>(it.x), static_cast<int>(it.y), GameConstants::TILE_SIZE, GameConstants::TILE_SIZE)) {
+                it.collected = true;
+                // Apply item effects
+                switch (it.type) {
+                    case GameConstants::ITEM_LANTERN:
+                        comic_has_lantern = true;
+                        score += 100;
+                        break;
+                    case GameConstants::ITEM_BOOTS:
+                        comic_has_boots = true;
+                        score += 100;
+                        break;
+                    case GameConstants::ITEM_TELEPORT:
+                        comic_has_teleport = true;
+                        score += 200;
+                        break;
+                    case GameConstants::ITEM_CROWN:
+                        comic_has_crown = true;
+                        score += 1000;
+                        break;
+                    case GameConstants::ITEM_GOLD:
+                        comic_has_gold = true;
+                        score += 500;
+                        break;
+                    case GameConstants::ITEM_GEM:
+                        ++comic_num_gems;
+                        score += 10;
+                        break;
+                    case GameConstants::ITEM_CORKSCREW:
+                        comic_has_corkscrew = true;
+                        score += 250;
+                        break;
+                    case GameConstants::ITEM_DOOR_KEY:
+                        comic_has_door_key = true;
+                        score += 250;
+                        break;
+                    case GameConstants::ITEM_BLASTOLA_COLA:
+                        // Increase firepower up to the configured maximum
+                        comic_firepower = static_cast<uint8_t>(std::min<int>(comic_firepower + 1, GameConstants::MAX_NUM_FIREBALLS));
+                        score += 100;
+                        break;
+                    case GameConstants::ITEM_SHIELD:
+                        // Shield: give shield meter and restore HP or award a life if HP was already full
+                        comic_shield_meter = GameConstants::MAX_SHIELD_METER;
+                        if (hp_at_tick_start == GameConstants::MAX_HP) {
+                            if (comic_num_lives < GameConstants::MAX_NUM_LIVES) {
+                                ++comic_num_lives;
+                            } else {
+                                score += 22500; // reward for over-collecting
+                            }
+                        } else {
+                            comic_hp = GameConstants::MAX_HP;
+                        }
+                        score += 200;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+
+    // 4) Door mechanics: if overlapping a door, change level/stage
+    if (current_level && current_stage_number < current_level->stage_doors.size()) {
+        auto &doors = current_level->stage_doors[current_stage_number];
+        for (auto &d : doors) {
+            if (rects_overlap(comic_x, comic_y, player_w, player_h, static_cast<int>(d.x), static_cast<int>(d.y), GameConstants::TILE_SIZE, GameConstants::TILE_SIZE)) {
+                // Prevent re-trigger in same tick by checking if target differs
+                int dest_level = static_cast<int>(d.destination_level);
+                int dest_stage = static_cast<int>(d.destination_stage);
+                if (dest_level != static_cast<int>(current_level_number) || dest_stage != static_cast<int>(current_stage_number)) {
+                    // Load destination and place player at spawn there
+                    loadLevel(dest_level, this->dataPath, dest_stage);
+                    break; // break out after level change
+                }
+            }
+        }
+    }
 }
+

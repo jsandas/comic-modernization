@@ -76,6 +76,11 @@ struct GameState {
     bool comic_has_gold;         // Gold item
     uint8_t comic_num_gems;      // Gem count
 
+    // Additional item state
+    uint8_t comic_firepower;     // number of Blastola Colas (unlocks fireballs)
+    bool comic_has_corkscrew;    // enables corkscrew fireball behavior
+    bool comic_has_door_key;     // allows opening locked doors
+
     // Damage/invulnerability counter (ticks)
     int comic_invuln_ticks = 0;
     // Current level/stage
@@ -120,6 +125,7 @@ public:
           comic_has_lantern(false), comic_has_boots(false),
           comic_has_teleport(false), comic_has_crown(false),
           comic_has_gold(false), comic_num_gems(0),
+          comic_firepower(0), comic_has_corkscrew(false), comic_has_door_key(false),
           current_level_number(GameConstants::LEVEL_NUMBER_FOREST),
           current_stage_number(0),
           game_over(false), stage_complete(false),
@@ -130,5 +136,9 @@ public:
     }
 
     // Load level/pt data from data directory (uses preview PNGs + tileset images). Returns true on success.
-    bool loadLevel(int level_number, const std::filesystem::path& dataPath);
+    // stage_number is 0-based (0..2) and selects which stage/pt to set as current.
+    bool loadLevel(int level_number, const std::filesystem::path& dataPath, int stage_number = 0);
+
+    // Stored data path used to load levels when using doors
+    std::filesystem::path dataPath;
 };

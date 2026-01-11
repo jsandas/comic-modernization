@@ -77,4 +77,19 @@ namespace GameConstants {
         ENEMY_BEHAVIOR_SEEK = 3,
         ENEMY_BEHAVIOR_SHY = 4
     };
+
+    // Item types used by level data and item collection
+    enum ItemType {
+        ITEM_NONE = 0,
+        ITEM_LANTERN = 1,
+        ITEM_BOOTS = 2,
+        ITEM_TELEPORT = 3,
+        ITEM_CROWN = 4,
+        ITEM_GOLD = 5,
+        ITEM_GEM = 6,
+        ITEM_CORKSCREW = 7,
+        ITEM_DOOR_KEY = 8,
+        ITEM_BLASTOLA_COLA = 9,
+        ITEM_SHIELD = 10
+    };
 }

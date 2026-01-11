@@ -149,6 +149,14 @@ void UI::renderInventory(const GameState& game_state) {
         if (!items.empty()) items += " ";
         items += "TELEPORT";
     }
+    if (game_state.comic_has_corkscrew) {
+        if (!items.empty()) items += " ";
+        items += "CORKSCREW";
+    }
+    if (game_state.comic_has_door_key) {
+        if (!items.empty()) items += " ";
+        items += "DOORKEY";
+    }
     if (game_state.comic_has_crown) {
         if (!items.empty()) items += " ";
         items += "CROWN";
@@ -156,6 +164,15 @@ void UI::renderInventory(const GameState& game_state) {
     if (game_state.comic_has_gold) {
         if (!items.empty()) items += " ";
         items += "GOLD";
+    }
+    if (game_state.comic_firepower > 0) {
+        if (!items.empty()) items += " ";
+        snprintf(inventory_text, sizeof(inventory_text), "BLAST:%d", game_state.comic_firepower);
+        items += inventory_text;
+    }
+    if (game_state.comic_shield_meter > 0) {
+        if (!items.empty()) items += " ";
+        items += "SHIELD";
     }
     if (game_state.comic_num_gems > 0) {
         if (!items.empty()) items += " ";

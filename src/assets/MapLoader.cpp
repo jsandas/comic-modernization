@@ -1,6 +1,8 @@
 #include "MapLoader.h"
 #include <SDL2/SDL.h>
+#ifdef HAVE_SDL2_IMAGE
 #include <SDL2/SDL_image.h>
+#endif
 #include <iostream>
 #include <vector>
 #include <limits>
@@ -11,11 +13,18 @@ MapLoader::MapLoader(const filesystem::path& dataPath)
     : dataPath(dataPath) {}
 
 static SDL_Surface* loadSurfaceConverted(const filesystem::path& p) {
+#ifdef HAVE_SDL2_IMAGE
     SDL_Surface* s = IMG_Load(p.string().c_str());
     if (!s) return nullptr;
     SDL_Surface* conv = SDL_ConvertSurfaceFormat(s, SDL_PIXELFORMAT_RGBA32, 0);
     SDL_FreeSurface(s);
     return conv;
+#else
+    // SDL_image not available in this build; cannot load PNG previews
+    (void)p;
+    std::cerr << "Warning: SDL2_image not available; cannot load preview: " << p << std::endl;
+    return nullptr;
+#endif
 }
 
 static uint64_t surfaceChecksum(SDL_Surface* s) {

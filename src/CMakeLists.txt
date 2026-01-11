@@ -146,6 +146,23 @@ endif()
 
 add_test(NAME player-respawn-tests COMMAND player-respawn-tests)
 
+# Item and door mechanic tests
+add_executable(items-doors-tests tests/items_doors_tests.cpp game/GameState.cpp assets/MapLoader.cpp input/Input.cpp)
+set_target_properties(items-doors-tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+target_include_directories(items-doors-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+if(TARGET SDL2::SDL2)
+    target_link_libraries(items-doors-tests SDL2::SDL2)
+else()
+    if(SDL2_INCLUDE_DIRS)
+        target_include_directories(items-doors-tests PRIVATE ${SDL2_INCLUDE_DIRS})
+    endif()
+    if(SDL2_LIBRARIES)
+        target_link_libraries(items-doors-tests ${SDL2_LIBRARIES})
+    endif()
+endif()
+
+add_test(NAME items-doors-tests COMMAND items-doors-tests)
+
 
 # If pkg-config provided explicit SDL2 include dirs, ensure all relevant targets get them
 if(SDL2_INCLUDE_DIRS)
@@ -192,7 +209,7 @@ else()
     set(PROJECT_WERROR_FLAGS /WX)
 endif()
 
-foreach(tgt IN ITEMS comic-c collision-tests enemy-ai-tests player-damage-knockback-tests player-respawn-tests)
+foreach(tgt IN ITEMS comic-c collision-tests enemy-ai-tests player-damage-knockback-tests player-respawn-tests items-doors-tests)
     if(TARGET ${tgt})
         target_compile_options(${tgt} PRIVATE ${PROJECT_WERROR_FLAGS})
     endif()
