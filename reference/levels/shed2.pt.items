@@ -1,0 +1,4 @@
+# Level sidecar generated from R3_levels.asm for SHED stage 2
+ITEM SHIELD 246 10
+DOOR 4 14 5 1
+DOOR 242 8 7 0

@@ -22,7 +22,7 @@ Initial implementation phase - basic framework and build system established.
 - [x] Implement enemy AI behaviors (5 types: bounce, leap, roll, seek, shy)
 
 ### Next Steps
-- [ ] Implement item collection and door mechanics
+- [x] Implement item collection and door mechanics
 - [ ] Audio playback integration
 - [ ] Game state management and level loading
 - [ ] Player movement and animation

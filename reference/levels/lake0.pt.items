@@ -1,0 +1,4 @@
+# Level sidecar generated from R3_levels.asm for LAKE stage 0
+ITEM BLASTOLA_COLA 112 12
+DOOR 118 10 1 2
+DOOR 248 14 5 0

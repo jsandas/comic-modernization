@@ -1,0 +1,4 @@
+# Level sidecar generated from R3_levels.asm for FOREST stage 2
+ITEM DOORKEY 160 2
+DOOR 238 12 0 0
+DOOR 160 14 7 2
