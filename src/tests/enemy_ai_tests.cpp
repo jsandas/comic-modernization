@@ -14,8 +14,8 @@ int main() {
 
         Enemy en{};
         en.behavior = GameConstants::ENEMY_BEHAVIOR_BOUNCE;
-        en.x = static_cast<uint8_t>(wall_tx * GameConstants::TILE_SIZE - 8);
-        en.y = static_cast<uint8_t>(wall_ty * GameConstants::TILE_SIZE); // align vertically with wall tile
+        en.x = static_cast<int16_t>(wall_tx * GameConstants::TILE_SIZE - 8);
+        en.y = static_cast<int16_t>(wall_ty * GameConstants::TILE_SIZE); // align vertically with wall tile
         en.x_vel = 2;
         g.enemies.clear(); g.enemies.push_back(en);
 
@@ -41,8 +41,8 @@ int main() {
 
         Enemy en{};
         en.behavior = GameConstants::ENEMY_BEHAVIOR_LEAP;
-        en.x = static_cast<uint8_t>(ground_tx * GameConstants::TILE_SIZE);
-        en.y = static_cast<uint8_t>(ground_ty * GameConstants::TILE_SIZE - GameConstants::TILE_SIZE);
+        en.x = static_cast<int16_t>(ground_tx * GameConstants::TILE_SIZE);
+        en.y = static_cast<int16_t>(ground_ty * GameConstants::TILE_SIZE - GameConstants::TILE_SIZE);
         en.state = 0; // trigger a leap
         g.enemies.clear(); g.enemies.push_back(en);
 
@@ -68,8 +68,8 @@ int main() {
 
         Enemy en{};
         en.behavior = GameConstants::ENEMY_BEHAVIOR_ROLL;
-        en.x = static_cast<uint8_t>(wall_tx * GameConstants::TILE_SIZE - 20);
-        en.y = static_cast<uint8_t>(wall_ty * GameConstants::TILE_SIZE);
+        en.x = static_cast<int16_t>(wall_tx * GameConstants::TILE_SIZE - 20);
+        en.y = static_cast<int16_t>(wall_ty * GameConstants::TILE_SIZE);
         en.x_vel = 2;
         g.enemies.clear(); g.enemies.push_back(en);
 
@@ -122,8 +122,8 @@ int main() {
         Enemy en{};
         en.behavior = GameConstants::ENEMY_BEHAVIOR_BOUNCE;
         // Place enemy so its right edge is just left of the wall; a move of +2 would push into wall
-        en.x = static_cast<uint8_t>(wall_tx * GameConstants::TILE_SIZE - GameConstants::TILE_SIZE - 1);
-        en.y = static_cast<uint8_t>(wall_ty * GameConstants::TILE_SIZE);
+        en.x = static_cast<int16_t>(wall_tx * GameConstants::TILE_SIZE - GameConstants::TILE_SIZE - 1);
+        en.y = static_cast<int16_t>(wall_ty * GameConstants::TILE_SIZE);
         en.x_vel = 2;
         g.enemies.clear(); g.enemies.push_back(en);
 
@@ -145,7 +145,7 @@ int main() {
         g.current_map->solidity[ceiling_ty * GameConstants::SCREEN_WIDTH_TILES + ceiling_tx] = 1;
 
         // Cooldown behavior
-        Enemy en1{}; en1.behavior = GameConstants::ENEMY_BEHAVIOR_LEAP; en1.x = static_cast<uint8_t>(ground_tx * GameConstants::TILE_SIZE); en1.y = static_cast<uint8_t>(ground_ty * GameConstants::TILE_SIZE - GameConstants::TILE_SIZE); en1.state = 0;
+        Enemy en1{}; en1.behavior = GameConstants::ENEMY_BEHAVIOR_LEAP; en1.x = static_cast<int16_t>(ground_tx * GameConstants::TILE_SIZE); en1.y = static_cast<int16_t>(ground_ty * GameConstants::TILE_SIZE - GameConstants::TILE_SIZE); en1.state = 0;
         g.enemies.clear(); g.enemies.push_back(en1);
         Input input;
         g.update(input);
@@ -154,7 +154,7 @@ int main() {
         if (g.enemies[0].state != 11) { std::cerr << "Leap cooldown not decrementing\n"; return 1; }
 
         // Ceiling collision: place enemy under ceiling and force an upward velocity to hit it
-        Enemy en2{}; en2.behavior = GameConstants::ENEMY_BEHAVIOR_LEAP; en2.x = static_cast<uint8_t>(ceiling_tx * GameConstants::TILE_SIZE); en2.y = static_cast<uint8_t>((ceiling_ty + 1) * GameConstants::TILE_SIZE); en2.state = 0;
+        Enemy en2{}; en2.behavior = GameConstants::ENEMY_BEHAVIOR_LEAP; en2.x = static_cast<int16_t>(ceiling_tx * GameConstants::TILE_SIZE); en2.y = static_cast<int16_t>((ceiling_ty + 1) * GameConstants::TILE_SIZE); en2.state = 0;
         g.enemies.clear(); g.enemies.push_back(en2);
         g.enemies[0].y_vel = -8; // strong upward
         // Debug: print pre-update info
@@ -178,8 +178,8 @@ int main() {
         g.current_map->solidity[wall_ty * GameConstants::SCREEN_WIDTH_TILES + wall_tx] = 1;
 
         Enemy en{}; en.behavior = GameConstants::ENEMY_BEHAVIOR_ROLL;
-        en.x = static_cast<uint8_t>(wall_tx * GameConstants::TILE_SIZE - GameConstants::TILE_SIZE - 2);
-        en.y = static_cast<uint8_t>(wall_ty * GameConstants::TILE_SIZE);
+        en.x = static_cast<int16_t>(wall_tx * GameConstants::TILE_SIZE - GameConstants::TILE_SIZE - 2);
+        en.y = static_cast<int16_t>(wall_ty * GameConstants::TILE_SIZE);
         en.x_vel = 6; // faster than default
         g.enemies.clear(); g.enemies.push_back(en);
 

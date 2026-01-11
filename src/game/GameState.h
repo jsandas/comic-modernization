@@ -8,7 +8,7 @@
 
 // Enemy structure
 struct Enemy {
-    uint8_t y, x;
+    int16_t y, x; // pixel coordinates (wider than 8-bit to avoid overflow on large maps)
     int8_t y_vel, x_vel;
     uint8_t state;
     uint8_t behavior;
@@ -21,21 +21,21 @@ struct Enemy {
 
 // Fireball structure
 struct Fireball {
-    uint8_t y, x;
+    int16_t y, x; // pixel coordinates
     int8_t y_vel, x_vel;
     uint8_t facing;
 };
 
 // Item structure
 struct Item {
-    uint8_t y, x;
+    int16_t y, x; // pixel coordinates
     uint8_t type;
     bool collected;
 };
 
 // Door structure
 struct Door {
-    uint8_t y, x;
+    int16_t y, x; // pixel coordinates
     uint8_t destination_level;
     uint8_t destination_stage;
 };
@@ -105,6 +105,13 @@ struct GameState {
     // Camera position
     int16_t camera_x;
 
+private:
+    // Helper movement functions for enemies
+    static void stepHorizontal(GameState &gs, Enemy &en, int &px, int py, int enemy_w, int enemy_h);
+    static void stepHorizontalNoReverse(GameState &gs, Enemy &en, int &px, int py, int enemy_w, int enemy_h);
+    static void stepVertical(GameState &gs, Enemy &en, int &py, int px, int enemy_w, int enemy_h);
+
+public:
     GameState() 
         : comic_x(0), comic_y(0), comic_x_vel(0), comic_y_vel(0),
           comic_facing(1), comic_hp(GameConstants::MAX_HP),

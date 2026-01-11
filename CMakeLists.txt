@@ -107,4 +107,21 @@ add_custom_target(build_assets
 )
 
 # Add source subdirectory
+# Enable CTest at top-level so tests registered in subdirectories are discovered by `ctest`
+enable_testing()
 add_subdirectory(src)
+
+# Top-level convenience target to run all registered tests: `cmake --build . --target check`
+# Create only if not already defined by subprojects
+if(NOT TARGET check)
+    # Ensure test executables are built before running ctest
+    set(TEST_TARGETS collision-tests enemy-ai-tests player-damage-knockback-tests player-respawn-tests)
+    if(TARGET enemy-player-tests)
+        list(APPEND TEST_TARGETS enemy-player-tests)
+    endif()
+
+    add_custom_target(check
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+        DEPENDS ${TEST_TARGETS}
+    )
+endif()

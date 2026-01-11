@@ -2,6 +2,60 @@
 #include "../assets/MapLoader.h"
 #include "../input/Input.h"
 #include <iostream>
+#include <algorithm>
+
+// Static helper implementations moved into GameState as private static members
+void GameState::stepHorizontal(GameState &gs, Enemy &en, int &px, int py, int enemy_w, int enemy_h) {
+    int vx = en.x_vel;
+    if (vx == 0) return;
+    int dir = (vx > 0) ? 1 : -1;
+    int steps = std::abs(vx);
+    for (int s = 0; s < steps; ++s) {
+        if (!gs.isRectSolid(px + dir, py, enemy_w, enemy_h)) {
+            px += dir;
+        } else {
+            en.x_vel = -en.x_vel;
+            return;
+        }
+    }
+}
+
+void GameState::stepHorizontalNoReverse(GameState &gs, Enemy &en, int &px, int py, int enemy_w, int enemy_h) {
+    int vx = en.x_vel;
+    if (vx == 0) return;
+    int dir = (vx > 0) ? 1 : -1;
+    int steps = std::abs(vx);
+    for (int s = 0; s < steps; ++s) {
+        if (!gs.isRectSolid(px + dir, py, enemy_w, enemy_h)) {
+            px += dir;
+        } else {
+            en.x_vel = 0;
+            return;
+        }
+    }
+}
+
+void GameState::stepVertical(GameState &gs, Enemy &en, int &py, int px, int enemy_w, int enemy_h) {
+    int vy = en.y_vel;
+    if (vy == 0) return;
+    int dir = (vy > 0) ? 1 : -1;
+    int steps = std::abs(vy);
+    for (int s = 0; s < steps; ++s) {
+        if (!gs.isRectSolid(px, py + dir, enemy_w, enemy_h)) {
+            py += dir;
+        } else {
+            if (dir > 0) {
+                int ty = (py + dir + enemy_h) / GameConstants::TILE_SIZE;
+                py = ty * GameConstants::TILE_SIZE - enemy_h;
+            } else {
+                int ty = (py + dir) / GameConstants::TILE_SIZE;
+                py = (ty + 1) * GameConstants::TILE_SIZE;
+            }
+            en.y_vel = 0;
+            return;
+        }
+    }
+}
 
 static const struct LevelDescriptor {
     const char* tileset;
@@ -272,16 +326,17 @@ void GameState::update(const Input& input) {
         int ex = static_cast<int>(e.x);
         int ey = static_cast<int>(e.y);
 
+
+        int max_world_x = GameConstants::SCREEN_WIDTH_TILES * GameConstants::TILE_SIZE - enemy_w;
+        int max_world_y = GameConstants::SCREEN_HEIGHT_TILES * GameConstants::TILE_SIZE - enemy_h;
+
         switch (e.behavior) {
             case GameConstants::ENEMY_BEHAVIOR_BOUNCE: {
                 // Simple horizontal patrol that reverses when hitting a wall
                 if (e.x_vel == 0) e.x_vel = 1;
-                int target_x = ex + e.x_vel;
-                if (!isRectSolid(target_x, ey, enemy_w, enemy_h)) {
-                    e.x = static_cast<uint8_t>(target_x);
-                } else {
-                    e.x_vel = -e.x_vel;
-                }
+                stepHorizontal(*this, e, ex, ey, enemy_w, enemy_h);
+                ex = std::clamp(ex, 0, max_world_x);
+                e.x = static_cast<int16_t>(ex);
                 break;
             }
             case GameConstants::ENEMY_BEHAVIOR_LEAP: {
@@ -296,30 +351,17 @@ void GameState::update(const Input& input) {
                 int new_y_vel = static_cast<int>(e.y_vel) + 1;
                 if (new_y_vel > 8) new_y_vel = 8;
                 e.y_vel = static_cast<int8_t>(new_y_vel);
-                int target_y = ey + e.y_vel;
-                if (!isRectSolid(ex, target_y, enemy_w, enemy_h)) {
-                    e.y = static_cast<uint8_t>(target_y);
-                } else {
-                    if (e.y_vel > 0) {
-                        int ty = (target_y + enemy_h) / GameConstants::TILE_SIZE;
-                        e.y = static_cast<uint8_t>(ty * GameConstants::TILE_SIZE - enemy_h);
-                    } else if (e.y_vel < 0) {
-                        int ty = target_y / GameConstants::TILE_SIZE;
-                        e.y = static_cast<uint8_t>((ty + 1) * GameConstants::TILE_SIZE);
-                    }
-                    e.y_vel = 0;
-                }
+                stepVertical(*this, e, ey, ex, enemy_w, enemy_h);
+                ey = std::clamp(ey, 0, max_world_y);
+                e.y = static_cast<int16_t>(ey);
                 break;
             }
             case GameConstants::ENEMY_BEHAVIOR_ROLL: {
                 // Continuous horizontal movement; reverse on obstacle similar to bounce
                 if (e.x_vel == 0) e.x_vel = 2;
-                int target_x = ex + e.x_vel;
-                if (!isRectSolid(target_x, ey, enemy_w, enemy_h)) {
-                    e.x = static_cast<uint8_t>(target_x);
-                } else {
-                    e.x_vel = -e.x_vel;
-                }
+                stepHorizontal(*this, e, ex, ey, enemy_w, enemy_h);
+                ex = std::clamp(ex, 0, max_world_x);
+                e.x = static_cast<int16_t>(ex);
                 break;
             }
             case GameConstants::ENEMY_BEHAVIOR_SEEK: {
@@ -327,12 +369,9 @@ void GameState::update(const Input& input) {
                 if (comic_x > ex) e.x_vel = 1;
                 else if (comic_x < ex) e.x_vel = -1;
                 else e.x_vel = 0;
-                int target_x = ex + e.x_vel;
-                if (!isRectSolid(target_x, ey, enemy_w, enemy_h)) {
-                    e.x = static_cast<uint8_t>(target_x);
-                } else {
-                    e.x_vel = 0;
-                }
+                stepHorizontalNoReverse(*this, e, ex, ey, enemy_w, enemy_h);
+                ex = std::clamp(ex, 0, max_world_x);
+                e.x = static_cast<int16_t>(ex);
                 break;
             }
             case GameConstants::ENEMY_BEHAVIOR_SHY: {
@@ -340,12 +379,9 @@ void GameState::update(const Input& input) {
                 int dx = comic_x - ex;
                 if (std::abs(dx) < 32) {
                     e.x_vel = (dx > 0) ? -1 : 1;
-                    int target_x = ex + e.x_vel;
-                    if (!isRectSolid(target_x, ey, enemy_w, enemy_h)) {
-                        e.x = static_cast<uint8_t>(target_x);
-                    } else {
-                        e.x_vel = 0;
-                    }
+                    stepHorizontalNoReverse(*this, e, ex, ey, enemy_w, enemy_h);
+                    ex = std::clamp(ex, 0, max_world_x);
+                    e.x = static_cast<int16_t>(ex);
                 } else {
                     e.x_vel = 0;
                 }
@@ -424,5 +460,3 @@ void GameState::update(const Input& input) {
         }
     }
 }
-
-
