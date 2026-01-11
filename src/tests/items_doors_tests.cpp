@@ -161,6 +161,36 @@ int main() {
         if (g.current_stage_number != 0) { std::cerr << "Door test: destination stage not set correctly\n"; return 1; }
     }
 
+    // 3) Loading items from files: ensure parser reads sidecar files
+    {
+        GameState g;
+        std::filesystem::path dpath = std::filesystem::path("reference") / "assets";
+        // If the tests are run from the build directory (ctest), the relative path
+        // may not point to the repository source tree. Fall back to locating
+        // the reference assets relative to this source file when necessary.
+        if (!std::filesystem::exists(dpath)) {
+            auto src_root = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path();
+            dpath = src_root / "reference" / "assets";
+        }
+        std::vector<Item> items;
+        std::vector<Door> doors;
+        std::filesystem::path p = dpath / (std::string("forest0.pt") + std::string(".items"));
+        GameState::loadStageSidecarFile(p, items, doors);
+        if (items.empty()) { std::cerr << "Expected items parsed from file: " << p << "\n"; return 1; }
+        if (doors.empty()) { std::cerr << "Expected doors parsed from file: " << p << "\n"; return 1; }
+    }
+
+    // 4) Ensure loadLevel finds sidecar files in reference/levels even when dataPath doesn't include them
+    {
+        GameState g;
+        // Use an empty/nonexistent dataPath so loader must fall back to reference/levels
+        g.dataPath = std::filesystem::path("/nonexistent-data-path");
+        bool ok = g.loadLevel(GameConstants::LEVEL_NUMBER_FOREST, g.dataPath, 0);
+        if (!ok) { std::cerr << "loadLevel failed for forest (expected success)\n"; return 1; }
+        if (g.current_level->stage_items.size() <= 0) { std::cerr << "No stages found in loaded level\n"; return 1; }
+        if (g.current_level->stage_items[0].empty()) { std::cerr << "Expected items loaded from reference/levels for stage 0\n"; return 1; }
+    }
+
     std::cout << "Item and door mechanic tests passed" << std::endl;
     return 0;
 }

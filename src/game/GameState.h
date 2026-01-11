@@ -139,6 +139,9 @@ public:
     // stage_number is 0-based (0..2) and selects which stage/pt to set as current.
     bool loadLevel(int level_number, const std::filesystem::path& dataPath, int stage_number = 0);
 
+    // Load items/doors from a sidecar file. Public for testing.
+    static void loadStageSidecarFile(const std::filesystem::path& p, std::vector<Item>& items_out, std::vector<Door>& doors_out);
+
     // Stored data path used to load levels when using doors
     std::filesystem::path dataPath;
 };

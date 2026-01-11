@@ -3,6 +3,60 @@
 #include "../input/Input.h"
 #include <iostream>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
+#include <cctype>
+
+void GameState::loadStageSidecarFile(const std::filesystem::path& p, std::vector<Item>& items_out, std::vector<Door>& doors_out) {
+    if (!std::filesystem::exists(p)) return;
+    std::ifstream in(p);
+    if (!in) return;
+    std::string line;
+    while (std::getline(in, line)) {
+        // Trim leading whitespace
+        size_t start = 0;
+        while (start < line.size() && std::isspace((unsigned char)line[start])) ++start;
+        if (start >= line.size()) continue;
+        if (line[start] == '#' || line[start] == ';') continue;
+        std::istringstream ss(line.substr(start));
+        std::string tok;
+        ss >> tok;
+        if (tok == "ITEM") {
+            std::string name; int x = 0, y = 0;
+            if (!(ss >> name >> x >> y)) continue;
+            // Map name to item type
+            GameConstants::ItemType itype = GameConstants::ITEM_NONE;
+            if (name == "LANTERN") itype = GameConstants::ITEM_LANTERN;
+            else if (name == "BOOTS") itype = GameConstants::ITEM_BOOTS;
+            else if (name == "TELEPORT") itype = GameConstants::ITEM_TELEPORT;
+            else if (name == "CROWN") itype = GameConstants::ITEM_CROWN;
+            else if (name == "GOLD") itype = GameConstants::ITEM_GOLD;
+            else if (name == "GEM" || name == "GEMS") itype = GameConstants::ITEM_GEM;
+            else if (name == "CORKSCREW") itype = GameConstants::ITEM_CORKSCREW;
+            else if (name == "DOORKEY" || name == "DOOR_KEY") itype = GameConstants::ITEM_DOOR_KEY;
+            else if (name == "BLAST" || name == "BLASTOLA" || name == "BLASTOLA_COLA") itype = GameConstants::ITEM_BLASTOLA_COLA;
+            else if (name == "SHIELD") itype = GameConstants::ITEM_SHIELD;
+            else itype = GameConstants::ITEM_NONE;
+
+            if (itype != GameConstants::ITEM_NONE) {
+                Item it{};
+                it.x = static_cast<int16_t>(x);
+                it.y = static_cast<int16_t>(y);
+                it.type = static_cast<uint8_t>(itype);
+                it.collected = false;
+                items_out.push_back(it);
+            }
+        } else if (tok == "DOOR") {
+            int x=0, y=0, dl=0, ds=0;
+            if (!(ss >> x >> y >> dl >> ds)) continue;
+            Door d{}; d.x = static_cast<int16_t>(x); d.y = static_cast<int16_t>(y);
+            d.destination_level = static_cast<uint8_t>(dl);
+            d.destination_stage = static_cast<uint8_t>(ds);
+            doors_out.push_back(d);
+        }
+    }
+}
+
 
 // Static helper implementations moved into GameState as private static members
 void GameState::stepHorizontal(GameState &gs, Enemy &en, int &px, int py, int enemy_w, int enemy_h) {
@@ -103,6 +157,28 @@ bool GameState::loadLevel(int level_number, const std::filesystem::path& dataPat
     lvl->stage_items.clear();  lvl->stage_items.resize(num_stages);
     lvl->stage_doors.clear();  lvl->stage_doors.resize(num_stages);
 
+    // Try to load optional per-stage item/door files. File format (plain text):
+    //  - COMMENT lines start with # or ;
+    //  - ITEM <NAME> <x> <y>
+    //  - DOOR <x> <y> <dest_level> <dest_stage>
+    // For each stage, look for sidecar files (e.g., "forest0.pt.items"), or in a levels/ subdir
+    const std::string pts[] = { desc.pt0, desc.pt1, desc.pt2 };
+    for (size_t si = 0; si < num_stages && si < 3; ++si) {
+        std::string ptname = pts[si];
+        std::filesystem::path p1 = dataPath / (ptname + ".items");
+        std::filesystem::path p2 = dataPath / "levels" / (ptname + ".items");
+        // Also check repository reference/levels directory so sidecar files in
+        // the source tree (used during development) are found when dataPath
+        // doesn't contain them.
+        std::filesystem::path p3 = std::filesystem::current_path() / "reference" / "levels" / (ptname + ".items");
+        std::filesystem::path p4 = std::filesystem::path(__FILE__).parent_path().parent_path().parent_path() / "reference" / "levels" / (ptname + ".items");
+
+        loadStageSidecarFile(p1, lvl->stage_items[si], lvl->stage_doors[si]);
+        loadStageSidecarFile(p2, lvl->stage_items[si], lvl->stage_doors[si]);
+        loadStageSidecarFile(p3, lvl->stage_items[si], lvl->stage_doors[si]);
+        // Also check the repository source tree (useful when dataPath doesn't contain sidecars)
+        loadStageSidecarFile(p4, lvl->stage_items[si], lvl->stage_doors[si]);
+    }
     // Adopt level into game state
     current_level = std::move(lvl);
     this->dataPath = dataPath;
