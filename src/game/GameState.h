@@ -8,7 +8,7 @@
 
 // Enemy structure
 struct Enemy {
-    uint8_t y, x;
+    int16_t y, x; // pixel coordinates (wider than 8-bit to avoid overflow on large maps)
     int8_t y_vel, x_vel;
     uint8_t state;
     uint8_t behavior;
@@ -21,21 +21,21 @@ struct Enemy {
 
 // Fireball structure
 struct Fireball {
-    uint8_t y, x;
+    int16_t y, x; // pixel coordinates
     int8_t y_vel, x_vel;
     uint8_t facing;
 };
 
 // Item structure
 struct Item {
-    uint8_t y, x;
+    int16_t y, x; // pixel coordinates
     uint8_t type;
     bool collected;
 };
 
 // Door structure
 struct Door {
-    uint8_t y, x;
+    int16_t y, x; // pixel coordinates
     uint8_t destination_level;
     uint8_t destination_stage;
 };
