@@ -200,10 +200,18 @@ ctest  # Run tests
 #include "../include/physics.h"
 
 int main() {
-    // Test gravity application
-    int8_t velocity = 0;
-    apply_gravity(&velocity);
-    assert(velocity == 5);  // GRAVITY constant
+    // Test tile collision detection
+    init_test_level();
+    
+    // Get tile at a specific position
+    uint8_t tile = get_tile_at(0, 0);
+    
+    // Test solid tile detection (tile_id > 0x3E is solid)
+    assert(is_tile_solid(0x40) == true);
+    assert(is_tile_solid(0x3F) == false);
+    
+    // Verify gravity constant
+    static_assert(COMIC_GRAVITY == 5, "Gravity should be 5");
     
     std::cout << "All tests passed!" << std::endl;
     return 0;
@@ -284,13 +292,26 @@ for (int i = 0; i < 64; i++) {
 
 **Example:**
 ```cpp
-// Apply gravity to player velocity
-// Clamped to TERMINAL_VELOCITY to prevent excessive fall speed
-void apply_gravity(int8_t* velocity) {
-    *velocity += GRAVITY;
-    if (*velocity > TERMINAL_VELOCITY) {
-        *velocity = TERMINAL_VELOCITY;
+// Check if a tile is solid (passable or obstacle)
+// Tiles with ID > 0x3E are solid obstacles
+bool is_tile_solid(uint8_t tile_id) {
+    constexpr uint8_t TILESET_LAST_PASSABLE = 0x3E;
+    return tile_id > TILESET_LAST_PASSABLE;
+}
+
+// Get tile ID at game coordinates
+// Converts game units to tile coordinates and looks up in map
+uint8_t get_tile_at(uint8_t x, uint8_t y) {
+    // Each tile is 2 game units (16 pixels at 16px/unit)
+    uint8_t tile_x = x / 2;
+    uint8_t tile_y = y / 2;
+    
+    if (tile_x >= MAP_WIDTH_TILES || tile_y >= MAP_HEIGHT_TILES) {
+        return 0;  // Out of bounds = passable
     }
+    
+    uint16_t index = tile_y * MAP_WIDTH_TILES + tile_x;
+    return current_level_map[index];
 }
 ```
 
