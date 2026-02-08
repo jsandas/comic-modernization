@@ -107,11 +107,13 @@ bool load_tileset(const std::string& level_name) {
 **File Structure:**
 ```
 comic-modernization/
+├── .github/                # GitHub-specific files
+│   ├── copilot-instructions.md  # Instructions for GitHub Copilot
+│   ├── dependabot.yml          # Dependabot configuration
+│   └── workflows/              # GitHub Actions workflows
 ├── CMakeLists.txt          # Build configuration
 ├── MODERNIZATION_PLAN.md   # Project roadmap
 ├── README.md               # Setup and usage
-├── agent/
-│   └── AGENT_INSTRUCTIONS.md  # This file
 ├── include/                # Header files (.h)
 │   ├── physics.h
 │   ├── graphics.h
