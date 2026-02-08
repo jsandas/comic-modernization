@@ -5,12 +5,11 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(SDL2 REQUIRED)
 
-# Find SDL2_image using pkg-config
+# Find SDL2_image using pkg-config with IMPORTED_TARGET
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(SDL2_IMAGE REQUIRED SDL2_image)
+pkg_check_modules(SDL2_IMAGE REQUIRED IMPORTED_TARGET SDL2_image)
 
 include_directories(${SDL2_INCLUDE_DIRS})
-include_directories(${SDL2_IMAGE_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_executable(captain_comic 
@@ -22,11 +21,8 @@ add_executable(captain_comic
 # Link libraries
 target_link_libraries(captain_comic 
     ${SDL2_LIBRARIES}
-    ${SDL2_IMAGE_LIBRARIES}
+    PkgConfig::SDL2_IMAGE
 )
-
-# Add include directories from pkg-config
-target_include_directories(captain_comic PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
 
 enable_testing()
 
@@ -38,10 +34,8 @@ add_executable(comic_tests
 
 target_link_libraries(comic_tests
     ${SDL2_LIBRARIES}
-    ${SDL2_IMAGE_LIBRARIES}
+    PkgConfig::SDL2_IMAGE
 )
-
-target_include_directories(comic_tests PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
 
 add_test(NAME comic_tests COMMAND comic_tests)
 
