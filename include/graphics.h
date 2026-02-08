@@ -81,9 +81,9 @@ public:
     void render_sprite_centered_scaled(int screen_x, int screen_y, const Sprite& sprite, int width, int height, bool flip_h = false);
     
     // Cleanup
-    void cleanup();
     
 private:
+    void cleanup();
     SDL_Renderer* renderer;
     std::map<std::string, Tileset> tilesets;
     std::map<std::string, Sprite> sprites;
