@@ -203,7 +203,6 @@ int main(int argc, char* argv[]) {
     }
 
     // Cleanup
-    g_graphics->cleanup();
     delete g_graphics;
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
