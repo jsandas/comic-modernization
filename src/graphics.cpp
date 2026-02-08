@@ -75,6 +75,8 @@ TextureInfo GraphicsSystem::load_png(const std::string& filepath) {
         return info;
     }
     
+    std::cerr << "Loaded PNG from: " << loaded_from << std::endl;
+    
     info.texture = SDL_CreateTextureFromSurface(renderer, surface);
     if (info.texture == nullptr) {
         std::cerr << "Failed to create texture from surface: " << SDL_GetError() << std::endl;
