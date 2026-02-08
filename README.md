@@ -4,10 +4,11 @@ A modern recreation of the classic 1988 DOS game *The Adventures of Captain Comi
 
 ## Project Status
 
-**Current Phase:** Core Physics Implementation (Phase 2 - 30% complete)
+**Current Phase:** Core Physics Implementation (Phase 2 - 85% complete)
 
 ✅ Foundation complete (SDL2 setup, build system, basic game loop)  
-🔄 Physics system in progress (gravity, jumping, collisions)  
+✅ Physics system nearly complete (gravity, jumping, tile collision, camera)  
+🔄 Final physics polish (stage transitions deferred to Phase 4)  
 ⏸️ Remaining phases pending
 
 See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for complete roadmap and status.
@@ -86,9 +87,19 @@ cmake --build .
 
 - ✅ SDL2 window and event loop
 - ✅ Keyboard input handling (arrow keys, space)
-- ✅ Basic physics: gravity, jumping, ground collision
-- ✅ Player rendering (white rectangle placeholder)
-- 🔄 Physics refinements in progress
+- ✅ Complete physics system:
+  - ✅ Gravity and terminal velocity
+  - ✅ Jumping with original constants (GRAVITY=5, ACCELERATION=7)
+  - ✅ Ceiling collision detection
+  - ✅ Floor/ground collision with tiles
+  - ✅ Wall collision detection
+  - ✅ Mid-air momentum and drag
+  - ✅ Camera following with viewport scrolling
+- ✅ Tile-based collision system
+- ✅ Test level with platforms and walls
+- ✅ Player rendering (yellow rectangle, 2x4 game units)
+- ✅ Tile rendering (gray blocks for solid tiles)
+- ✅ Modular architecture (separate physics module)
 
 ## Roadmap
 
@@ -103,17 +114,19 @@ See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for the complete 10-phase imp
 7. ⏸️ **UI/Menus** - HUD, title, high scores
 8. ⏸️ **Game Loop** - Complete flow, states
 9. ⏸️ **Polish** - Testing, optimization
-10. ⏸️ **Release** - Documentation, packaging
-
+10. ├── main.cpp                # Entry point and game loop
+│   └── physics.cpp             # Physics engine (complete)
+├── include/
+│   └── physics.h               # Physics constants and functions
 ## Project Structure
 
 ```
 comic-modernization/
 ├── CMakeLists.txt              # Build configuration
 ├── README.md                   # This file
-├── MODERNIZATION_PLAN.md       # Detailed implementation plan
-├── src/
-│   └── main.cpp                # Entry point and game loop
+├── MODERNIZATION_PLAN.md       #  (on ground or in air)
+- **Space** - Jump (hold for higher jump)
+- **Close Window** - Exit game Entry point and game loop
 ├── include/                    # Headers (TBD)
 ├── assets/                     # Game assets (not in repo)
 └── build/                      # Build output (generated)
@@ -162,7 +175,15 @@ Assets: Original game assets © Michael Denio - consult original licensing
 ## Credits
 
 - **Original Game**: Michael Denio (1988)
-- **C Refactor Reference**: [jsandas/comic-c](https://github.com/jsandas/comic-c)
+- **C RefactPhase 2 Nearly Complete (85% - Physics System)
+
+**What's Working:**
+- Player falls with gravity and lands on platforms
+- Jump with space bar (hold for higher jumps)
+- Move left/right with arrow keys
+- Collision with walls, floors, and ceilings
+- Camera follows player as they move
+- Test level with ground, platforms, and walls(https://github.com/jsandas/comic-c)
 - **Modernization**: This project's contributors
 
 ## Links

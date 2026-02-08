@@ -1,64 +1,21 @@
 #include <SDL2/SDL.h>
 #include <iostream>
-
-// Physics constants
-#define COMIC_GRAVITY 5
-#define TERMINAL_VELOCITY 23
-#define JUMP_ACCELERATION 7
+#include "../include/physics.h"
 
 // Game state
-int comic_x = 100;
-int comic_y = 100;
+int comic_x = 20;
+int comic_y = 2;
 int8_t comic_y_vel = 0;
 int8_t comic_x_momentum = 0;
 uint8_t comic_facing = 1; // 1 right, 0 left
 uint8_t comic_animation = 0;
-uint8_t comic_is_falling_or_jumping = 0;
+uint8_t comic_is_falling_or_jumping = 1;
 uint8_t comic_jump_counter = 0;
-uint8_t comic_jump_power = 4;
+uint8_t comic_jump_power = JUMP_POWER_DEFAULT;
 uint8_t key_state_jump = 0;
 uint8_t key_state_left = 0;
 uint8_t key_state_right = 0;
-
-void handle_fall_or_jump() {
-    if (comic_is_falling_or_jumping) {
-        // Decrement jump counter
-        if (comic_jump_counter > 0) {
-            comic_jump_counter--;
-            if (key_state_jump) {
-                comic_y_vel -= JUMP_ACCELERATION;
-            }
-        }
-
-        // Integrate velocity
-        int delta_y = comic_y_vel >> 3;
-        comic_y += delta_y;
-
-        // Apply gravity
-        comic_y_vel += COMIC_GRAVITY;
-        if (comic_y_vel > TERMINAL_VELOCITY) {
-            comic_y_vel = TERMINAL_VELOCITY;
-        }
-
-        // Ground collision (simple)
-        if (comic_y >= 400) {
-            comic_y = 400;
-            comic_y_vel = 0;
-            comic_is_falling_or_jumping = 0;
-            comic_jump_counter = comic_jump_power;
-        }
-    } else {
-        // Recharge jump counter
-        comic_jump_counter = comic_jump_power;
-
-        // Start jump if pressed
-        if (key_state_jump) {
-            comic_is_falling_or_jumping = 1;
-            comic_jump_counter--;
-            comic_y_vel -= JUMP_ACCELERATION;
-        }
-    }
-}
+int camera_x = 0;
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
@@ -84,6 +41,9 @@ int main(int argc, char* argv[]) {
     bool quit = false;
     SDL_Event e;
 
+    // Initialize test level
+    init_test_level();
+
     while (!quit) {
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
@@ -106,17 +66,46 @@ int main(int argc, char* argv[]) {
         // Update physics
         handle_fall_or_jump();
 
-        // Simple horizontal movement
-        if (key_state_left) comic_x -= 1;
-        if (key_state_right) comic_x += 1;
+        // Ground movement (only when not in air)
+        if (!comic_is_falling_or_jumping) {
+            if (key_state_left) {
+                move_left();
+            }
+            if (key_state_right) {
+                move_right();
+            }
+        }
 
         // Clear screen
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_SetRenderDrawColor(renderer, 0, 64, 128, 255); // Blue background
         SDL_RenderClear(renderer);
 
-        // Render player as a rectangle
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        SDL_Rect playerRect = {comic_x, comic_y, 16, 16};
+        // Scale factor for visibility (original is 2 pixels per game unit)
+        const int SCALE = 16;
+
+        // Render tiles (simplified - just show solid tiles)
+        SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255); // Gray tiles
+        for (int ty = 0; ty < MAP_HEIGHT_TILES; ty++) {
+            for (int tx = 0; tx < MAP_WIDTH_TILES; tx++) {
+                // Only render tiles visible on camera
+                int world_x = tx * 2; // Tile x in game units
+                if (world_x >= camera_x && world_x < camera_x + PLAYFIELD_WIDTH) {
+                    uint8_t tile = get_tile_at(tx * 2, ty * 2);
+                    if (is_tile_solid(tile)) {
+                        int screen_x = (world_x - camera_x) * SCALE;
+                        int screen_y = ty * 2 * SCALE;
+                        SDL_Rect tileRect = {screen_x, screen_y, SCALE * 2, SCALE * 2};
+                        SDL_RenderFillRect(renderer, &tileRect);
+                    }
+                }
+            }
+        }
+
+        // Render player as a rectangle (camera-relative)
+        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); // Yellow player
+        int screen_x = (comic_x - camera_x) * SCALE;
+        int screen_y = comic_y * SCALE;
+        SDL_Rect playerRect = {screen_x, screen_y, SCALE * 2, SCALE * 4}; // 2x4 game units
         SDL_RenderFillRect(renderer, &playerRect);
 
         // Present

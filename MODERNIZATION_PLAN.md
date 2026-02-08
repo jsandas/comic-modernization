@@ -90,16 +90,17 @@ From jsandas/comic-c, key modules to port:
   - [x] Gravity application
   - [x] Jump counter logic
   - [x] Velocity integration
-  - [ ] Ceiling collision
-  - [x] Ground collision (simple placeholder)
-- [ ] Implement `move_left()` and `move_right()` from physics.c
-  - [ ] Wall collision detection
-  - [ ] Camera following
+  - [x] Ceiling collision
+  - [x] Ground collision with tile detection
+- [x] Implement `move_left()` and `move_right()` from physics.c
+  - [x] Wall collision detection
+  - [x] Camera following
   - [ ] Stage transitions
-- [ ] Port tile map system
-  - [ ] `address_of_tile_at_coordinates()`
-  - [ ] `is_tile_solid()`
-  - [ ] Tile data structures
+- [x] Port tile map system
+  - [x] `address_of_tile_at_coordinates()` (implemented as `get_tile_at()`)
+  - [x] `is_tile_solid()`
+  - [x] Tile data structures
+  - [x] Test level with platforms and walls
 
 **Reference Code:**
 - `src/physics.c`: Lines 59-398 (handle_fall_or_jump, movement functions)
@@ -107,10 +108,13 @@ From jsandas/comic-c, key modules to port:
 - `include/globals.h`: MAP_WIDTH, PLAYFIELD_WIDTH, etc.
 
 **Success Criteria:**
-- Player falls realistically with gravity
-- Jumping height matches original (constants validated)
-- Wall collision prevents movement through walls
-- Floor detection works accurately
+- ✅ Player falls realistically with gravity
+- ✅ Jumping height matches original (constants validated)
+- ✅ Wall collision prevents movement through walls
+- ✅ Floor detection works accurately
+- ✅ Camera follows player smoothly
+- ✅ Ceiling collision stops upward movement
+- [ ] Stage transitions at boundaries (deferred to Phase 4)
 
 ---
 
@@ -469,19 +473,19 @@ comic-modernization/
 ├── .gitignore               # Git ignore rules
 │
 ├── src/                     # Source code
-│   ├── main.cpp             # Entry point
-│   ├── game.cpp             # Main game class
-│   ├── physics.cpp          # Physics engine
-│   ├── actors.cpp           # Enemies, fireballs, items
-│   ├── graphics.cpp         # Rendering
-│   ├── audio.cpp            # Sound and music
-│   ├── level.cpp            # Level loading and management
-│   ├── input.cpp            # Input handling
+│   ├── main.cpp             # Entry point and game loop
+│   ├── physics.cpp          # Physics engine (COMPLETE)
+│   ├── game.cpp             # Main game class (TODO)
+│   ├── actors.cpp           # Enemies, fireballs, items (TODO)
+│   ├── graphics.cpp         # Rendering (TODO)
+│   ├── audio.cpp            # Sound and music (TODO)
+│   ├── level.cpp            # Level loading and management (TODO)
+│   ├── input.cpp            # Input handling (TODO)
 │   └── ...                  # Additional modules
 │
 ├── include/                 # Header files
+│   ├── physics.h            # Physics constants and functions (COMPLETE)
 │   ├── game.h
-│   ├── physics.h
 │   ├── actors.h
 │   ├── graphics.h
 │   ├── audio.h
@@ -538,26 +542,40 @@ comic-modernization/
   - Window and event loop
   - Input handling
 
-- Phase 2: Core Physics (30%)
+- Phase 2: Core Physics (85%)
   - Physics constants ported
-  - Basic gravity and jumping
-  - Simple ground collision
+  - Gravity and jumping complete
+  - Ceiling and floor collision with tiles
+  - Wall collision detection
+  - Camera following system
   - Jump counter logic
+  - Mid-air momentum
+  - Test level with platforms and walls
 
 ### In Progress 🔄
-- Phase 2: Core Physics (remaining 70%)
-  - Next: Ceiling collision
-  - Next: Horizontal movement with walls
-  - Next: Tile map integration
+- Phase 2: Core Physics (remaining 15%)
+  - Stage transitions (deferred to Phase 4 with full level system)
+  
+### Next Phase
+- Phase 3: Rendering System
+  - Load actual game assets (.TT2, .PT, .SHP files)
+  - Sprite animations
+  **Implemented complete physics system**:
+  - Separated physics into dedicated module (physics.cpp/physics.h)
+  - Full gravity and jumping with exact original constants
+  - Tile-based collision detection (ceiling, floor, walls)
+  - Camera following system with viewport scrolling
+  - Mid-air momentum and drag
+  - Test level with platforms, walls, and ground
+- Set up cross-platform build system with CMake
+- Modular architecture for maintainability
 
-### Not Started ⏸️
-- Phase 3-10 (pending completion of physics)
-
-### Recent Accomplishments
-- Created modernization plan with comprehensive phases
-- Established SDL2 development environment
-- Implemented basic player movement and physics
-- Set up cross-platform build system
+### Next Steps (Immediate)
+1. Begin Phase 3: Rendering System
+2. Port tile rendering from graphics.c
+3. Load .TT2 tileset files (EGA format)
+4. Convert EGA palette to SDL RGB colors
+5. Implement sprite system for player animations
 - Fixed compilation warnings (data type issues)
 
 ### Next Steps (Immediate)
