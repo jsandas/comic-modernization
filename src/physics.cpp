@@ -27,25 +27,30 @@ void init_test_level() {
     // Initialize empty level
     std::memset(current_tiles, 0, sizeof(current_tiles));
     
+    // Use tile ID 0x3F (last valid tile) for visible platforms
+    // Valid tile range is 0x00-0x3F (64 tiles from tileset)
+    // Update tileset_last_passable to mark 0x3F as solid for collision
+    tileset_last_passable = 0x3E;
+    
     // Create ground floor (row 9, bottom row)
     for (int x = 0; x < MAP_WIDTH_TILES; x++) {
-        current_tiles[9 * MAP_WIDTH_TILES + x] = 0x40; // Solid tile
+        current_tiles[9 * MAP_WIDTH_TILES + x] = 0x3F; // Solid platform tile
     }
     
     // Add some walls for testing
     // Left wall
     for (int y = 5; y < 9; y++) {
-        current_tiles[y * MAP_WIDTH_TILES + 10] = 0x40;
+        current_tiles[y * MAP_WIDTH_TILES + 10] = 0x3F;
     }
     
     // Right wall
     for (int y = 5; y < 9; y++) {
-        current_tiles[y * MAP_WIDTH_TILES + 30] = 0x40;
+        current_tiles[y * MAP_WIDTH_TILES + 30] = 0x3F;
     }
     
     // Platform in the middle
     for (int x = 15; x < 25; x++) {
-        current_tiles[7 * MAP_WIDTH_TILES + x] = 0x40;
+        current_tiles[7 * MAP_WIDTH_TILES + x] = 0x3F;
     }
 }
 
