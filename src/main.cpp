@@ -108,7 +108,6 @@ int main(int argc, char* argv[]) {
 
     while (!quit) {
         uint32_t current_time = SDL_GetTicks();
-        uint32_t delta_time = current_time - last_time;
         last_time = current_time;
 
         while (SDL_PollEvent(&e) != 0) {
