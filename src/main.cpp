@@ -111,11 +111,8 @@ int main(int argc, char* argv[]) {
     // Initialize test level
     init_test_level();
 
-    uint32_t last_time = SDL_GetTicks();
-
     while (!quit) {
         uint32_t current_time = SDL_GetTicks();
-        last_time = current_time;
 
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
