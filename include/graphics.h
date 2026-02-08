@@ -15,7 +15,7 @@ struct SpriteSheet;
 // Tile size in pixels (16x16 in original EGA)
 constexpr int TILE_SIZE = 16;
 
-// Text rendering structure
+// Texture rendering structure
 struct TextureInfo {
     SDL_Texture* texture;
     int width;
