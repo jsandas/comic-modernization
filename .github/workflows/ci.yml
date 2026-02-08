@@ -17,28 +17,28 @@ jobs:
         build_type: [Debug, Release]
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install dependencies (Ubuntu)
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake libsdl2-dev libsdl2-image-dev pkg-config
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libsdl2-dev libsdl2-image-dev pkg-config
 
-    - name: Install dependencies (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew install cmake sdl2 sdl2_image pkg-config
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake sdl2 sdl2_image pkg-config
 
-    - name: Configure CMake
-      run: |
-        cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+      - name: Configure CMake
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
-    - name: Build
-      run: |
-        cmake --build build --config ${{ matrix.build_type }}
+      - name: Build
+        run: |
+          cmake --build build --config ${{ matrix.build_type }}
 
-    - name: Run tests
-      working-directory: build
-      run: |
-        ctest --output-on-failure --build-config ${{ matrix.build_type }}
+      - name: Run tests
+        working-directory: build
+        run: |
+          ctest --output-on-failure --build-config ${{ matrix.build_type }}
