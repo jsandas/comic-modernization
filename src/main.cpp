@@ -149,6 +149,7 @@ int main(int argc, char* argv[]) {
         }
 
         // Update animation based on state
+        Animation* previous_animation = current_animation;
         if (comic_is_falling_or_jumping) {
             current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
         } else {
@@ -157,6 +158,12 @@ int main(int argc, char* argv[]) {
             } else {
                 current_animation = comic_facing ? &comic_idle_right : &comic_idle_left;
             }
+        }
+
+        // Reset animation state when switching to a new animation
+        if (current_animation && current_animation != previous_animation) {
+            current_animation->current_frame = 0;
+            current_animation->frame_start_time = current_time;
         }
 
         if (current_animation) {
