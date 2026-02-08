@@ -189,7 +189,9 @@ int main(int argc, char* argv[]) {
                 // Player is 2 units wide, 4 units tall in game coords
                 int screen_x = (comic_x - camera_x) * RENDER_SCALE + RENDER_SCALE;  // Center X
                 int screen_y = comic_y * RENDER_SCALE + RENDER_SCALE * 2; // Center Y
-                g_graphics->render_sprite_centered(screen_x, screen_y, frame->sprite);
+                int player_width = RENDER_SCALE * 2;
+                int player_height = RENDER_SCALE * 4;
+                g_graphics->render_sprite_centered_scaled(screen_x, screen_y, frame->sprite, player_width, player_height);
             }
         }
 

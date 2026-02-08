@@ -217,10 +217,22 @@ void GraphicsSystem::render_sprite(int screen_x, int screen_y, const Sprite& spr
     SDL_RenderCopyEx(renderer, sprite.texture.texture, nullptr, &dst_rect, 0, nullptr, flip);
 }
 
+void GraphicsSystem::render_sprite_scaled(int screen_x, int screen_y, const Sprite& sprite, int width, int height, bool flip_h) {
+    SDL_Rect dst_rect = {screen_x, screen_y, width, height};
+    SDL_RendererFlip flip = flip_h ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+    SDL_RenderCopyEx(renderer, sprite.texture.texture, nullptr, &dst_rect, 0, nullptr, flip);
+}
+
 void GraphicsSystem::render_sprite_centered(int screen_x, int screen_y, const Sprite& sprite, bool flip_h) {
     int x = screen_x - sprite.width / 2;
     int y = screen_y - sprite.height / 2;
     render_sprite(x, y, sprite, flip_h);
+}
+
+void GraphicsSystem::render_sprite_centered_scaled(int screen_x, int screen_y, const Sprite& sprite, int width, int height, bool flip_h) {
+    int x = screen_x - width / 2;
+    int y = screen_y - height / 2;
+    render_sprite_scaled(x, y, sprite, width, height, flip_h);
 }
 
 void GraphicsSystem::cleanup() {
