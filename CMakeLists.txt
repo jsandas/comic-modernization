@@ -28,3 +28,20 @@ target_link_libraries(captain_comic
 # Add include directories from pkg-config
 target_include_directories(captain_comic PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
 
+enable_testing()
+
+add_executable(comic_tests
+    tests/test_main.cpp
+    src/physics.cpp
+    src/graphics.cpp
+)
+
+target_link_libraries(comic_tests
+    ${SDL2_LIBRARIES}
+    ${SDL2_IMAGE_LIBRARIES}
+)
+
+target_include_directories(comic_tests PRIVATE ${SDL2_IMAGE_INCLUDE_DIRS})
+
+add_test(NAME comic_tests COMMAND comic_tests)
+
