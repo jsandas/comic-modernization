@@ -7,7 +7,7 @@
 // Global graphics system
 GraphicsSystem* g_graphics = nullptr;
 
-GraphicsSystem::GraphicsSystem(SDL_Renderer* renderer) : renderer(renderer) {}
+GraphicsSystem::GraphicsSystem(SDL_Renderer* renderer) : renderer(renderer), img_inited(false) {}
 
 GraphicsSystem::~GraphicsSystem() {
     cleanup();
@@ -20,6 +20,7 @@ bool GraphicsSystem::initialize() {
         std::cerr << "SDL_image initialization failed: " << IMG_GetError() << std::endl;
         return false;
     }
+    img_inited = true;
     return true;
 }
 
@@ -275,7 +276,11 @@ void GraphicsSystem::cleanup() {
     }
     sprites.clear();
     
-    IMG_Quit();
+    // Only quit SDL_image once to prevent double-quit errors
+    if (img_inited) {
+        IMG_Quit();
+        img_inited = false;
+    }
 }
 
 void Tileset::cleanup() {
