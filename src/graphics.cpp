@@ -57,7 +57,6 @@ TextureInfo GraphicsSystem::load_png(const std::string& filepath) {
     };
     
     SDL_Surface* surface = nullptr;
-    std::string loaded_from;
     
     for (const auto& path : possible_paths) {
         // Check if file exists
@@ -65,7 +64,6 @@ TextureInfo GraphicsSystem::load_png(const std::string& filepath) {
         if (f.good()) {
             surface = IMG_Load(path.c_str());
             if (surface) {
-                loaded_from = path;
                 break;
             }
         }
@@ -75,8 +73,6 @@ TextureInfo GraphicsSystem::load_png(const std::string& filepath) {
         std::cerr << "Failed to load image: " << filepath << " - " << IMG_GetError() << std::endl;
         return info;
     }
-    
-    std::cerr << "Loaded PNG from: " << loaded_from << std::endl;
     
     info.texture = SDL_CreateTextureFromSurface(renderer, surface);
     if (info.texture == nullptr) {
