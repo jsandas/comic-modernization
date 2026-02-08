@@ -1,5 +1,6 @@
 #include "../include/graphics.h"
 #include <SDL2/SDL_image.h>
+#include <cstdio>
 #include <iostream>
 #include <fstream>
 
@@ -98,7 +99,7 @@ bool GraphicsSystem::load_tileset(const std::string& level_name) {
     // Load all 64 tiles (0x00-0x3F) for the level
     for (int i = 0; i < 64; i++) {
         char tile_name[64];
-        snprintf(tile_name, sizeof(tile_name), "%s.tt2-%02x.png", level_name.c_str(), i);
+        std::snprintf(tile_name, sizeof(tile_name), "%s.tt2-%02x.png", level_name.c_str(), i);
         
         std::string filepath = get_asset_path(tile_name);
         TextureInfo texture = load_png(filepath);
@@ -161,6 +162,7 @@ Animation GraphicsSystem::create_animation(const std::vector<std::string>& sprit
     Animation anim;
     anim.looping = looping;
     anim.frame_start_time = SDL_GetTicks();
+    int safe_duration_ms = frame_duration_ms > 0 ? frame_duration_ms : 1;
     
     for (const auto& sprite_name : sprite_names) {
         if (load_sprite(sprite_name, direction)) {
@@ -168,7 +170,7 @@ Animation GraphicsSystem::create_animation(const std::vector<std::string>& sprit
             if (sprite) {
                 AnimationFrame frame;
                 frame.sprite = *sprite;
-                frame.duration_ms = frame_duration_ms;
+                frame.duration_ms = safe_duration_ms;
                 anim.frames.push_back(frame);
             }
         }
@@ -188,15 +190,36 @@ void GraphicsSystem::update_animation(Animation& anim, uint32_t current_time) {
     if (anim.frames.empty()) {
         return;
     }
-    
-    uint32_t elapsed = current_time - anim.frame_start_time;
-    int current_frame = (elapsed / anim.frames[0].duration_ms) % anim.frames.size();
-    
-    if (!anim.looping && current_frame >= anim.frames.size() - 1) {
-        current_frame = anim.frames.size() - 1;
+
+    int total_duration = 0;
+    for (const auto& frame : anim.frames) {
+        total_duration += frame.duration_ms > 0 ? frame.duration_ms : 1;
     }
-    
-    anim.current_frame = current_frame;
+
+    if (total_duration <= 0) {
+        anim.current_frame = 0;
+        return;
+    }
+
+    uint32_t elapsed = current_time - anim.frame_start_time;
+    if (anim.looping) {
+        elapsed %= static_cast<uint32_t>(total_duration);
+    } else if (elapsed >= static_cast<uint32_t>(total_duration)) {
+        anim.current_frame = static_cast<int>(anim.frames.size()) - 1;
+        return;
+    }
+
+    uint32_t cursor = 0;
+    for (size_t i = 0; i < anim.frames.size(); i++) {
+        int frame_duration = anim.frames[i].duration_ms > 0 ? anim.frames[i].duration_ms : 1;
+        cursor += static_cast<uint32_t>(frame_duration);
+        if (elapsed < cursor) {
+            anim.current_frame = static_cast<int>(i);
+            return;
+        }
+    }
+
+    anim.current_frame = static_cast<int>(anim.frames.size()) - 1;
 }
 
 void GraphicsSystem::render_tile(int screen_x, int screen_y, Tileset* tileset, uint8_t tile_id, int scale) {
