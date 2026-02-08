@@ -74,7 +74,7 @@ public:
     void update_animation(Animation& anim, uint32_t current_time);
     
     // Rendering
-    void render_tile(int screen_x, int screen_y, Tileset* tileset, uint8_t tile_id);
+    void render_tile(int screen_x, int screen_y, Tileset* tileset, uint8_t tile_id, int scale);
     void render_sprite(int screen_x, int screen_y, const Sprite& sprite, bool flip_h = false);
     void render_sprite_centered(int screen_x, int screen_y, const Sprite& sprite, bool flip_h = false);
     

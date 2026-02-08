@@ -199,14 +199,15 @@ void GraphicsSystem::update_animation(Animation& anim, uint32_t current_time) {
     anim.current_frame = current_frame;
 }
 
-void GraphicsSystem::render_tile(int screen_x, int screen_y, Tileset* tileset, uint8_t tile_id) {
+void GraphicsSystem::render_tile(int screen_x, int screen_y, Tileset* tileset, uint8_t tile_id, int scale) {
     if (tileset == nullptr) return;
     
     auto it = tileset->tiles.find(tile_id);
     if (it == tileset->tiles.end()) return;
     
     const TextureInfo& texture = it->second;
-    SDL_Rect dst_rect = {screen_x, screen_y, texture.width, texture.height};
+    int pixel_size = scale * 2; // 2 game units per tile
+    SDL_Rect dst_rect = {screen_x, screen_y, pixel_size, pixel_size};
     SDL_RenderCopy(renderer, texture.texture, nullptr, &dst_rect);
 }
 

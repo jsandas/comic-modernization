@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
                     int screen_x = (world_x - camera_x) * RENDER_SCALE;
                     int screen_y = ty * 2 * RENDER_SCALE;
                     
-                    g_graphics->render_tile(screen_x, screen_y, tileset, tile);
+                    g_graphics->render_tile(screen_x, screen_y, tileset, tile, RENDER_SCALE);
                 }
             }
         }
@@ -188,7 +188,7 @@ int main(int argc, char* argv[]) {
                 // Center player on screen relative to camera
                 // Player is 2 units wide, 4 units tall in game coords
                 int screen_x = (comic_x - camera_x) * RENDER_SCALE + RENDER_SCALE;  // Center X
-                int screen_y = (comic_y - camera_x) * RENDER_SCALE + RENDER_SCALE * 2; // Center Y
+                int screen_y = comic_y * RENDER_SCALE + RENDER_SCALE * 2; // Center Y
                 g_graphics->render_sprite_centered(screen_x, screen_y, frame->sprite);
             }
         }
