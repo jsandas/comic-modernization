@@ -220,17 +220,17 @@ int main() {
 
 ## Implementation Guidelines
 
-### Current Phase: Phase 3 (Rendering System)
+### Current Phase
 
-See [MODERNIZATION_PLAN.md](../MODERNIZATION_PLAN.md) for complete roadmap.
+See [MODERNIZATION_PLAN.md](../MODERNIZATION_PLAN.md) for the authoritative roadmap, current phase, and detailed priorities.
 
-**Priority:**
-1. Implement graphics system (textures, sprites, animations)
-2. Implement rendering pipeline (tiles, player sprite)
-3. Add animation state machine
-4. Test with forest level assets
+**Priority (keep in sync with MODERNIZATION_PLAN.md):**
+- Focus on the tasks marked as "In Progress" in MODERNIZATION_PLAN.md.
+- When the roadmap phase or priorities change, update this section accordingly so contributors work on the intended focus areas.
 
 ### Common Patterns
+
+**Animation State Machine:**
 
 **Animation State Machine:**
 ```cpp
