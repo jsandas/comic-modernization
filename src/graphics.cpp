@@ -98,6 +98,7 @@ bool GraphicsSystem::load_tileset(const std::string& level_name) {
     }
     
     Tileset tileset;
+    std::vector<int> missing_tiles;
     
     // Load all 64 tiles (0x00-0x3F) for the level
     for (int i = 0; i < 64; i++) {
@@ -109,11 +110,26 @@ bool GraphicsSystem::load_tileset(const std::string& level_name) {
         
         if (texture.texture != nullptr) {
             tileset.tiles[i] = texture;
+        } else {
+            missing_tiles.push_back(i);
         }
     }
     
+    if (!missing_tiles.empty()) {
+        std::cerr << "Warning: Failed to load " << missing_tiles.size() 
+                  << " tiles for tileset '" << level_name << "': ";
+        for (size_t i = 0; i < missing_tiles.size() && i < 10; i++) {
+            std::cerr << "0x" << std::hex << missing_tiles[i] << std::dec;
+            if (i < missing_tiles.size() - 1 && i < 9) std::cerr << ", ";
+        }
+        if (missing_tiles.size() > 10) {
+            std::cerr << " ... and " << (missing_tiles.size() - 10) << " more";
+        }
+        std::cerr << std::endl;
+    }
+    
     if (tileset.tiles.empty()) {
-        std::cerr << "Failed to load any tiles for tileset: " << level_name << std::endl;
+        std::cerr << "Error: Failed to load any tiles for tileset: " << level_name << std::endl;
         return false;
     }
     
