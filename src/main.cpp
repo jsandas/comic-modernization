@@ -75,16 +75,23 @@ int main(int argc, char* argv[]) {
     }
 
     // Pre-load player sprites and create animations
-    g_graphics->load_sprite("comic_standing", "right");
-    g_graphics->load_sprite("comic_standing", "left");
-    g_graphics->load_sprite("comic_running_1", "right");
-    g_graphics->load_sprite("comic_running_1", "left");
-    g_graphics->load_sprite("comic_running_2", "right");
-    g_graphics->load_sprite("comic_running_2", "left");
-    g_graphics->load_sprite("comic_running_3", "right");
-    g_graphics->load_sprite("comic_running_3", "left");
-    g_graphics->load_sprite("comic_jumping", "right");
-    g_graphics->load_sprite("comic_jumping", "left");
+    const char* sprite_names[] = {
+        "comic_standing", "comic_running_1", "comic_running_2", "comic_running_3", "comic_jumping"
+    };
+    const char* directions[] = {"right", "left"};
+    
+    for (const char* sprite : sprite_names) {
+        for (const char* dir : directions) {
+            if (!g_graphics->load_sprite(sprite, dir)) {
+                std::cerr << "Failed to load sprite: " << sprite << " (" << dir << ")" << std::endl;
+                delete g_graphics;
+                SDL_DestroyRenderer(renderer);
+                SDL_DestroyWindow(window);
+                SDL_Quit();
+                return 1;
+            }
+        }
+    }
 
     // Create animations
     comic_idle_right = g_graphics->create_animation({"comic_standing"}, "right", 100, true);
