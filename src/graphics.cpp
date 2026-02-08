@@ -28,17 +28,20 @@ std::string GraphicsSystem::get_asset_path(const std::string& filename) {
     // 2. ../assets/ (from build directory)
     // 3. ../../assets/ (from nested build directory)
 
-    // Note: In a full implementation, we might want to check if the file actually exists 
-    // at these paths and return the first valid one. For now, we'll just return the first 
-    // path and assume the user runs from the correct directory.
-    // std::string paths[] = {
-    //     "assets/" + filename,
-    //     "../assets/" + filename,
-    //     "../../assets/" + filename
-    // };
-    
-    // For now, just return the first path - the user should run from the correct directory
-    return "assets/" + filename;
+    std::string paths[] = {
+        "assets/" + filename,
+        "../assets/" + filename,
+        "../../assets/" + filename
+    };
+
+    for (const auto& path : paths) {
+        std::ifstream f(path);
+        if (f.good()) {
+            return path;
+        }
+    }
+
+    return paths[0];
 }
 
 TextureInfo GraphicsSystem::load_png(const std::string& filepath) {
