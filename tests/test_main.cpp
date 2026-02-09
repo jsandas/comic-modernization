@@ -187,15 +187,8 @@ struct TestCase {
     void (*run)();
 };
 
-static bool matches_filter(const std::string& name, const std::string& filter) {
-    if (filter.empty()) {
-        return true;
-    }
-    return name.find(filter) != std::string::npos;
-}
-
-static int run_tests(const std::string& filter) {
-    const TestCase tests[] = {
+static const std::vector<TestCase>& test_registry() {
+    static const std::vector<TestCase> tests = {
         {"physics_tiles", test_physics_tiles},
         {"animation_looping", test_animation_looping},
         {"animation_non_looping", test_animation_non_looping},
@@ -204,9 +197,19 @@ static int run_tests(const std::string& filter) {
         {"jump_recharge", test_jump_recharge},
         {"jump_height", test_jump_height}
     };
+    return tests;
+}
 
+static bool matches_filter(const std::string& name, const std::string& filter) {
+    if (filter.empty()) {
+        return true;
+    }
+    return name.find(filter) != std::string::npos;
+}
+
+static int run_tests(const std::string& filter) {
     int tests_run = 0;
-    for (const auto& test : tests) {
+    for (const auto& test : test_registry()) {
         if (!matches_filter(test.name, filter)) {
             continue;
         }
@@ -255,16 +258,7 @@ int main(int argc, char** argv) {
     }
 
     if (list_only) {
-        const TestCase tests[] = {
-            {"physics_tiles", test_physics_tiles},
-            {"animation_looping", test_animation_looping},
-            {"animation_non_looping", test_animation_non_looping},
-            {"animation_zero_duration", test_animation_zero_duration},
-            {"jump_edge_trigger", test_jump_edge_trigger},
-            {"jump_recharge", test_jump_recharge},
-            {"jump_height", test_jump_height}
-        };
-        for (const auto& test : tests) {
+        for (const auto& test : test_registry()) {
             std::cout << test.name << std::endl;
         }
         return 0;
