@@ -14,6 +14,7 @@ uint8_t comic_is_falling_or_jumping = 1;
 uint8_t comic_jump_counter = 0;
 uint8_t comic_jump_power = JUMP_POWER_DEFAULT;
 uint8_t key_state_jump = 0;
+uint8_t previous_key_state_jump = 0;
 uint8_t key_state_left = 0;
 uint8_t key_state_right = 0;
 int camera_x = 0;
@@ -145,6 +146,20 @@ int main(int argc, char* argv[]) {
         // This decouples physics from rendering rate
         while (tick_accumulator >= MS_PER_TICK) {
             tick_accumulator -= MS_PER_TICK;
+
+            // Initiate jump if conditions are met (edge-triggered):
+            // - Player is standing (not in air)
+            // - Jump key transitioned from released to pressed
+            // - Jump power is recharged (counter matches power)
+            if (comic_is_falling_or_jumping == 0 && 
+                key_state_jump && !previous_key_state_jump && 
+                comic_jump_counter == comic_jump_power) {
+                // Start a new jump (physics handles acceleration on first tick)
+                comic_is_falling_or_jumping = 1;
+            }
+
+            // Store previous jump key state for next tick
+            previous_key_state_jump = key_state_jump;
 
             // Update physics (once per tick)
             handle_fall_or_jump();

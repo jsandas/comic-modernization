@@ -182,14 +182,10 @@ void handle_fall_or_jump() {
             }
         }
     } else {
-        // Recharge jump counter when on ground
-        comic_jump_counter = comic_jump_power;
-        
-        // Start jump if pressed
-        if (key_state_jump) {
-            comic_is_falling_or_jumping = 1;
-            comic_jump_counter--;
-            comic_y_vel -= JUMP_ACCELERATION;
+        // Recharge jump counter when on ground and not pressing jump
+        // (jump initiation now happens in main loop with edge detection)
+        if (!key_state_jump) {
+            comic_jump_counter = comic_jump_power;
         }
         
         // Check if we should start falling (no ground beneath)
