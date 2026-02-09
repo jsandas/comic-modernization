@@ -111,8 +111,17 @@ int main(int argc, char* argv[]) {
     // Initialize test level
     init_test_level();
 
+    // Tick timing - match original game's ~18.2 Hz tick rate
+    constexpr double TICK_RATE = 18.2065; // PC timer interrupt rate (1193182/65536 Hz)
+    constexpr double MS_PER_TICK = 1000.0 / TICK_RATE; // ~54.93 ms per tick
+    uint32_t last_tick_time = SDL_GetTicks();
+    double tick_accumulator = 0.0;
+
     while (!quit) {
         uint32_t current_time = SDL_GetTicks();
+        uint32_t delta_time = current_time - last_tick_time;
+        last_tick_time = current_time;
+        tick_accumulator += delta_time;
 
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
@@ -132,20 +141,27 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // Update physics
-        handle_fall_or_jump();
+        // Process physics ticks at ~18.2 Hz (original game speed)
+        // This decouples physics from rendering rate
+        while (tick_accumulator >= MS_PER_TICK) {
+            tick_accumulator -= MS_PER_TICK;
 
-        // Ground movement (only when not in air)
-        if (!comic_is_falling_or_jumping) {
-            if (key_state_left) {
-                move_left();
-            }
-            if (key_state_right) {
-                move_right();
+            // Update physics (once per tick)
+            handle_fall_or_jump();
+
+            // Ground movement (only when not in air)
+            if (!comic_is_falling_or_jumping) {
+                if (key_state_left) {
+                    move_left();
+                }
+                if (key_state_right) {
+                    move_right();
+                }
             }
         }
 
-        // Update animation based on state
+        // Update animation based on state (updates every frame for smooth animation)
+        current_time = SDL_GetTicks();
         Animation* previous_animation = current_animation;
         if (comic_is_falling_or_jumping) {
             current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
@@ -208,7 +224,7 @@ int main(int argc, char* argv[]) {
         // Present
         SDL_RenderPresent(renderer);
 
-        // Cap to 60 FPS
+        // Cap rendering to ~60 FPS while physics runs at 18.2 Hz
         SDL_Delay(16);
     }
 
