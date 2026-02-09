@@ -37,5 +37,12 @@ target_link_libraries(comic_tests
     PkgConfig::SDL2_IMAGE
 )
 
-add_test(NAME comic_tests COMMAND comic_tests)
+add_test(NAME comic_tests_all COMMAND comic_tests)
+add_test(NAME comic_tests_physics_tiles COMMAND comic_tests --filter physics_tiles)
+add_test(NAME comic_tests_animation_looping COMMAND comic_tests --filter animation_looping)
+add_test(NAME comic_tests_animation_non_looping COMMAND comic_tests --filter animation_non_looping)
+add_test(NAME comic_tests_animation_zero_duration COMMAND comic_tests --filter animation_zero_duration)
+add_test(NAME comic_tests_jump_edge_trigger COMMAND comic_tests --filter jump_edge_trigger)
+add_test(NAME comic_tests_jump_recharge COMMAND comic_tests --filter jump_recharge)
+add_test(NAME comic_tests_jump_height COMMAND comic_tests --filter jump_height)
 
