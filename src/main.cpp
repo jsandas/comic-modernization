@@ -154,19 +154,8 @@ int main(int argc, char* argv[]) {
             tick_accumulator -= MS_PER_TICK;
             ticks_processed++;
 
-            // Initiate jump if conditions are met (edge-triggered):
-            // - Player is standing (not in air)
-            // - Jump key transitioned from released to pressed
-            // - Jump power is recharged (counter matches power)
-            if (comic_is_falling_or_jumping == 0 && 
-                key_state_jump && !previous_key_state_jump && 
-                comic_jump_counter == comic_jump_power) {
-                // Start a new jump (physics handles acceleration on first tick)
-                comic_is_falling_or_jumping = 1;
-            }
-
-            // Store previous jump key state for next tick
-            previous_key_state_jump = key_state_jump;
+            // Process jump input once per tick (edge-triggered)
+            process_jump_input();
 
             // Update physics (once per tick)
             handle_fall_or_jump();

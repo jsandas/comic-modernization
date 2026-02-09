@@ -116,13 +116,7 @@ static void reset_physics_state() {
 }
 
 static void simulate_tick() {
-    if (comic_is_falling_or_jumping == 0 &&
-        key_state_jump && !previous_key_state_jump &&
-        comic_jump_counter == comic_jump_power) {
-        comic_is_falling_or_jumping = 1;
-    }
-
-    previous_key_state_jump = key_state_jump;
+    process_jump_input();
     handle_fall_or_jump();
 }
 
@@ -158,6 +152,7 @@ static void test_jump_edge_trigger() {
     comic_is_falling_or_jumping = 0;
     comic_y = 14;
     comic_y_vel = 0;
+    comic_jump_counter = comic_jump_power;
     key_state_jump = 1;
     simulate_tick();
     check(comic_is_falling_or_jumping == 0, "holding jump should not retrigger");

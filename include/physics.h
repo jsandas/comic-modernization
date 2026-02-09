@@ -20,6 +20,7 @@ constexpr int PLAYFIELD_WIDTH = 24;        // Visible playfield width in game un
 constexpr int PLAYFIELD_HEIGHT = 20;       // Visible playfield height in game units
 
 // Functions
+void process_jump_input();
 void handle_fall_or_jump();
 void move_left();
 void move_right();
