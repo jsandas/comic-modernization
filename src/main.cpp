@@ -115,6 +115,8 @@ int main(int argc, char* argv[]) {
     // Tick timing - match original game's ~18.2 Hz tick rate
     constexpr double TICK_RATE = 18.2065; // PC timer interrupt rate (1193182/65536 Hz)
     constexpr double MS_PER_TICK = 1000.0 / TICK_RATE; // ~54.93 ms per tick
+    constexpr int MAX_TICKS_PER_FRAME = 5;
+    constexpr double MAX_ACCUMULATED_MS = MS_PER_TICK * MAX_TICKS_PER_FRAME;
     uint32_t last_tick_time = SDL_GetTicks();
     double tick_accumulator = 0.0;
 
@@ -123,6 +125,9 @@ int main(int argc, char* argv[]) {
         uint32_t delta_time = current_time - last_tick_time;
         last_tick_time = current_time;
         tick_accumulator += delta_time;
+        if (tick_accumulator > MAX_ACCUMULATED_MS) {
+            tick_accumulator = MAX_ACCUMULATED_MS;
+        }
 
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
@@ -144,8 +149,10 @@ int main(int argc, char* argv[]) {
 
         // Process physics ticks at ~18.2 Hz (original game speed)
         // This decouples physics from rendering rate
-        while (tick_accumulator >= MS_PER_TICK) {
+        int ticks_processed = 0;
+        while (tick_accumulator >= MS_PER_TICK && ticks_processed < MAX_TICKS_PER_FRAME) {
             tick_accumulator -= MS_PER_TICK;
+            ticks_processed++;
 
             // Initiate jump if conditions are met (edge-triggered):
             // - Player is standing (not in air)
@@ -240,7 +247,11 @@ int main(int argc, char* argv[]) {
         SDL_RenderPresent(renderer);
 
         // Cap rendering to ~60 FPS while physics runs at 18.2 Hz
-        SDL_Delay(16);
+        if (tick_accumulator >= MS_PER_TICK) {
+            SDL_Delay(0);
+        } else {
+            SDL_Delay(16);
+        }
     }
 
     // Cleanup
