@@ -243,8 +243,14 @@ int main(int argc, char** argv) {
         std::string arg = argv[i];
         if (arg == "--list") {
             list_only = true;
-        } else if (arg == "--filter" && i + 1 < argc) {
-            filter = argv[++i];
+        } else if (arg == "--filter") {
+            if (i + 1 < argc) {
+                filter = argv[++i];
+            } else {
+                std::cerr << "--filter requires a value" << std::endl;
+                print_usage(argv[0]);
+                return 1;
+            }
         } else if (arg.rfind("--filter=", 0) == 0) {
             filter = arg.substr(std::string("--filter=").size());
         } else if (arg == "--help" || arg == "-h") {
