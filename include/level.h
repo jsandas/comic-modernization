@@ -2,6 +2,7 @@
 #define LEVEL_H
 
 #include <cstdint>
+#include <string>
 
 /* Maximum counts */
 constexpr int MAX_NUM_ENEMIES = 4;
@@ -107,6 +108,7 @@ struct stage_t {
     uint8_t exit_r;                 /* Right exit: target stage number or EXIT_UNUSED */
     door_t doors[MAX_NUM_DOORS];    /* Up to 3 doors per stage */
     enemy_record_t enemies[MAX_NUM_ENEMIES]; /* Up to 4 enemies per stage */
+    uint8_t tiles[128 * 10];        /* 128×10 tile map (1280 bytes) */
 };
 
 /**
@@ -148,5 +150,17 @@ extern const level_t level_data_cave;
 extern const level_t level_data_shed;
 extern const level_t level_data_castle;
 extern const level_t level_data_comp;
+
+/**
+ * Get level data by name (case-insensitive)
+ * Returns nullptr if level name not found
+ */
+const level_t* get_level_by_name(const std::string& level_name);
+
+/**
+ * Get level data by level number (0-7)
+ * Returns nullptr if level number is invalid
+ */
+const level_t* get_level_by_number(int level_number);
 
 #endif /* LEVEL_H */

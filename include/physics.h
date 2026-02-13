@@ -2,6 +2,7 @@
 #define PHYSICS_H
 
 #include <cstdint>
+#include <string>
 
 // Physics constants (from jsandas/comic-c physics.h)
 constexpr int COMIC_GRAVITY = 5;           // Gravity (units of 1/8 game units per tick)
@@ -27,6 +28,7 @@ void move_right();
 
 // Tile system
 void init_test_level();
+bool load_level_from_file(const std::string& level_name, int stage_number);
 uint8_t get_tile_at(uint8_t x, uint8_t y);
 bool is_tile_solid(uint8_t tile_id);
 

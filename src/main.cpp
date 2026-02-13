@@ -2,6 +2,7 @@
 #include <iostream>
 #include "../include/physics.h"
 #include "../include/graphics.h"
+#include "../include/level_loader.h"
 
 // Game state
 int comic_x = 20;
@@ -109,8 +110,20 @@ int main(int argc, char* argv[]) {
     bool quit = false;
     SDL_Event e;
 
-    // Initialize test level
-    init_test_level();
+    // Initialize all level data (loads tile maps from PT files)
+    if (!initialize_level_data()) {
+        std::cerr << "Warning: Some level data failed to load. Game may have missing tiles." << std::endl;
+    }
+
+    // Load the first playable level (FOREST, stage 0)
+    // Note: Each level has 3 stages (0-2)
+    std::string current_game_level = "FOREST";
+    int current_stage = 0;
+    
+    if (!load_level_from_file(current_game_level, current_stage)) {
+        std::cerr << "Failed to load game level. Falling back to test level." << std::endl;
+        init_test_level();  // Fall back to test level if file loading fails
+    }
 
     // Tick timing - match original game's ~18.2 Hz tick rate
     constexpr double TICK_RATE = 18.2065; // PC timer interrupt rate (1193182/65536 Hz)

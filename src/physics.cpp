@@ -1,6 +1,10 @@
 #include "../include/physics.h"
+#include "../include/level_loader.h"
 #include <algorithm>
 #include <cstring>
+#include <cstdio>
+#include <iostream>
+#include <vector>
 
 // External game state (defined in main.cpp)
 extern int comic_x;
@@ -272,4 +276,28 @@ void move_right() {
     if (camera_x < max_camera_x && relative_x > (PLAYFIELD_WIDTH / 2)) {
         camera_x++;
     }
+}
+bool load_level_from_file(const std::string& level_name, int stage_number) {
+    // Get the level data (which has been pre-loaded with tiles)
+    level_t* level = get_level_data(level_name);
+    if (!level) {
+        std::cerr << "Failed to load level: " << level_name << std::endl;
+        return false;
+    }
+    
+    // Validate stage number
+    if (stage_number < 0 || stage_number >= 3) {
+        std::cerr << "Invalid stage number: " << stage_number << " (must be 0-2)" << std::endl;
+        return false;
+    }
+    
+    // Copy tile data from the stage structure to the current map
+    const stage_t& stage = level->stages[stage_number];
+    std::memcpy(current_tiles, stage.tiles, sizeof(current_tiles));
+    
+    // Set last_passable from the level's metadata
+    // For now, use default value 0x3F (tiles > 0x3F are solid)
+    tileset_last_passable = 0x3F;
+    
+    return true;
 }

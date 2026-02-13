@@ -6,6 +6,8 @@
  */
 
 #include "level.h"
+#include <algorithm>
+#include <cctype>
 
 /* ===== LAKE Level Data ===== */
 const level_t level_data_lake = {
@@ -694,3 +696,29 @@ const level_t* const level_data_pointers[8] = {
     &level_data_castle,
     &level_data_comp
 };
+
+/* ===== Level Accessor Functions ===== */
+
+const level_t* get_level_by_name(const std::string& level_name) {
+    std::string lower_name = level_name;
+    std::transform(lower_name.begin(), lower_name.end(), lower_name.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+    
+    if (lower_name == "lake") return &level_data_lake;
+    if (lower_name == "forest") return &level_data_forest;
+    if (lower_name == "space") return &level_data_space;
+    if (lower_name == "base") return &level_data_base;
+    if (lower_name == "cave") return &level_data_cave;
+    if (lower_name == "shed") return &level_data_shed;
+    if (lower_name == "castle") return &level_data_castle;
+    if (lower_name == "comp") return &level_data_comp;
+    
+    return nullptr;
+}
+
+const level_t* get_level_by_number(int level_number) {
+    if (level_number < 0 || level_number >= 8) {
+        return nullptr;
+    }
+    return level_data_pointers[level_number];
+}
