@@ -17,7 +17,6 @@ add_executable(captain_comic
     src/physics.cpp
     src/graphics.cpp
     src/level_data.cpp
-    src/file_loader.cpp
     src/level_loader.cpp
     src/level_tiles.cpp
 )
@@ -35,7 +34,6 @@ add_executable(comic_tests
     src/physics.cpp
     src/graphics.cpp
     src/level_data.cpp
-    src/file_loader.cpp
     src/level_loader.cpp
     src/level_tiles.cpp
 )
