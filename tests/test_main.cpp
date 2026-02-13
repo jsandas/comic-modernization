@@ -4,6 +4,7 @@
 #include <vector>
 #include "../include/physics.h"
 #include "../include/graphics.h"
+#include "../include/level.h"
 
 // Provide required globals from main.cpp for physics.cpp linkage.
 int comic_x = 0;
@@ -19,7 +20,16 @@ uint8_t key_state_jump = 0;
 uint8_t previous_key_state_jump = 0;
 uint8_t key_state_left = 0;
 uint8_t key_state_right = 0;
+uint8_t key_state_open = 0;
 int camera_x = 0;
+
+// Door system globals for test linkage
+uint8_t comic_has_door_key = 0;
+uint8_t current_level_number = 1;
+uint8_t current_stage_number = 0;
+const level_t* current_level_ptr = nullptr;
+int8_t source_door_level_number = -1;
+int8_t source_door_stage_number = -1;
 
 static int failures = 0;
 

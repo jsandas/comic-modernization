@@ -3,6 +3,7 @@
 #include "../include/physics.h"
 #include "../include/graphics.h"
 #include "../include/level_loader.h"
+#include "../include/doors.h"
 
 // Game state
 int comic_x = 20;
@@ -18,7 +19,18 @@ uint8_t key_state_jump = 0;
 uint8_t previous_key_state_jump = 0;
 uint8_t key_state_left = 0;
 uint8_t key_state_right = 0;
+uint8_t key_state_open = 0;  // Open key for doors
 int camera_x = 0;
+
+// Item collection state
+uint8_t comic_has_door_key = 0;  // 1 if player has door key, 0 otherwise
+
+// Level/stage transition tracking
+uint8_t current_level_number = 1;  // Current level (0=LAKE, 1=FOREST, etc.)
+uint8_t current_stage_number = 0;  // Current stage (0-2 per level)
+const level_t* current_level_ptr = nullptr;  // Pointer to current level data
+int8_t source_door_level_number = -1;  // Set when entering via door for reciprocal positioning
+int8_t source_door_stage_number = -1;
 
 // Rendering scale: 16 pixels per game unit
 const int RENDER_SCALE = 16;
@@ -150,12 +162,15 @@ int main(int argc, char* argv[]) {
                     case SDLK_LEFT: key_state_left = 1; break;
                     case SDLK_RIGHT: key_state_right = 1; break;
                     case SDLK_SPACE: key_state_jump = 1; break;
+                    case SDLK_o: key_state_open = 1; break;  // 'O' key to open doors
+                    case SDLK_k: comic_has_door_key = 1; break;  // 'K' key for debugging (grant door key)
                 }
             } else if (e.type == SDL_KEYUP) {
                 switch (e.key.keysym.sym) {
                     case SDLK_LEFT: key_state_left = 0; break;
                     case SDLK_RIGHT: key_state_right = 0; break;
                     case SDLK_SPACE: key_state_jump = 0; break;
+                    case SDLK_o: key_state_open = 0; break;  // 'O' key to open doors
                 }
             }
         }
@@ -180,6 +195,11 @@ int main(int argc, char* argv[]) {
                 }
                 if (key_state_right) {
                     move_right();
+                }
+                
+                // Check for door activation (only when on ground, not jumping)
+                if (key_state_open) {
+                    check_door_activation();
                 }
             }
         }

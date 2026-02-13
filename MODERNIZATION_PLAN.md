@@ -193,10 +193,10 @@ From jsandas/comic-c, key modules to port:
   - [x] ~~.EGA file loader~~ → System graphics converted to PNG
   - **Note:** All binary formats pre-converted to modern formats (PNG/GIF)
   - **Note:** Tile data embedded in executable as C++ arrays (stage 2 migration)
-- [ ] Implement door system from doors.c
-  - [ ] Door collision detection
-  - [ ] Key checking
-  - [ ] Level/stage transitions
+- [x] Implement door system from doors.c
+  - [x] Door collision detection
+  - [x] Key checking
+  - [x] Level/stage transitions (stubs for now)
 
 **Reference Code:**
 - `src/level_data.c`: All level definitions
@@ -208,6 +208,13 @@ From jsandas/comic-c, key modules to port:
 - Stage transitions work (left/right boundaries)
 - Doors function properly with keys
 - Level data matches original exactly
+
+**Implementation Notes:**
+- Door collision detection checks Y coordinate (exact) and X coordinate (within 3 units)
+- Door Key requirement implemented
+- Door transitions call load_new_level() or load_new_stage() as appropriate
+- Source door tracking for reciprocal positioning (entering target stage via door)
+- 'O' key opens doors, 'K' key grants door key (debug)
 
 ---
 
@@ -606,14 +613,15 @@ comic-modernization/
    - Tile maps: Compiled as C++ hex arrays in level_tiles.cpp
    - Graphics: All converted to PNG (tiles and sprites)
    - Zero runtime binary file I/O
-2. Implement stage loading integration
+2. ✅ COMPLETED: Door system implemented
+   - Door collision detection (Y exact, X within 3 units)
+   - Door Key requirement checking
+   - Level/stage transition stubs (activate_door)
+3. Implement stage loading integration
    - Load levels from level_data_pointers array
    - Load stage maps into memory (from compiled tile data)
    - Initialize enemies from stage data
-3. Implement door system from doors.c
-   - Door collision detection
-   - Key-based door logic
-   - Level/stage transitions
+   - Find reciprocal door when entering via door
 4. Add stage boundary transitions
    - Left/right exit handling
    - Level scrolling between stages

@@ -93,3 +93,21 @@ level_t* get_level_data(const std::string& level_name) {
     
     return nullptr;
 }
+
+/**
+ * load_new_level - Load a new level's data and assets
+ * 
+ * TODO: Implement full level loading when door transitions are added
+ */
+void load_new_level() {
+    // Placeholder - will be implemented when we need level transitions
+}
+
+/**
+ * load_new_stage - Load a new stage within the current level
+ * 
+ * TODO: Implement stage loading when door transitions are added
+ */
+void load_new_stage() {
+    // Placeholder - will be implemented when we need stage transitions
+}

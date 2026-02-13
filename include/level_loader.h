@@ -28,4 +28,24 @@ level_t* get_level_data(const std::string& level_name);
  */
 void set_level_asset_path(const std::string& path);
 
+/**
+ * load_new_level - Load a new level's data and assets
+ * 
+ * Loads the tileset, enemy sprites, and initializes the first stage.
+ * Called when a door leads to a different level.
+ * 
+ * TODO: Implement full level loading
+ */
+void load_new_level();
+
+/**
+ * load_new_stage - Load a new stage within the current level
+ * 
+ * Loads the stage tile map, enemies, and items.
+ * Called for stage transitions within same level or at startup.
+ * 
+ * TODO: Implement stage loading
+ */
+void load_new_stage();
+
 #endif /* LEVEL_LOADER_H */
