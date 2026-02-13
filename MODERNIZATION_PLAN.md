@@ -186,11 +186,13 @@ From jsandas/comic-c, key modules to port:
   - [x] Stage data (3 stages per level) with exact values
   - [x] Enemy spawn data for all stages
   - [x] Item placement for all stages
-- [ ] Port file loaders from file_loaders.c
-  - [ ] .PT file loader (tile maps)
-  - [ ] .TT2 file loader (tilesets)
-  - [ ] .SHP file loader (sprites)
-  - [ ] .EGA file loader (fullscreen)
+- [x] Port file loaders from file_loaders.c (NO LONGER NEEDED)
+  - [x] ~~.PT file loader~~ → Tile maps compiled as C++ hex arrays
+  - [x] ~~.TT2 file loader~~ → Tilesets converted to PNG
+  - [x] ~~.SHP file loader~~ → Sprites converted to PNG/GIF
+  - [x] ~~.EGA file loader~~ → System graphics converted to PNG
+  - **Note:** All binary formats pre-converted to modern formats (PNG/GIF)
+  - **Note:** Tile data embedded in executable as C++ arrays (stage 2 migration)
 - [ ] Implement door system from doors.c
   - [ ] Door collision detection
   - [ ] Key checking
@@ -600,13 +602,13 @@ comic-modernization/
 - Fixed compilation warnings (data type issues)
 
 ### Next Steps (Immediate - Phase 4)
-1. Port file loaders from file_loaders.c
-   - .PT file loader (tile maps from binary files)
-   - .TT2 file loader (tilesets from binary files)
-   - .SHP file loader (sprite graphics from binary files)
+1. ✅ COMPLETED: File loaders obsolete (all assets pre-converted)
+   - Tile maps: Compiled as C++ hex arrays in level_tiles.cpp
+   - Graphics: All converted to PNG (tiles and sprites)
+   - Zero runtime binary file I/O
 2. Implement stage loading integration
    - Load levels from level_data_pointers array
-   - Load stage maps into memory
+   - Load stage maps into memory (from compiled tile data)
    - Initialize enemies from stage data
 3. Implement door system from doors.c
    - Door collision detection
