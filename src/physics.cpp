@@ -12,6 +12,7 @@ extern uint8_t comic_is_falling_or_jumping;
 extern uint8_t comic_jump_counter;
 extern uint8_t comic_jump_power;
 extern uint8_t key_state_jump;
+extern uint8_t previous_key_state_jump;
 extern uint8_t key_state_left;
 extern uint8_t key_state_right;
 extern int camera_x;
@@ -69,6 +70,16 @@ uint8_t get_tile_at(uint8_t x, uint8_t y) {
 
 bool is_tile_solid(uint8_t tile_id) {
     return tile_id > tileset_last_passable;
+}
+
+void process_jump_input() {
+    if (comic_is_falling_or_jumping == 0 &&
+        key_state_jump && !previous_key_state_jump &&
+        comic_jump_counter == comic_jump_power) {
+        comic_is_falling_or_jumping = 1;
+    }
+
+    previous_key_state_jump = key_state_jump;
 }
 
 void handle_fall_or_jump() {
@@ -182,14 +193,10 @@ void handle_fall_or_jump() {
             }
         }
     } else {
-        // Recharge jump counter when on ground
-        comic_jump_counter = comic_jump_power;
-        
-        // Start jump if pressed
-        if (key_state_jump) {
-            comic_is_falling_or_jumping = 1;
-            comic_jump_counter--;
-            comic_y_vel -= JUMP_ACCELERATION;
+        // Recharge jump counter when on ground and not pressing jump
+        // (jump initiation now happens in main loop with edge detection)
+        if (!key_state_jump) {
+            comic_jump_counter = comic_jump_power;
         }
         
         // Check if we should start falling (no ground beneath)

@@ -508,12 +508,18 @@ SDL_Quit();
   add_executable(comic_tests tests/test_main.cpp)
   target_link_libraries(comic_tests ${SDL2_LIBRARIES} PkgConfig::SDL2_IMAGE)
   
-  add_test(NAME comic_tests COMMAND comic_tests)
+  add_test(NAME comic_tests_all COMMAND comic_tests)
+  add_test(NAME comic_tests_jump_height COMMAND comic_tests --filter jump_height)
   ```
 
 - **Run with CTest**:
   ```bash
   cd build && ctest --output-on-failure
+  ```
+
+- **Run a single test**:
+  ```bash
+  cd build && ctest -R comic_tests_jump_height --output-on-failure
   ```
 
 ## Common Pitfalls to Avoid

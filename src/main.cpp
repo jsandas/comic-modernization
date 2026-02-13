@@ -14,6 +14,7 @@ uint8_t comic_is_falling_or_jumping = 1;
 uint8_t comic_jump_counter = 0;
 uint8_t comic_jump_power = JUMP_POWER_DEFAULT;
 uint8_t key_state_jump = 0;
+uint8_t previous_key_state_jump = 0;
 uint8_t key_state_left = 0;
 uint8_t key_state_right = 0;
 int camera_x = 0;
@@ -111,8 +112,22 @@ int main(int argc, char* argv[]) {
     // Initialize test level
     init_test_level();
 
+    // Tick timing - match original game's ~18.2 Hz tick rate
+    constexpr double TICK_RATE = 18.2065; // PC timer interrupt rate (1193182/65536 Hz)
+    constexpr double MS_PER_TICK = 1000.0 / TICK_RATE; // ~54.93 ms per tick
+    constexpr int MAX_TICKS_PER_FRAME = 5;
+    constexpr double MAX_ACCUMULATED_MS = MS_PER_TICK * MAX_TICKS_PER_FRAME;
+    uint32_t last_tick_time = SDL_GetTicks();
+    double tick_accumulator = 0.0;
+
     while (!quit) {
         uint32_t current_time = SDL_GetTicks();
+        uint32_t delta_time = current_time - last_tick_time;
+        last_tick_time = current_time;
+        tick_accumulator += delta_time;
+        if (tick_accumulator > MAX_ACCUMULATED_MS) {
+            tick_accumulator = MAX_ACCUMULATED_MS;
+        }
 
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
@@ -132,20 +147,32 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // Update physics
-        handle_fall_or_jump();
+        // Process physics ticks at ~18.2 Hz (original game speed)
+        // This decouples physics from rendering rate
+        int ticks_processed = 0;
+        while (tick_accumulator >= MS_PER_TICK && ticks_processed < MAX_TICKS_PER_FRAME) {
+            tick_accumulator -= MS_PER_TICK;
+            ticks_processed++;
 
-        // Ground movement (only when not in air)
-        if (!comic_is_falling_or_jumping) {
-            if (key_state_left) {
-                move_left();
-            }
-            if (key_state_right) {
-                move_right();
+            // Process jump input once per tick (edge-triggered)
+            process_jump_input();
+
+            // Update physics (once per tick)
+            handle_fall_or_jump();
+
+            // Ground movement (only when not in air)
+            if (!comic_is_falling_or_jumping) {
+                if (key_state_left) {
+                    move_left();
+                }
+                if (key_state_right) {
+                    move_right();
+                }
             }
         }
 
-        // Update animation based on state
+        // Update animation based on state (updates every frame for smooth animation)
+        current_time = SDL_GetTicks();
         Animation* previous_animation = current_animation;
         if (comic_is_falling_or_jumping) {
             current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
@@ -208,8 +235,12 @@ int main(int argc, char* argv[]) {
         // Present
         SDL_RenderPresent(renderer);
 
-        // Cap to 60 FPS
-        SDL_Delay(16);
+        // Cap rendering to ~60 FPS while physics runs at 18.2 Hz
+        if (tick_accumulator >= MS_PER_TICK) {
+            SDL_Delay(0);
+        } else {
+            SDL_Delay(16);
+        }
     }
 
     // Cleanup
