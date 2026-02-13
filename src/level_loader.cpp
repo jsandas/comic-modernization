@@ -8,8 +8,22 @@
 
 #include "level_loader.h"
 #include "level_tiles.h"
+#include "physics.h"
+#include "graphics.h"
 #include <cstring>
 #include <iostream>
+
+/* External game state (defined in main.cpp) */
+extern int comic_x;
+extern int comic_y;
+extern int8_t comic_y_vel;
+extern uint8_t current_level_number;
+extern uint8_t current_stage_number;
+extern const level_t* current_level_ptr;
+extern int8_t source_door_level_number;
+extern int8_t source_door_stage_number;
+extern int camera_x;
+extern GraphicsSystem* g_graphics;
 
 /* Runtime mutable copies of level data */
 static level_t runtime_levels[8];
@@ -97,17 +111,112 @@ level_t* get_level_data(const std::string& level_name) {
 /**
  * load_new_level - Load a new level's data and assets
  * 
- * TODO: Implement full level loading when door transitions are added
+ * Called when transitioning to a different level (via door or level change).
+ * Loads the level's tileset graphics and initializes the first stage.
  */
 void load_new_level() {
-    // Placeholder - will be implemented when we need level transitions
+    if (!levels_initialized) {
+        std::cerr << "Error: Level data not initialized!" << std::endl;
+        return;
+    }
+    
+    /* Validate level number */
+    if (current_level_number >= 8) {
+        std::cerr << "Error: Invalid level number: " << static_cast<int>(current_level_number) << std::endl;
+        return;
+    }
+    
+    /* Set current level pointer */
+    current_level_ptr = source_levels[current_level_number];
+    
+    /* Load tileset graphics for this level */
+    if (g_graphics) {
+        std::string level_name = level_names[current_level_number];
+        if (!g_graphics->load_tileset(level_name)) {
+            std::cerr << "Warning: Failed to load tileset for level: " << level_name << std::endl;
+            /* Continue anyway - may work with existing tileset */
+        }
+    }
+    
+    /* Load the current stage */
+    load_new_stage();
 }
 
 /**
  * load_new_stage - Load a new stage within the current level
  * 
- * TODO: Implement stage loading when door transitions are added
+ * Called when transitioning to a different stage (via door, stage boundary, or level load).
+ * Loads the stage tile map into the physics system and positions Comic appropriately.
  */
 void load_new_stage() {
-    // Placeholder - will be implemented when we need stage transitions
+    if (!levels_initialized) {
+        std::cerr << "Error: Level data not initialized!" << std::endl;
+        return;
+    }
+    
+    if (!current_level_ptr) {
+        std::cerr << "Error: No level loaded!" << std::endl;
+        return;
+    }
+    
+    /* Validate stage number */
+    if (current_stage_number >= 3) {
+        std::cerr << "Error: Invalid stage number: " << static_cast<int>(current_stage_number) << std::endl;
+        return;
+    }
+    
+    /* Load stage tiles into physics system */
+    std::string level_name = level_names[current_level_number];
+    if (!load_level_from_file(level_name, current_stage_number)) {
+        std::cerr << "Error: Failed to load stage tiles for " << level_name 
+                  << " stage " << static_cast<int>(current_stage_number) << std::endl;
+        return;
+    }
+    
+    /* Handle entry positioning */
+    if (source_door_level_number >= 0) {
+        /* Entering via door - find reciprocal door and position Comic there */
+        const stage_t& stage = current_level_ptr->stages[current_stage_number];
+        
+        /* Search for door that points back to source level/stage */
+        bool found_door = false;
+        for (int i = 0; i < MAX_NUM_DOORS; i++) {
+            const door_t& door = stage.doors[i];
+            
+            /* Skip unused doors */
+            if (door.x == DOOR_UNUSED || door.y == DOOR_UNUSED) {
+                continue;
+            }
+            
+            /* Check if this door links back to where we came from */
+            if (door.target_level == source_door_level_number && 
+                door.target_stage == source_door_stage_number) {
+                /* Found reciprocal door - position Comic in front of it */
+                comic_x = door.x + 1;  /* Center Comic in door (door is 2 units wide) */
+                comic_y = door.y;
+                comic_y_vel = 0;
+                
+                /* Set camera to follow Comic */
+                camera_x = comic_x - (PLAYFIELD_WIDTH / 2);
+                if (camera_x < 0) camera_x = 0;
+                if (camera_x > MAP_WIDTH - PLAYFIELD_WIDTH) {
+                    camera_x = MAP_WIDTH - PLAYFIELD_WIDTH;
+                }
+                
+                found_door = true;
+                break;
+            }
+        }
+        
+        if (!found_door) {
+            std::cerr << "Warning: Could not find reciprocal door from level " 
+                      << static_cast<int>(source_door_level_number) 
+                      << " stage " << static_cast<int>(source_door_stage_number) << std::endl;
+        }
+        
+        /* Clear door entry flag */
+        source_door_level_number = -1;
+        source_door_stage_number = -1;
+    }
+    /* else: Not entering via door, Comic position unchanged (stage boundary or initial spawn) */
 }

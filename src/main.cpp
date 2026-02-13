@@ -76,18 +76,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Load tileset for the current level (Forest is the first playable level)
-    // Note: LEVEL_NUMBER_LAKE = 0, but LEVEL_NUMBER_FOREST = 1 is the actual starting level
-    std::string current_level = "forest";
-    if (!g_graphics->load_tileset(current_level)) {
-        std::cerr << "Failed to load tileset for level: " << current_level << std::endl;
-        delete g_graphics;
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
-
     // Pre-load player sprites and create animations
     const char* sprite_names[] = {
         "comic_standing", "comic_running_1", "comic_running_2", "comic_running_3", "comic_jumping"
@@ -127,14 +115,23 @@ int main(int argc, char* argv[]) {
         std::cerr << "Warning: Level data initialization failed." << std::endl;
     }
 
-    // Load the first playable level (FOREST, stage 0)
-    // Note: Each level has 3 stages (0-2)
-    std::string current_game_level = "FOREST";
-    int current_stage = 0;
+    // Load the first playable level (FOREST = level 1, stage 0)
+    // Level numbers: 0=LAKE, 1=FOREST, 2=SPACE, 3=BASE, 4=CAVE, 5=SHED, 6=CASTLE, 7=COMP
+    current_level_number = LEVEL_NUMBER_FOREST;  // Forest is the first playable level
+    current_stage_number = 0;
+    source_door_level_number = -1;  // Not entering via door
     
-    if (!load_level_from_file(current_game_level, current_stage)) {
+    // Set initial spawn position
+    comic_x = 14;
+    comic_y = 12;
+    comic_y_vel = 0;
+    
+    // Load the level and stage
+    load_new_level();
+    
+    if (!current_level_ptr) {
         std::cerr << "Failed to load game level. Falling back to test level." << std::endl;
-        init_test_level();  // Fall back to test level if file loading fails
+        init_test_level();  // Fall back to test level if loading fails
     }
 
     // Tick timing - match original game's ~18.2 Hz tick rate
@@ -231,8 +228,10 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        // Get current tileset
-        Tileset* tileset = g_graphics->get_tileset(current_level);
+        // Get current tileset from loaded level
+        const char* level_names[] = {"lake", "forest", "space", "base", "cave", "shed", "castle", "comp"};
+        std::string current_level_name = (current_level_number < 8) ? level_names[current_level_number] : "forest";
+        Tileset* tileset = g_graphics->get_tileset(current_level_name);
 
         // Render tiles
         for (int ty = 0; ty < MAP_HEIGHT_TILES; ty++) {

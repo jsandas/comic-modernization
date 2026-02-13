@@ -215,6 +215,12 @@ From jsandas/comic-c, key modules to port:
 - Door transitions call load_new_level() or load_new_stage() as appropriate
 - Source door tracking for reciprocal positioning (entering target stage via door)
 - 'O' key opens doors, 'K' key grants door key (debug)
+- Level/stage loading system integrated:
+  - load_new_level() sets current_level_ptr and loads tileset graphics
+  - load_new_stage() loads stage tiles into physics system (current_tiles)
+  - Reciprocal door search finds matching door in destination stage
+  - Camera positioned relative to Comic on stage load
+  - Initial spawn: Forest stage 0 at position (14, 12)
 
 ---
 
@@ -617,11 +623,11 @@ comic-modernization/
    - Door collision detection (Y exact, X within 3 units)
    - Door Key requirement checking
    - Level/stage transition stubs (activate_door)
-3. Implement stage loading integration
-   - Load levels from level_data_pointers array
-   - Load stage maps into memory (from compiled tile data)
-   - Initialize enemies from stage data
-   - Find reciprocal door when entering via door
+3. ✅ COMPLETED: Stage loading integration
+   - load_new_level() loads tileset and calls load_new_stage()
+   - load_new_stage() loads stage tiles into physics system
+   - Reciprocal door positioning when entering via door
+   - Camera positioning on stage load
 4. Add stage boundary transitions
    - Left/right exit handling
    - Level scrolling between stages
