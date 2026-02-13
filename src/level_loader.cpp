@@ -1,21 +1,19 @@
 /**
  * level_loader.cpp - Runtime level data initialization
  * 
- * Loads tile data from binary PT files into level structures.
- * This bridges the gap between code-based level metadata and binary tile data,
- * with a path toward full code-based data migration.
+ * Initializes level data with pre-generated tile data from level_tiles.cpp.
+ * Tile data is compiled directly into the executable as C++ hex arrays,
+ * eliminating all runtime file I/O dependencies.
  */
 
 #include "level_loader.h"
-#include "file_loader.h"
+#include "level_tiles.h"
 #include <cstring>
 #include <iostream>
-#include <map>
 
 /* Runtime mutable copies of level data */
 static level_t runtime_levels[8];
 static bool levels_initialized = false;
-static std::string level_asset_path = "original/";
 
 /* Names corresponding to level numbers */
 static const char* level_names[] = {
@@ -34,12 +32,21 @@ static const level_t* source_levels[8] = {
     &level_data_comp
 };
 
+/* Pre-generated tile data arrays (from level_tiles.cpp) */
+static const uint8_t* tile_arrays[8][3] = {
+    {lake_stage_0_tiles, lake_stage_1_tiles, lake_stage_2_tiles},
+    {forest_stage_0_tiles, forest_stage_1_tiles, forest_stage_2_tiles},
+    {space_stage_0_tiles, space_stage_1_tiles, space_stage_2_tiles},
+    {base_stage_0_tiles, base_stage_1_tiles, base_stage_2_tiles},
+    {cave_stage_0_tiles, cave_stage_1_tiles, cave_stage_2_tiles},
+    {shed_stage_0_tiles, shed_stage_1_tiles, shed_stage_2_tiles},
+    {castle_stage_0_tiles, castle_stage_1_tiles, castle_stage_2_tiles},
+    {comp_stage_0_tiles, comp_stage_1_tiles, comp_stage_2_tiles}
+};
+
 void set_level_asset_path(const std::string& path) {
-    level_asset_path = path;
-    if (!level_asset_path.empty() && level_asset_path.back() != '/') {
-        level_asset_path += '/';
-    }
-    set_asset_path(level_asset_path);
+    /* No longer needed - all tile data is compiled-in */
+    (void)path;
 }
 
 bool initialize_level_data() {
@@ -47,35 +54,22 @@ bool initialize_level_data() {
         return true;
     }
     
-    /* Copy const level data into runtime structures */
-    bool has_errors = false;
+    /* Copy const level data into runtime structures and populate with tile data */
     for (int level_num = 0; level_num < 8; level_num++) {
         /* Copy const level data into runtime mutable copy */
         std::memcpy(&runtime_levels[level_num], source_levels[level_num], 
                     sizeof(level_t) - (128 * 10 * 3)); /* Don't copy tiles yet */
         
-        /* Load tile data for each of the 3 stages */
+        /* Copy pre-generated tile data for each of the 3 stages */
         for (int stage_num = 0; stage_num < 3; stage_num++) {
-            std::string filename = std::string(level_names[level_num]);
-            filename += std::to_string(stage_num) + ".PT";
-            
-            pt_file_t pt_file;
-            if (!load_pt_file(filename, pt_file)) {
-                std::cerr << "Warning: Failed to load tile data for " 
-                          << level_names[level_num] << " stage " << stage_num << std::endl;
-                has_errors = true;
-                /* Initialize with empty tiles */
-                std::memset(runtime_levels[level_num].stages[stage_num].tiles, 0, 128 * 10);
-            } else {
-                /* Copy tile data into stage */
-                std::memcpy(runtime_levels[level_num].stages[stage_num].tiles,
-                           pt_file.tiles, 128 * 10);
-            }
+            std::memcpy(runtime_levels[level_num].stages[stage_num].tiles,
+                       tile_arrays[level_num][stage_num], 
+                       128 * 10);
         }
     }
     
     levels_initialized = true;
-    return !has_errors;
+    return true;
 }
 
 level_t* get_level_data(const std::string& level_name) {

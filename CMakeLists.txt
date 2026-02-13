@@ -19,6 +19,7 @@ add_executable(captain_comic
     src/level_data.cpp
     src/file_loader.cpp
     src/level_loader.cpp
+    src/level_tiles.cpp
 )
 
 # Link libraries
@@ -36,6 +37,7 @@ add_executable(comic_tests
     src/level_data.cpp
     src/file_loader.cpp
     src/level_loader.cpp
+    src/level_tiles.cpp
 )
 
 target_link_libraries(comic_tests

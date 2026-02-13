@@ -110,9 +110,9 @@ int main(int argc, char* argv[]) {
     bool quit = false;
     SDL_Event e;
 
-    // Initialize all level data (loads tile maps from PT files)
+    // Initialize all level data (tile data is compiled-in as hex arrays)
     if (!initialize_level_data()) {
-        std::cerr << "Warning: Some level data failed to load. Game may have missing tiles." << std::endl;
+        std::cerr << "Warning: Level data initialization failed." << std::endl;
     }
 
     // Load the first playable level (FOREST, stage 0)
