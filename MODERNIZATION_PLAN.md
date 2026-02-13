@@ -81,7 +81,7 @@ From jsandas/comic-c, key modules to port:
 
 ---
 
-### Phase 2: Core Physics 🔄 IN PROGRESS
+### Phase 2: Core Physics ✅ COMPLETE
 **Goal:** Implement player movement and physics
 
 **Tasks:**
@@ -95,7 +95,7 @@ From jsandas/comic-c, key modules to port:
 - [x] Implement `move_left()` and `move_right()` from physics.c
   - [x] Wall collision detection
   - [x] Camera following
-  - [ ] Stage transitions
+  - [x] Movement mechanics (stage transitions deferred to Phase 4)
 - [x] Port tile map system
   - [x] `address_of_tile_at_coordinates()` (implemented as `get_tile_at()`)
   - [x] `is_tile_solid()`
@@ -171,19 +171,21 @@ From jsandas/comic-c, key modules to port:
 
 ---
 
-### Phase 4: Level System
+### Phase 4: Level System 🔄 IN PROGRESS
 **Goal:** Load and manage game levels
 
 **Tasks:**
-- [ ] Port level data structures from level_data.h
-  - [ ] `level_t` structure
-  - [ ] `stage_t` structure
-  - [ ] Door definitions
-- [ ] Implement level loading from level_data.c
-  - [ ] All 8 levels (LAKE through COMP)
-  - [ ] Stage data (3 stages per level)
-  - [ ] Enemy spawn data
-  - [ ] Item placement
+- [x] Port level data structures from level_data.h
+  - [x] `level_t` structure (with filenames, door tiles, sprite descriptors)
+  - [x] `stage_t` structure (with items, exits, doors, enemies)
+  - [x] Door definitions
+  - [x] Enemy record definitions
+  - [x] Sprite descriptor (`shp_t`) definitions
+- [x] Implement level loading from level_data.c
+  - [x] All 8 levels (LAKE through COMP) with complete data
+  - [x] Stage data (3 stages per level) with exact values
+  - [x] Enemy spawn data for all stages
+  - [x] Item placement for all stages
 - [ ] Port file loaders from file_loaders.c
   - [ ] .PT file loader (tile maps)
   - [ ] .TT2 file loader (tilesets)
@@ -544,7 +546,7 @@ comic-modernization/
 - [ ] Level layouts identical
 - [ ] Enemy behavior identical
 
-## Current Status (2024-02-07)
+## Current Status (2026-02-12)
 
 ### Completed ✅
 - Phase 1: Foundation (100%)
@@ -553,7 +555,7 @@ comic-modernization/
   - Window and event loop
   - Input handling
 
-- Phase 2: Core Physics (85%)
+- Phase 2: Core Physics (100%)
   - Physics constants ported
   - Gravity and jumping complete
   - Ceiling and floor collision with tiles
@@ -562,10 +564,18 @@ comic-modernization/
   - Jump counter logic
   - Mid-air momentum
   - Test level with platforms and walls
+  - Note: Fine-tuning of movement can be revisited in Phase 5
+
+- Phase 3: Rendering System (100%)
+  - Tile rendering with PNG tilesets
+  - Sprite system with animation
+  - Camera viewport system
+  - Player sprite rendering with state-based animations
 
 ### In Progress 🔄
-- Phase 2: Core Physics (remaining 15%)
-  - Stage transitions (deferred to Phase 4 with full level system)
+- Phase 4: Level System (partial)
+  - Level data structures and definitions (IN PROGRESS)
+  - File loaders (TO DO)
   
 ### Next Phase
 - Phase 3: Rendering System
@@ -589,12 +599,22 @@ comic-modernization/
 5. Implement sprite system for player animations
 - Fixed compilation warnings (data type issues)
 
-### Next Steps (Immediate)
-1. Complete `handle_fall_or_jump()` ceiling collision
-2. Implement tile map data structures
-3. Port `move_left()` and `move_right()` with collision
-4. Create simple test level with walls
-5. Validate physics constants against original
+### Next Steps (Immediate - Phase 4)
+1. Port file loaders from file_loaders.c
+   - .PT file loader (tile maps from binary files)
+   - .TT2 file loader (tilesets from binary files)
+   - .SHP file loader (sprite graphics from binary files)
+2. Implement stage loading integration
+   - Load levels from level_data_pointers array
+   - Load stage maps into memory
+   - Initialize enemies from stage data
+3. Implement door system from doors.c
+   - Door collision detection
+   - Key-based door logic
+   - Level/stage transitions
+4. Add stage boundary transitions
+   - Left/right exit handling
+   - Level scrolling between stages
 
 ### Blockers
 - None currently
