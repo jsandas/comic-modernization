@@ -2,9 +2,7 @@
 #include "../include/level_loader.h"
 #include <algorithm>
 #include <cstring>
-#include <cstdio>
 #include <iostream>
-#include <vector>
 
 // External game state (defined in main.cpp)
 extern int comic_x;
