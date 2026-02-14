@@ -20,10 +20,7 @@
 #include <fstream>
 #include <iomanip>
 #include <string>
-#include <vector>
-#include <cstring>
-#include <unistd.h>
-#include <sys/stat.h>
+#include <cstdint>
 
 /* Level names in order */
 static const char* level_names[] = {
