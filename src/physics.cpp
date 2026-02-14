@@ -383,7 +383,7 @@ void move_right() {
         camera_x++;
     }
 }
-bool load_level_from_file(const std::string& level_name, int stage_number) {
+bool load_stage_tiles(const std::string& level_name, int stage_number) {
     // Get the level data (which has been pre-loaded with tiles)
     level_t* level = get_level_data(level_name);
     if (!level) {

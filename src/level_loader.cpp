@@ -162,7 +162,7 @@ void load_new_stage() {
     
     /* Load stage tiles into physics system */
     std::string level_name = level_names[current_level_number];
-    if (!load_level_from_file(level_name, current_stage_number)) {
+    if (!load_stage_tiles(level_name, current_stage_number)) {
         std::cerr << "Error: Failed to load stage tiles for " << level_name 
                   << " stage " << static_cast<int>(current_stage_number) << std::endl;
         return;
