@@ -20,6 +20,7 @@ uint8_t previous_key_state_jump = 0;
 uint8_t key_state_left = 0;
 uint8_t key_state_right = 0;
 uint8_t key_state_open = 0;  // Open key for doors
+uint8_t previous_key_state_open = 0;  // Track previous state for edge-triggered activation
 int camera_x = 0;
 
 // Item collection state
@@ -47,6 +48,18 @@ Animation comic_run_left;
 Animation comic_jump_right;
 Animation comic_jump_left;
 Animation* current_animation = nullptr;
+
+void process_door_input() {
+    // Edge-triggered door activation: only trigger on rising edge of open key
+    // This prevents the door from immediately re-triggering when entering a new stage
+    // (since load_new_stage positions Comic at the reciprocal door location)
+    if (comic_is_falling_or_jumping == 0 &&
+        key_state_open && !previous_key_state_open) {
+        check_door_activation();
+    }
+    
+    previous_key_state_open = key_state_open;
+}
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
@@ -186,6 +199,9 @@ int main(int argc, char* argv[]) {
             // Process jump input once per tick (edge-triggered)
             process_jump_input();
 
+            // Process door input once per tick (edge-triggered)
+            process_door_input();
+
             // Update physics (once per tick)
             handle_fall_or_jump();
 
@@ -196,11 +212,6 @@ int main(int argc, char* argv[]) {
                 }
                 if (key_state_right) {
                     move_right();
-                }
-                
-                // Check for door activation (only when on ground, not jumping)
-                if (key_state_open) {
-                    check_door_activation();
                 }
             }
         }
