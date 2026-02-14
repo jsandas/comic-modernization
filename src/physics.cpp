@@ -21,6 +21,17 @@ extern uint8_t key_state_left;
 extern uint8_t key_state_right;
 extern int camera_x;
 
+// Level/stage tracking (defined in main.cpp)
+extern uint8_t current_level_number;
+extern uint8_t current_stage_number;
+extern const level_t* current_level_ptr;
+extern int8_t source_door_level_number;
+extern int8_t source_door_stage_number;
+
+// Checkpoint position (defined in main.cpp)
+extern uint8_t comic_y_checkpoint;
+extern uint8_t comic_x_checkpoint;
+
 // Tile map data
 static uint8_t current_tiles[MAP_WIDTH_TILES * MAP_HEIGHT_TILES];
 static uint8_t tileset_last_passable = 0x3F; // Tiles > this are solid
@@ -221,9 +232,48 @@ void handle_fall_or_jump() {
 }
 
 void move_left() {
-    // Check if at left edge
+    // Check if at left edge of stage
     if (comic_x == 0) {
-        comic_x_momentum = 0;
+        // Guard against NULL level pointer
+        if (current_level_ptr == nullptr) {
+            comic_x_momentum = 0;
+            return;
+        }
+        
+        // Validate stage number is within bounds (0-2)
+        if (current_stage_number >= 3) {
+            comic_x_momentum = 0;
+            return;
+        }
+        
+        const stage_t* stage = &current_level_ptr->stages[current_stage_number];
+        
+        // Check if there's a left exit
+        if (stage->exit_l == 0xFF) {  // EXIT_UNUSED
+            // No exit here, stop moving
+            comic_x_momentum = 0;
+            return;
+        }
+        
+        // Stage transition to the left
+        // TODO: play_sound(SOUND_STAGE_EDGE_TRANSITION, 4) when audio is implemented
+        std::cout << "Stage transition: left to stage " << static_cast<int>(stage->exit_l) << std::endl;
+        
+        current_stage_number = stage->exit_l;
+        comic_y_vel = 0;
+        
+        // Update checkpoint for spawn position on new stage
+        comic_y_checkpoint = comic_y;
+        comic_x_checkpoint = MAP_WIDTH - 2;  // Far right of new stage (254)
+        
+        // Position at far right edge of new stage
+        comic_x = MAP_WIDTH - 2;
+        
+        // Mark as boundary transition (not door)
+        source_door_level_number = -1;
+        
+        // Load the new stage
+        load_new_stage();
         return;
     }
     
@@ -249,9 +299,48 @@ void move_left() {
 }
 
 void move_right() {
-    // Check if at right edge
+    // Check if at right edge of stage
     if (comic_x >= MAP_WIDTH - 2) {
-        comic_x_momentum = 0;
+        // Guard against NULL level pointer
+        if (current_level_ptr == nullptr) {
+            comic_x_momentum = 0;
+            return;
+        }
+        
+        // Validate stage number is within bounds (0-2)
+        if (current_stage_number >= 3) {
+            comic_x_momentum = 0;
+            return;
+        }
+        
+        const stage_t* stage = &current_level_ptr->stages[current_stage_number];
+        
+        // Check if there's a right exit
+        if (stage->exit_r == 0xFF) {  // EXIT_UNUSED
+            // No exit here, stop moving
+            comic_x_momentum = 0;
+            return;
+        }
+        
+        // Stage transition to the right
+        // TODO: play_sound(SOUND_STAGE_EDGE_TRANSITION, 4) when audio is implemented
+        std::cout << "Stage transition: right to stage " << static_cast<int>(stage->exit_r) << std::endl;
+        
+        current_stage_number = stage->exit_r;
+        comic_y_vel = 0;
+        
+        // Update checkpoint for spawn position on new stage
+        comic_y_checkpoint = comic_y;
+        comic_x_checkpoint = 0;  // Far left of new stage
+        
+        // Position at far left edge of new stage
+        comic_x = 0;
+        
+        // Mark as boundary transition (not door)
+        source_door_level_number = -1;
+        
+        // Load the new stage
+        load_new_stage();
         return;
     }
     

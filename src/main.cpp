@@ -32,6 +32,10 @@ const level_t* current_level_ptr = nullptr;  // Pointer to current level data
 int8_t source_door_level_number = -1;  // Set when entering via door for reciprocal positioning
 int8_t source_door_stage_number = -1;
 
+// Checkpoint position (for respawn and boundary crossing)
+uint8_t comic_y_checkpoint = 12;  // Y position to respawn at
+uint8_t comic_x_checkpoint = 14;  // X position to respawn at
+
 // Rendering scale: 16 pixels per game unit
 const int RENDER_SCALE = 16;
 

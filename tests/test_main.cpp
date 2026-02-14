@@ -31,6 +31,10 @@ const level_t* current_level_ptr = nullptr;
 int8_t source_door_level_number = -1;
 int8_t source_door_stage_number = -1;
 
+// Checkpoint position
+uint8_t comic_y_checkpoint = 12;
+uint8_t comic_x_checkpoint = 14;
+
 static int failures = 0;
 
 static void check(bool condition, const std::string& message) {

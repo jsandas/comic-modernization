@@ -171,7 +171,7 @@ From jsandas/comic-c, key modules to port:
 
 ---
 
-### Phase 4: Level System 🔄 IN PROGRESS
+### Phase 4: Level System ✅ COMPLETE
 **Goal:** Load and manage game levels
 
 **Tasks:**
@@ -202,12 +202,13 @@ From jsandas/comic-c, key modules to port:
 - `src/level_data.c`: All level definitions
 - `src/file_loaders.c`: Asset loading
 - `src/doors.c`: Door mechanics
+- `src/physics.c`: Stage boundary transition logic
 
 **Success Criteria:**
-- All 8 levels load correctly
-- Stage transitions work (left/right boundaries)
-- Doors function properly with keys
-- Level data matches original exactly
+- ✅ All 8 levels load correctly
+- ✅ Stage transitions work (left/right boundaries)
+- ✅ Doors function properly with keys
+- ✅ Level data matches original exactly
 
 **Implementation Notes:**
 - Door collision detection checks Y coordinate (exact) and X coordinate (within 3 units)
@@ -221,6 +222,13 @@ From jsandas/comic-c, key modules to port:
   - Reciprocal door search finds matching door in destination stage
   - Camera positioned relative to Comic on stage load
   - Initial spawn: Forest stage 0 at position (14, 12)
+- Stage boundary transitions:
+  - Triggered at left edge (comic_x == 0) or right edge (comic_x >= 254)
+  - Checks stage->exit_l or stage->exit_r for target stage
+  - If EXIT_UNUSED (0xFF), stops movement
+  - Otherwise, transitions to new stage at opposite edge
+  - Checkpoint updated to preserve Y position and edge position
+  - source_door_level_number = -1 marks as boundary (not door) transition
 
 ---
 
@@ -628,9 +636,12 @@ comic-modernization/
    - load_new_stage() loads stage tiles into physics system
    - Reciprocal door positioning when entering via door
    - Camera positioning on stage load
-4. Add stage boundary transitions
-   - Left/right exit handling
-   - Level scrolling between stages
+4. ✅ COMPLETED: Stage boundary transitions
+   - Left/right exit handling (comic_x == 0 or >= MAP_WIDTH-2)
+   - Checks exit_l and exit_r from stage data
+   - Positions player at opposite edge in new stage
+   - Updates checkpoint for respawning
+   - Sets source_door_level_number = -1 (boundary vs door transition)
 
 ### Blockers
 - None currently

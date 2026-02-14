@@ -217,6 +217,12 @@ void load_new_stage() {
         /* Clear door entry flag */
         source_door_level_number = -1;
         source_door_stage_number = -1;
+    } else {
+        /* Boundary transition or initial spawn - Comic position already set, update camera */
+        camera_x = comic_x - (PLAYFIELD_WIDTH / 2);
+        if (camera_x < 0) camera_x = 0;
+        if (camera_x > MAP_WIDTH - PLAYFIELD_WIDTH) {
+            camera_x = MAP_WIDTH - PLAYFIELD_WIDTH;
+        }
     }
-    /* else: Not entering via door, Comic position unchanged (stage boundary or initial spawn) */
 }
