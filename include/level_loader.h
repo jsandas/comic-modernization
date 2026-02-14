@@ -5,12 +5,12 @@
 #include <string>
 
 /**
- * Initialize all level data by loading tile maps from PT files
+ * Initialize all level data 
  * 
- * This function populates the tile data for all stages from binary PT files.
+ * Populates runtime level structures with pre-generated compiled-in tile data.
  * Call this once at game startup before using any level data.
  * 
- * Returns true if successful, false if critical file loading fails
+ * Returns true if successful, false on failure
  */
 bool initialize_level_data();
 
@@ -25,20 +25,21 @@ level_t* get_level_data(const std::string& level_name);
 /**
  * load_new_level - Load a new level's data and assets
  * 
- * Loads the tileset, enemy sprites, and initializes the first stage.
+ * Initializes the tileset for the current level and loads the first stage.
  * Called when a door leads to a different level.
  * 
- * TODO: Implement full level loading
+ * Requires current_level_number to be set before calling.
  */
 void load_new_level();
 
 /**
  * load_new_stage - Load a new stage within the current level
  * 
- * Loads the stage tile map, enemies, and items.
+ * Loads the stage tile map and positions Comic appropriately.
+ * Handles door entry positioning and camera setup.
  * Called for stage transitions within same level or at startup.
  * 
- * TODO: Implement stage loading
+ * Requires current_level_ptr and current_stage_number to be set before calling.
  */
 void load_new_stage();
 
