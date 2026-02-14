@@ -396,6 +396,68 @@ static void test_door_open_key_requirement() {
     check(result == 1, "check_door_activation should return 1 when open key pressed");
 }
 
+static void test_door_state_update_same_level() {
+    reset_door_state();
+    level_t* level = create_test_level_with_door(10, 8, 1, 1);  // Target same level, stage 1
+    current_level_ptr = level;
+    current_level_number = 1;
+    current_stage_number = 0;
+    comic_has_door_key = 1;
+    comic_x = 10;
+    comic_y = 8;
+    key_state_open = 1;
+    
+    // Before activation
+    check(source_door_level_number == -1, "source_door_level_number should start as -1");
+    check(source_door_stage_number == -1, "source_door_stage_number should start as -1");
+    check(current_stage_number == 0, "current_stage_number should start as 0");
+    
+    // Activate door (will call load_new_stage due to same level)
+    uint8_t result = check_door_activation();
+    check(result == 1, "door activation to same level stage should succeed");
+    
+    // After activation, verify state was set
+    check(source_door_level_number == 1, 
+          "source_door_level_number should be 1 (origin level)");
+    check(source_door_stage_number == 0, 
+          "source_door_stage_number should be 0 (origin stage)");
+    check(current_stage_number == 1, 
+          "current_stage_number should be 1 (target stage)");
+    check(current_level_number == 1, 
+          "current_level_number should remain 1 (same level)");
+}
+
+static void test_door_state_update_different_level() {
+    reset_door_state();
+    level_t* level = create_test_level_with_door(10, 8, 2, 1);  // Target different level
+    current_level_ptr = level;
+    current_level_number = 1;
+    current_stage_number = 0;
+    comic_has_door_key = 1;
+    comic_x = 10;
+    comic_y = 8;
+    key_state_open = 1;
+    
+    // Before activation
+    check(source_door_level_number == -1, "source_door_level_number should start as -1");
+    check(source_door_stage_number == -1, "source_door_stage_number should start as -1");
+    check(current_level_number == 1, "current_level_number should start as 1");
+    
+    // Activate door (will call load_new_level due to different level)
+    uint8_t result = check_door_activation();
+    check(result == 1, "door activation to different level should succeed");
+    
+    // After activation, verify state was set
+    check(source_door_level_number == 1, 
+          "source_door_level_number should be 1 (origin level)");
+    check(source_door_stage_number == 0, 
+          "source_door_stage_number should be 0 (origin stage)");
+    check(current_level_number == 2, 
+          "current_level_number should be 2 (target level)");
+    check(current_stage_number == 1, 
+          "current_stage_number should be 1 (target stage)");
+}
+
 struct TestCase {
     const char* name;
     void (*run)();
@@ -413,7 +475,9 @@ static const std::vector<TestCase>& test_registry() {
         {"door_activation_alignment_x", test_door_activation_alignment_x},
         {"door_activation_alignment_y", test_door_activation_alignment_y},
         {"door_key_requirement", test_door_key_requirement},
-        {"door_open_key_requirement", test_door_open_key_requirement}
+        {"door_open_key_requirement", test_door_open_key_requirement},
+        {"door_state_update_same_level", test_door_state_update_same_level},
+        {"door_state_update_different_level", test_door_state_update_different_level}
     };
     return tests;
 }
