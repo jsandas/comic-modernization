@@ -23,12 +23,6 @@ bool initialize_level_data();
 level_t* get_level_data(const std::string& level_name);
 
 /**
- * Set the asset path for loading PT files
- * Default is "original/"
- */
-void set_level_asset_path(const std::string& path);
-
-/**
  * load_new_level - Load a new level's data and assets
  * 
  * Loads the tileset, enemy sprites, and initializes the first stage.

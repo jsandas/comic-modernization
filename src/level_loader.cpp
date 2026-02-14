@@ -58,11 +58,6 @@ static const uint8_t* tile_arrays[8][3] = {
     {comp_stage_0_tiles, comp_stage_1_tiles, comp_stage_2_tiles}
 };
 
-void set_level_asset_path(const std::string& path) {
-    /* No longer needed - all tile data is compiled-in */
-    (void)path;
-}
-
 bool initialize_level_data() {
     if (levels_initialized) {
         return true;
