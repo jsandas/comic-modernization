@@ -40,6 +40,11 @@ uint8_t comic_x_checkpoint = 14;  // X position to respawn at
 // Rendering scale: 16 pixels per game unit
 const int RENDER_SCALE = 16;
 
+// Level names (indexed by level number)
+static constexpr const char* level_names[] = {
+    "lake", "forest", "space", "base", "cave", "shed", "castle", "comp"
+};
+
 // Player animation state
 Animation comic_idle_right;
 Animation comic_idle_left;
@@ -151,6 +156,13 @@ int main(int argc, char* argv[]) {
         init_test_level();  // Fall back to test level if loading fails
     }
 
+    // Cache for tileset to avoid per-frame lookups
+    uint8_t cached_level_number = current_level_number;
+    Tileset* cached_tileset = nullptr;
+    if (current_level_number < 8) {
+        cached_tileset = g_graphics->get_tileset(level_names[current_level_number]);
+    }
+
     // Tick timing - match original game's ~18.2 Hz tick rate
     constexpr double TICK_RATE = 18.2065; // PC timer interrupt rate (1193182/65536 Hz)
     constexpr double MS_PER_TICK = 1000.0 / TICK_RATE; // ~54.93 ms per tick
@@ -243,10 +255,15 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        // Get current tileset from loaded level
-        const char* level_names[] = {"lake", "forest", "space", "base", "cave", "shed", "castle", "comp"};
-        std::string current_level_name = (current_level_number < 8) ? level_names[current_level_number] : "forest";
-        Tileset* tileset = g_graphics->get_tileset(current_level_name);
+        // Update tileset cache if level changed
+        if (current_level_number != cached_level_number) {
+            cached_level_number = current_level_number;
+            if (current_level_number < 8) {
+                cached_tileset = g_graphics->get_tileset(level_names[current_level_number]);
+            }
+        }
+
+        Tileset* tileset = cached_tileset;
 
         // Render tiles
         for (int ty = 0; ty < MAP_HEIGHT_TILES; ty++) {
