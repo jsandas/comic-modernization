@@ -23,6 +23,9 @@ const level_t level_data_lake = {
     .door_tile_ll = 16,
     .door_tile_lr = 17,
     
+    /* Door frame tiles */
+    .door_frame_tiles = {0x13, 0x14, 0, 0, 0, 0, 0, 0},
+    
     /* Enemy sprite files */
     .shp = {
         {3, ENEMY_HORIZONTAL_DUPLICATED, ENEMY_ANIMATION_ALTERNATE, "fb.shp      "},
@@ -106,6 +109,9 @@ const level_t level_data_forest = {
     .door_tile_ur = 49,
     .door_tile_ll = 48,
     .door_tile_lr = 49,
+    
+    /* Door frame tiles */
+    .door_frame_tiles = {0x40, 0x41, 0x42, 0x43, 0x44, 0, 0, 0},
     
     /* Enemy sprite files */
     .shp = {
@@ -191,6 +197,9 @@ const level_t level_data_space = {
     .door_tile_ll = 51,
     .door_tile_lr = 52,
     
+    /* Door frame tiles */
+    .door_frame_tiles = {0, 0, 0, 0, 0, 0, 0, 0},
+    
     /* Enemy sprite files */
     .shp = {
         {4, ENEMY_HORIZONTAL_DUPLICATED, ENEMY_ANIMATION_LOOP, "rock.shp    "},
@@ -274,6 +283,9 @@ const level_t level_data_base = {
     .door_tile_ur = 10,
     .door_tile_ll = 11,
     .door_tile_lr = 12,
+    
+    /* Door frame tiles */
+    .door_frame_tiles = {0, 0, 0, 0, 0, 0, 0, 0},
     
     /* Enemy sprite files */
     .shp = {
@@ -359,6 +371,9 @@ const level_t level_data_cave = {
     .door_tile_ll = 5,
     .door_tile_lr = 5,
     
+    /* Door frame tiles */
+    .door_frame_tiles = {0, 0, 0, 0, 0, 0, 0, 0},
+    
     /* Enemy sprite files */
     .shp = {
         {3, ENEMY_HORIZONTAL_DUPLICATED, ENEMY_ANIMATION_ALTERNATE, "frog.shp    "},
@@ -442,6 +457,9 @@ const level_t level_data_shed = {
     .door_tile_ur = 11,
     .door_tile_ll = 10,
     .door_tile_lr = 11,
+    
+    /* Door frame tiles */
+    .door_frame_tiles = {0, 0, 0, 0, 0, 0, 0, 0},
     
     /* Enemy sprite files */
     .shp = {
@@ -527,6 +545,9 @@ const level_t level_data_castle = {
     .door_tile_ll = 26,
     .door_tile_lr = 27,
     
+    /* Door frame tiles */
+    .door_frame_tiles = {0, 0, 0, 0, 0, 0, 0, 0},
+    
     /* Enemy sprite files */
     .shp = {
         {3, ENEMY_HORIZONTAL_SEPARATE, ENEMY_ANIMATION_ALTERNATE, "bird.shp    "},
@@ -610,6 +631,9 @@ const level_t level_data_comp = {
     .door_tile_ur = 3,
     .door_tile_ll = 4,
     .door_tile_lr = 5,
+    
+    /* Door frame tiles */
+    .door_frame_tiles = {0, 0, 0, 0, 0, 0, 0, 0},
     
     /* Enemy sprite files */
     .shp = {

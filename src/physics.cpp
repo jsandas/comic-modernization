@@ -84,6 +84,25 @@ uint8_t get_tile_at(uint8_t x, uint8_t y) {
 }
 
 bool is_tile_solid(uint8_t tile_id) {
+    // Check if tile is a door or door frame tile (always passable)
+    if (current_level_ptr != nullptr) {
+        // Check door tiles
+        if (tile_id == current_level_ptr->door_tile_ul ||
+            tile_id == current_level_ptr->door_tile_ur ||
+            tile_id == current_level_ptr->door_tile_ll ||
+            tile_id == current_level_ptr->door_tile_lr) {
+            return false;  // Door tiles are passable
+        }
+        
+        // Check door frame tiles array
+        for (int i = 0; i < 8; i++) {
+            if (current_level_ptr->door_frame_tiles[i] != 0 && tile_id == current_level_ptr->door_frame_tiles[i]) {
+                return false;  // Door frame tiles are passable
+            }
+        }
+    }
+    
+    // Normal solid tile check
     return tile_id > tileset_last_passable;
 }
 

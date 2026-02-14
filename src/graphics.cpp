@@ -70,7 +70,7 @@ TextureInfo GraphicsSystem::load_png(const std::string& filepath) {
     }
     
     if (surface == nullptr) {
-        std::cerr << "Failed to load image: " << filepath << " - " << IMG_GetError() << std::endl;
+        // Silently return null texture - caller will handle missing assets
         return info;
     }
     
@@ -94,10 +94,11 @@ bool GraphicsSystem::load_tileset(const std::string& level_name) {
     }
     
     Tileset tileset;
-    std::vector<int> missing_tiles;
     
-    // Load all 64 tiles (0x00-0x3F) for the level
-    for (int i = 0; i < 64; i++) {
+    // Load all tiles (0x00-0x7F / 0-127) for the level
+    // Some levels have up to 87 tiles, so we try to load 128 to be safe
+    // Missing tiles beyond what exists is expected and not an error
+    for (int i = 0; i < 128; i++) {
         char tile_name[64];
         std::snprintf(tile_name, sizeof(tile_name), "%s.tt2-%02x.png", level_name.c_str(), i);
         
@@ -106,22 +107,8 @@ bool GraphicsSystem::load_tileset(const std::string& level_name) {
         
         if (texture.texture != nullptr) {
             tileset.tiles[i] = texture;
-        } else {
-            missing_tiles.push_back(i);
         }
-    }
-    
-    if (!missing_tiles.empty()) {
-        std::cerr << "Warning: Failed to load " << missing_tiles.size() 
-                  << " tiles for tileset '" << level_name << "': ";
-        for (size_t i = 0; i < missing_tiles.size() && i < 10; i++) {
-            std::cerr << "0x" << std::hex << missing_tiles[i] << std::dec;
-            if (i < missing_tiles.size() - 1 && i < 9) std::cerr << ", ";
-        }
-        if (missing_tiles.size() > 10) {
-            std::cerr << " ... and " << (missing_tiles.size() - 10) << " more";
-        }
-        std::cerr << std::endl;
+        // Silently skip missing tiles - this is expected behavior
     }
     
     if (tileset.tiles.empty()) {

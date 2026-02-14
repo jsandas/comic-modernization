@@ -131,6 +131,9 @@ struct level_t {
     uint8_t door_tile_ll;           /* Door tile: lower-left */
     uint8_t door_tile_lr;           /* Door tile: lower-right */
     
+    /* Door frame tiles (decorative tiles around doors that should be passable) */
+    uint8_t door_frame_tiles[8];    /* Array of up to 8 additional passable door frame tiles (0 = unused) */
+    
     /* Enemy sprite files */
     shp_t shp[4];                   /* Sprite descriptors for enemies in this level */
     
