@@ -458,6 +458,70 @@ static void test_door_state_update_different_level() {
           "current_stage_number should be 1 (target stage)");
 }
 
+static void test_stage_left_exit_blocked() {
+    reset_physics_state();
+    
+    // Position Comic not quite at edge (x=10, not 0)
+    comic_x = 10;
+    comic_y = 12;
+    comic_x_momentum = 0;
+    
+    // Normal move should work (not at edge)
+    move_left();
+    check(comic_x == 9, "Comic should move left normally when not at edge");
+}
+
+static void test_stage_right_exit_blocked() {
+    reset_physics_state();
+    
+    // Position Comic not quite at edge
+    comic_x = MAP_WIDTH - 10;
+    comic_y = 12;
+    comic_x_momentum = 0;
+    
+    // Normal move should work (not at edge)
+    move_right();
+    check(comic_x == MAP_WIDTH - 9, "Comic should move right normally when not at edge");
+}
+
+static void test_stage_left_edge_detection() {
+    reset_physics_state();
+    
+    // Position Comic at left edge with no level loaded
+    comic_x = 0;
+    comic_y = 12;
+    comic_x_momentum = -1;
+    current_level_ptr = nullptr;
+    
+    // Attempt to move left - should be blocked by null check
+    uint8_t initial_stage = current_stage_number;
+    move_left();
+    
+    // Verify stage didn't change and momentum was cleared
+    check(current_stage_number == initial_stage, 
+          "stage should not change when current_level_ptr is null");
+    check(comic_x_momentum == 0, "momentum should be cleared when blocked at edge");
+}
+
+static void test_stage_right_edge_detection() {
+    reset_physics_state();
+    
+    // Position Comic at right edge with no level loaded
+    comic_x = MAP_WIDTH - 2;
+    comic_y = 12;
+    comic_x_momentum = 1;
+    current_level_ptr = nullptr;
+    
+    // Attempt to move right - should be blocked by null check
+    uint8_t initial_stage = current_stage_number;
+    move_right();
+    
+    // Verify stage didn't change and momentum was cleared
+    check(current_stage_number == initial_stage, 
+          "stage should not change when current_level_ptr is null");
+    check(comic_x_momentum == 0, "momentum should be cleared when blocked at edge");
+}
+
 struct TestCase {
     const char* name;
     void (*run)();
@@ -477,7 +541,11 @@ static const std::vector<TestCase>& test_registry() {
         {"door_key_requirement", test_door_key_requirement},
         {"door_open_key_requirement", test_door_open_key_requirement},
         {"door_state_update_same_level", test_door_state_update_same_level},
-        {"door_state_update_different_level", test_door_state_update_different_level}
+        {"door_state_update_different_level", test_door_state_update_different_level},
+        {"stage_left_exit_blocked", test_stage_left_exit_blocked},
+        {"stage_right_exit_blocked", test_stage_right_exit_blocked},
+        {"stage_left_edge_detection", test_stage_left_edge_detection},
+        {"stage_right_edge_detection", test_stage_right_edge_detection}
     };
     return tests;
 }
