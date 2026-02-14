@@ -67,8 +67,8 @@ uint8_t check_door_activation() {
         }
         
         /* Check Y coordinate: must be exact match
-         * Both comic_y and door->y are in game units (same coordinate system)
-         * Players can be at half-tile positions, so check if close enough */
+         * Both comic_y and door->y are in game units (same coordinate system).
+         * Door activation only occurs when Comic's Y exactly equals the door's Y. */
         if (comic_y != door->y) {
             continue;
         }
