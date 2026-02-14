@@ -70,11 +70,11 @@ bool initialize_level_data() {
     
     /* Copy const level data into runtime structures and populate with tile data */
     for (int level_num = 0; level_num < 8; level_num++) {
-        /* Copy const level data into runtime mutable copy */
+        /* Copy entire const level data into runtime mutable copy */
         std::memcpy(&runtime_levels[level_num], source_levels[level_num], 
-                    sizeof(level_t) - (128 * 10 * 3)); /* Don't copy tiles yet */
+                    sizeof(level_t));
         
-        /* Copy pre-generated tile data for each of the 3 stages */
+        /* Overwrite tile data with pre-generated arrays for each of the 3 stages */
         for (int stage_num = 0; stage_num < 3; stage_num++) {
             std::memcpy(runtime_levels[level_num].stages[stage_num].tiles,
                        tile_arrays[level_num][stage_num], 
