@@ -96,7 +96,7 @@ void write_cpp_header(std::ofstream& out) {
 void write_tile_array(std::ofstream& out, const std::string& level_name_lower, 
                       int stage_num, const uint8_t* tiles) {
     out << "/* " << level_name_lower << " Stage " << stage_num << " - Tile Map */\n";
-    out << "extern const uint8_t " << level_name_lower << "_stage_" << stage_num 
+    out << "const uint8_t " << level_name_lower << "_stage_" << stage_num 
         << "_tiles[128 * 10] = {\n";
     
     /* Write tiles in 16-byte rows for readability */
