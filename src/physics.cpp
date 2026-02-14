@@ -274,7 +274,6 @@ void move_left() {
         
         // Stage transition to the left
         // TODO: play_sound(SOUND_STAGE_EDGE_TRANSITION, 4) when audio is implemented
-        std::cout << "Stage transition: left to stage " << static_cast<int>(stage->exit_l) << std::endl;
         
         current_stage_number = stage->exit_l;
         comic_y_vel = 0;
@@ -341,7 +340,6 @@ void move_right() {
         
         // Stage transition to the right
         // TODO: play_sound(SOUND_STAGE_EDGE_TRANSITION, 4) when audio is implemented
-        std::cout << "Stage transition: right to stage " << static_cast<int>(stage->exit_r) << std::endl;
         
         current_stage_number = stage->exit_r;
         comic_y_vel = 0;
