@@ -216,7 +216,7 @@ Run tests matching a pattern:
 
 **`create_test_level_with_door(x, y, target_level, target_stage)`** - Constructs a minimal test level with a single door at specified coordinates and target.
 
-### Test Framwork
+### Test Framework
 
 Tests use a simple assertion macro:
 ```cpp
