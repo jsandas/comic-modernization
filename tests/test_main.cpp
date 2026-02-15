@@ -458,6 +458,30 @@ static void test_door_state_update_different_level() {
           "current_stage_number should be 1 (target stage)");
 }
 
+static void test_runtime_level_tiles_populated() {
+    initialize_level_data();
+    current_level_number = LEVEL_NUMBER_FOREST;
+    current_stage_number = 0;
+    source_door_level_number = -1;
+    source_door_stage_number = -1;
+    current_level_ptr = nullptr;
+
+    load_new_level();
+    check(current_level_ptr != nullptr, "current_level_ptr should be set after load_new_level");
+
+    bool any_non_zero = false;
+    const uint8_t* tiles = current_level_ptr->stages[current_stage_number].tiles;
+    for (int i = 0; i < 128 * 10; ++i) {
+        if (tiles[i] != 0) {
+            any_non_zero = true;
+            break;
+        }
+    }
+
+    check(any_non_zero, "current level tiles should be populated (non-zero)");
+    reset_door_state();
+}
+
 static void test_stage_left_exit_blocked() {
     reset_physics_state();
     
@@ -542,6 +566,7 @@ static const std::vector<TestCase>& test_registry() {
         {"door_open_key_requirement", test_door_open_key_requirement},
         {"door_state_update_same_level", test_door_state_update_same_level},
         {"door_state_update_different_level", test_door_state_update_different_level},
+        {"runtime_level_tiles_populated", test_runtime_level_tiles_populated},
         {"stage_left_exit_blocked", test_stage_left_exit_blocked},
         {"stage_right_exit_blocked", test_stage_right_exit_blocked},
         {"stage_left_edge_detection", test_stage_left_edge_detection},

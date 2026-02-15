@@ -120,8 +120,8 @@ void load_new_level() {
         return;
     }
     
-    /* Set current level pointer */
-    current_level_ptr = source_levels[current_level_number];
+    /* Set current level pointer to runtime data (includes populated tiles) */
+    current_level_ptr = &runtime_levels[current_level_number];
     
     /* Load tileset graphics for this level */
     if (g_graphics) {
