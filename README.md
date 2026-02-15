@@ -150,6 +150,7 @@ comic-modernization/
 - **F2** - Level warp (interactive menu to select level 0-7 and stage 0-2)
 - **F3** - Toggle debug overlay (shows X/Y coordinates, velocity, level/stage)
 - **F4** - Position warp (teleport to specific coordinates)
+- **F5** - Toggle door key (grant/remove ability to open doors)
 
 ## Development
 

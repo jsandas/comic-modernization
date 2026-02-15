@@ -286,10 +286,17 @@ A centralized system for managing debug cheats and development tools. Activated 
    - Uses SDL2_ttf for text rendering with system font fallback chain
    - Useful for: Verifying position during complex maneuvers, monitoring physics state, visual feedback on cheat status
 
+5. **Door Key Toggle (F5)**
+   - Toggle the door key inventory item on/off
+   - When active (1): Allows opening all doors
+   - When inactive (0): Cannot open doors even if they're nearby
+   - Useful for: Testing door mechanics, accessing specific areas, bypassing door locks for testing
+
 **Console Logging:**
 - All cheat activations logged to stdout with `[CHEAT]` prefix
 - Input validation feedback (e.g., invalid coordinates)
 - Level/stage warp confirmations
+- Door key grant/removal notifications
 - Users can see cheat activity in terminal even if overlay disabled
 
 **Command-Line Interface:**

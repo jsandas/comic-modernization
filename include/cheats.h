@@ -41,6 +41,7 @@ private:
     // Toggle methods
     void toggle_noclip();
     void toggle_debug_overlay();
+    void toggle_door_key();
     void activate_level_warp();
     void activate_position_warp();
     

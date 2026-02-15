@@ -12,6 +12,7 @@ extern int comic_y;
 extern int8_t comic_y_vel;
 extern int8_t comic_x_momentum;
 extern uint8_t comic_is_falling_or_jumping;
+extern uint8_t comic_has_door_key;  // Door key inventory item
 extern int camera_x;
 extern uint8_t current_level_number;
 extern uint8_t current_stage_number;
@@ -46,11 +47,12 @@ bool CheatSystem::initialize(bool debug_mode) {
     debug_enabled = debug_mode;
     
     if (debug_enabled) {
-        std::cout << "[CHEAT] Debug mode enabled. Press F1-F4 for cheats:" << std::endl;
+        std::cout << "[CHEAT] Debug mode enabled. Press F1-F5 for cheats:" << std::endl;
         std::cout << "  F1 - Toggle noclip (walk through walls)" << std::endl;
         std::cout << "  F2 - Level warp (choose level/stage)" << std::endl;
         std::cout << "  F3 - Toggle debug overlay" << std::endl;
         std::cout << "  F4 - Position warp (teleport to coordinates)" << std::endl;
+        std::cout << "  F5 - Toggle door key" << std::endl;
     }
     
     initialized = true;
@@ -109,6 +111,10 @@ void CheatSystem::process_input(SDL_Keycode key) {
             activate_position_warp();
             break;
             
+        case SDLK_F5:
+            toggle_door_key();
+            break;
+            
         default:
             // Not a cheat key
             break;
@@ -125,6 +131,11 @@ void CheatSystem::toggle_noclip() {
 void CheatSystem::toggle_debug_overlay() {
     debug_overlay_active = !debug_overlay_active;
     std::cout << "[CHEAT] Debug overlay " << (debug_overlay_active ? "enabled" : "disabled") << std::endl;
+}
+
+void CheatSystem::toggle_door_key() {
+    comic_has_door_key = comic_has_door_key ? 0 : 1;
+    std::cout << "[CHEAT] Door key " << (comic_has_door_key ? "granted" : "removed") << std::endl;
 }
 
 void CheatSystem::activate_level_warp() {
