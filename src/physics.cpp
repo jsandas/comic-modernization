@@ -266,7 +266,7 @@ void move_left() {
         const stage_t* stage = &current_level_ptr->stages[current_stage_number];
         
         // Check if there's a left exit
-        if (stage->exit_l == 0xFF) {  // EXIT_UNUSED
+        if (stage->exit_l == EXIT_UNUSED) {
             // No exit here, stop moving
             comic_x_momentum = 0;
             return;
