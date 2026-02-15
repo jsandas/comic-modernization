@@ -19,11 +19,12 @@ Run tests matching a pattern:
 ./comic_tests --filter door    # Run all door-related tests
 ./comic_tests --filter jump    # Run all jump-related tests
 ./comic_tests --filter physics # Run all physics tests
+./comic_tests --filter stage   # Run all stage-related tests
 ```
 
 ## Test Categories
 
-### Physics & Collision (3 tests)
+### Physics & Collision (1 test)
 
 #### test_physics_tiles
 **Purpose:** Verify tile collision detection and terrain metadata.
@@ -198,6 +199,52 @@ Run tests matching a pattern:
 
 ---
 
+### Stage Exits (4 tests)
+
+#### test_stage_left_exit_blocked
+**Purpose:** Verify normal left movement works when not at the stage boundary.
+
+**What it tests:**
+- Comic moves left normally when positioned away from the left edge
+- Left movement does not trigger a stage exit when not at the boundary
+
+**Why it matters:** Stage exits should only trigger at the boundary. Regular movement must remain unaffected in the interior of the stage.
+
+---
+
+#### test_stage_right_exit_blocked
+**Purpose:** Verify normal right movement works when not at the stage boundary.
+
+**What it tests:**
+- Comic moves right normally when positioned away from the right edge
+- Right movement does not trigger a stage exit when not at the boundary
+
+**Why it matters:** Prevents false positives where normal movement would accidentally cause a stage transition.
+
+---
+
+#### test_stage_left_edge_detection
+**Purpose:** Verify left edge exit logic is blocked if the level pointer is missing.
+
+**What it tests:**
+- When Comic is at the left edge and `current_level_ptr` is null, stage does not change
+- Leftward momentum is cleared when blocked at the edge
+
+**Why it matters:** Defensive handling avoids crashes or undefined behavior when stage data is unavailable.
+
+---
+
+#### test_stage_right_edge_detection
+**Purpose:** Verify right edge exit logic is blocked if the level pointer is missing.
+
+**What it tests:**
+- When Comic is at the right edge and `current_level_ptr` is null, stage does not change
+- Rightward momentum is cleared when blocked at the edge
+
+**Why it matters:** Mirrors the left edge guard path to keep boundary transitions safe and deterministic.
+
+---
+
 ## Test Infrastructure
 
 ### Helper Functions
@@ -235,7 +282,8 @@ If `condition` is false, it prints "FAIL: message" and increments a failure coun
 | Animation | 3 | ✓ Implemented |
 | Jump Physics | 3 | ✓ Implemented |
 | Door System | 6 | ✓ Implemented |
-| **Total** | **13** | ✓ All Passing |
+| Stage Exits | 4 | ✓ Implemented |
+| **Total** | **17** | ✓ All Passing |
 
 ---
 
@@ -266,6 +314,9 @@ When making changes to core systems (physics, doors, animation), always run the 
 
 # After changing door logic
 ./comic_tests --filter door
+
+# After changing stage exits
+./comic_tests --filter stage
 
 # After any change
 ./comic_tests
