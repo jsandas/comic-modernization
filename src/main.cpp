@@ -188,7 +188,6 @@ int main(int argc, char* argv[]) {
                     case SDLK_LEFT: key_state_left = 1; break;
                     case SDLK_RIGHT: key_state_right = 1; break;
                     case SDLK_SPACE: key_state_jump = 1; break;
-                    case SDLK_LALT: key_state_open = 1; break;  // Left Alt key to open doors
                     case SDLK_k: comic_has_door_key = 1; break;  // 'K' key for debugging (grant door key)
                 }
             } else if (e.type == SDL_KEYUP) {
@@ -196,10 +195,12 @@ int main(int argc, char* argv[]) {
                     case SDLK_LEFT: key_state_left = 0; break;
                     case SDLK_RIGHT: key_state_right = 0; break;
                     case SDLK_SPACE: key_state_jump = 0; break;
-                    case SDLK_LALT: key_state_open = 0; break;  // Left Alt key to open doors
                 }
             }
         }
+
+        // Update Alt key state using modifier mask (supports either left or right Alt)
+        key_state_open = (SDL_GetModState() & KMOD_ALT) ? 1 : 0;
 
         // Process physics ticks at ~18.2 Hz (original game speed)
         // This decouples physics from rendering rate

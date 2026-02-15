@@ -131,8 +131,8 @@ const level_t level_data_forest = {
             .exit_l = EXIT_UNUSED,
             .exit_r = 1,
             .doors = {
-                {12, 12, 1, 2},
-                {12, 248, 5, 0},
+                {12, 12, 6, 0},  // Door to castle stage 0
+                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
@@ -169,8 +169,8 @@ const level_t level_data_forest = {
             .exit_l = 1,
             .exit_r = EXIT_UNUSED,
             .doors = {
-                {12, 228, 3, 0},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
+                {12, 238, 0, 0},  // Door to lake stage 0
+                {14, 160, 7, 2},  // Door to comp stage 2
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
