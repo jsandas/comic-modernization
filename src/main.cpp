@@ -133,9 +133,7 @@ int main(int argc, char* argv[]) {
     SDL_Event e;
 
     // Initialize all level data (tile data is compiled-in as hex arrays)
-    if (!initialize_level_data()) {
-        std::cerr << "Warning: Level data initialization failed." << std::endl;
-    }
+    initialize_level_data();
 
     // Load the first playable level (FOREST = level 1, stage 0)
     // Level numbers: 0=LAKE, 1=FOREST, 2=SPACE, 3=BASE, 4=CAVE, 5=SHED, 6=CASTLE, 7=COMP

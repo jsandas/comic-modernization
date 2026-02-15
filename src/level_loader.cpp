@@ -58,9 +58,9 @@ static const uint8_t* tile_arrays[8][3] = {
     {comp_stage_0_tiles, comp_stage_1_tiles, comp_stage_2_tiles}
 };
 
-bool initialize_level_data() {
+void initialize_level_data() {
     if (levels_initialized) {
-        return true;
+        return;
     }
     
     /* Copy const level data into runtime structures and populate with tile data */
@@ -78,7 +78,6 @@ bool initialize_level_data() {
     }
     
     levels_initialized = true;
-    return true;
 }
 
 level_t* get_level_data(const std::string& level_name) {

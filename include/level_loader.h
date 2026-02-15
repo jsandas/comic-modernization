@@ -10,9 +10,8 @@
  * Populates runtime level structures with pre-generated compiled-in tile data.
  * Call this once at game startup before using any level data.
  * 
- * Returns true if successful, false on failure
  */
-bool initialize_level_data();
+void initialize_level_data();
 
 /**
  * Get runtime-initialized level data by name (case-insensitive)
