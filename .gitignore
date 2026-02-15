@@ -44,4 +44,4 @@ assets
 build
 original
 
-tools/genrate_tiles
+tools/generate_tiles
