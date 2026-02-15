@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <iostream>
 #include <fstream>
+#include <unordered_set>
 
 // Global graphics system
 GraphicsSystem* g_graphics = nullptr;
@@ -48,6 +49,7 @@ std::string GraphicsSystem::get_asset_path(const std::string& filename) {
 
 TextureInfo GraphicsSystem::load_png(const std::string& filepath) {
     TextureInfo info = {nullptr, 0, 0};
+    static std::unordered_set<std::string> logged_load_failures;
     
     // Try multiple possible paths
     std::string possible_paths[] = {
@@ -65,6 +67,10 @@ TextureInfo GraphicsSystem::load_png(const std::string& filepath) {
             surface = IMG_Load(path.c_str());
             if (surface) {
                 break;
+            }
+            if (logged_load_failures.insert(path).second) {
+                std::cerr << "Warning: Failed to load PNG: " << path
+                          << " (" << IMG_GetError() << ")" << std::endl;
             }
         }
     }
@@ -94,6 +100,9 @@ bool GraphicsSystem::load_tileset(const std::string& level_name) {
     }
     
     Tileset tileset;
+    int missing_count = 0;
+    int loaded_count = 0;
+    std::string first_missing;
     
     // Load all tiles (0x00-0x7F / 0-127) for the level
     // Some levels have up to 87 tiles, so we try to load 128 to be safe
@@ -107,13 +116,27 @@ bool GraphicsSystem::load_tileset(const std::string& level_name) {
         
         if (texture.texture != nullptr) {
             tileset.tiles[i] = texture;
+            loaded_count++;
+        } else {
+            missing_count++;
+            if (first_missing.empty()) {
+                first_missing = tile_name;
+            }
         }
-        // Silently skip missing tiles - this is expected behavior
     }
     
     if (tileset.tiles.empty()) {
         std::cerr << "Error: Failed to load any tiles for tileset: " << level_name << std::endl;
         return false;
+    }
+
+    if (missing_count > 0) {
+        std::cerr << "Warning: Tileset '" << level_name << "' missing "
+                  << missing_count << " tile(s)"
+                  << " (loaded " << loaded_count << ")"
+                  << (first_missing.empty() ? "" : ", e.g. ")
+                  << (first_missing.empty() ? "" : first_missing)
+                  << std::endl;
     }
     
     tilesets[level_name] = tileset;
@@ -139,6 +162,7 @@ bool GraphicsSystem::load_sprite(const std::string& sprite_name, const std::stri
     
     TextureInfo texture = load_png(filepath);
     if (texture.texture == nullptr) {
+        std::cerr << "Warning: Missing sprite asset: " << filename << std::endl;
         return false;
     }
     
