@@ -129,7 +129,7 @@ Run tests matching a pattern:
 
 **Why it matters:** This implements the precise collision behavior required for door activation. Comic must be closely aligned with the door. Incorrect alignment would allow opening doors from impossible positions or prevent legitimate activation.
 
-**Key detail:** Comics' width is 2 units, and doors are 2 units wide. The 3-unit tolerance (0, 1, 2 units offset) allows Comic to stand in the door or adjacent to it. Offsets cannot be negative.
+**Key detail:** Comic's width is 2 units, and doors are 2 units wide. The 3-unit tolerance (0, 1, 2 units offset) allows Comic to stand in the door or adjacent to it. Offsets cannot be negative.
 
 ---
 
