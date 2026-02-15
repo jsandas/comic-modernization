@@ -1,6 +1,8 @@
 #include "../include/physics.h"
+#include "../include/level_loader.h"
 #include <algorithm>
 #include <cstring>
+#include <iostream>
 
 // External game state (defined in main.cpp)
 extern int comic_x;
@@ -16,6 +18,17 @@ extern uint8_t previous_key_state_jump;
 extern uint8_t key_state_left;
 extern uint8_t key_state_right;
 extern int camera_x;
+
+// Level/stage tracking (defined in main.cpp)
+extern uint8_t current_level_number;
+extern uint8_t current_stage_number;
+extern const level_t* current_level_ptr;
+extern int8_t source_door_level_number;
+extern int8_t source_door_stage_number;
+
+// Checkpoint position (defined in main.cpp)
+extern uint8_t comic_y_checkpoint;
+extern uint8_t comic_x_checkpoint;
 
 // Tile map data
 static uint8_t current_tiles[MAP_WIDTH_TILES * MAP_HEIGHT_TILES];
@@ -69,6 +82,25 @@ uint8_t get_tile_at(uint8_t x, uint8_t y) {
 }
 
 bool is_tile_solid(uint8_t tile_id) {
+    // Check if tile is a door or door frame tile (always passable)
+    if (current_level_ptr != nullptr) {
+        // Check door tiles
+        if (tile_id == current_level_ptr->door_tile_ul ||
+            tile_id == current_level_ptr->door_tile_ur ||
+            tile_id == current_level_ptr->door_tile_ll ||
+            tile_id == current_level_ptr->door_tile_lr) {
+            return false;  // Door tiles are passable
+        }
+        
+        // Check door frame tiles array
+        for (int i = 0; i < 8; i++) {
+            if (current_level_ptr->door_frame_tiles[i] != 0 && tile_id == current_level_ptr->door_frame_tiles[i]) {
+                return false;  // Door frame tiles are passable
+            }
+        }
+    }
+    
+    // Normal solid tile check
     return tile_id > tileset_last_passable;
 }
 
@@ -217,9 +249,47 @@ void handle_fall_or_jump() {
 }
 
 void move_left() {
-    // Check if at left edge
+    // Check if at left edge of stage
     if (comic_x == 0) {
-        comic_x_momentum = 0;
+        // Guard against NULL level pointer
+        if (current_level_ptr == nullptr) {
+            comic_x_momentum = 0;
+            return;
+        }
+        
+        // Validate stage number is within bounds (0-2)
+        if (current_stage_number >= 3) {
+            comic_x_momentum = 0;
+            return;
+        }
+        
+        const stage_t* stage = &current_level_ptr->stages[current_stage_number];
+        
+        // Check if there's a left exit
+        if (stage->exit_l == EXIT_UNUSED) {
+            // No exit here, stop moving
+            comic_x_momentum = 0;
+            return;
+        }
+        
+        // Stage transition to the left
+        // TODO: play_sound(SOUND_STAGE_EDGE_TRANSITION, 4) when audio is implemented
+        
+        current_stage_number = stage->exit_l;
+        comic_y_vel = 0;
+        
+        // Update checkpoint for spawn position on new stage
+        comic_y_checkpoint = comic_y;
+        comic_x_checkpoint = MAP_WIDTH - 2;  // Far right of new stage (254)
+        
+        // Position at far right edge of new stage
+        comic_x = MAP_WIDTH - 2;
+        
+        // Mark as boundary transition (not door)
+        source_door_level_number = -1;
+        
+        // Load the new stage
+        load_new_stage();
         return;
     }
     
@@ -245,9 +315,47 @@ void move_left() {
 }
 
 void move_right() {
-    // Check if at right edge
+    // Check if at right edge of stage
     if (comic_x >= MAP_WIDTH - 2) {
-        comic_x_momentum = 0;
+        // Guard against NULL level pointer
+        if (current_level_ptr == nullptr) {
+            comic_x_momentum = 0;
+            return;
+        }
+        
+        // Validate stage number is within bounds (0-2)
+        if (current_stage_number >= 3) {
+            comic_x_momentum = 0;
+            return;
+        }
+        
+        const stage_t* stage = &current_level_ptr->stages[current_stage_number];
+        
+        // Check if there's a right exit
+        if (stage->exit_r == EXIT_UNUSED) {
+            // No exit here, stop moving
+            comic_x_momentum = 0;
+            return;
+        }
+        
+        // Stage transition to the right
+        // TODO: play_sound(SOUND_STAGE_EDGE_TRANSITION, 4) when audio is implemented
+        
+        current_stage_number = stage->exit_r;
+        comic_y_vel = 0;
+        
+        // Update checkpoint for spawn position on new stage
+        comic_y_checkpoint = comic_y;
+        comic_x_checkpoint = 0;  // Far left of new stage
+        
+        // Position at far left edge of new stage
+        comic_x = 0;
+        
+        // Mark as boundary transition (not door)
+        source_door_level_number = -1;
+        
+        // Load the new stage
+        load_new_stage();
         return;
     }
     
@@ -272,4 +380,28 @@ void move_right() {
     if (camera_x < max_camera_x && relative_x > (PLAYFIELD_WIDTH / 2)) {
         camera_x++;
     }
+}
+bool load_stage_tiles(const std::string& level_name, int stage_number) {
+    // Get the level data (which has been pre-loaded with tiles)
+    level_t* level = get_level_data(level_name);
+    if (!level) {
+        std::cerr << "Failed to load level: " << level_name << std::endl;
+        return false;
+    }
+    
+    // Validate stage number
+    if (stage_number < 0 || stage_number >= 3) {
+        std::cerr << "Invalid stage number: " << stage_number << " (must be 0-2)" << std::endl;
+        return false;
+    }
+    
+    // Copy tile data from the stage structure to the current map
+    const stage_t& stage = level->stages[stage_number];
+    std::memcpy(current_tiles, stage.tiles, sizeof(current_tiles));
+    
+    // Set last_passable from the level's metadata
+    // For now, use default value 0x3E (tiles with ID > 0x3E are solid)
+    tileset_last_passable = 0x3E;
+    
+    return true;
 }

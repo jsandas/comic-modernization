@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <iostream>
 #include <fstream>
+#include <unordered_set>
 
 // Global graphics system
 GraphicsSystem* g_graphics = nullptr;
@@ -48,6 +49,7 @@ std::string GraphicsSystem::get_asset_path(const std::string& filename) {
 
 TextureInfo GraphicsSystem::load_png(const std::string& filepath) {
     TextureInfo info = {nullptr, 0, 0};
+    static std::unordered_set<std::string> logged_load_failures;
     
     // Try multiple possible paths
     std::string possible_paths[] = {
@@ -66,11 +68,15 @@ TextureInfo GraphicsSystem::load_png(const std::string& filepath) {
             if (surface) {
                 break;
             }
+            if (logged_load_failures.insert(path).second) {
+                std::cerr << "Warning: Failed to load PNG: " << path
+                          << " (" << IMG_GetError() << ")" << std::endl;
+            }
         }
     }
     
     if (surface == nullptr) {
-        std::cerr << "Failed to load image: " << filepath << " - " << IMG_GetError() << std::endl;
+        // Silently return null texture - caller will handle missing assets
         return info;
     }
     
@@ -94,10 +100,14 @@ bool GraphicsSystem::load_tileset(const std::string& level_name) {
     }
     
     Tileset tileset;
-    std::vector<int> missing_tiles;
+    int missing_count = 0;
+    int loaded_count = 0;
+    std::string first_missing;
     
-    // Load all 64 tiles (0x00-0x3F) for the level
-    for (int i = 0; i < 64; i++) {
+    // Load all tiles (0x00-0x7F / 0-127) for the level
+    // Some levels have up to 87 tiles, so we try to load 128 to be safe
+    // Missing tiles beyond what exists is expected and not an error
+    for (int i = 0; i < 128; i++) {
         char tile_name[64];
         std::snprintf(tile_name, sizeof(tile_name), "%s.tt2-%02x.png", level_name.c_str(), i);
         
@@ -106,27 +116,27 @@ bool GraphicsSystem::load_tileset(const std::string& level_name) {
         
         if (texture.texture != nullptr) {
             tileset.tiles[i] = texture;
+            loaded_count++;
         } else {
-            missing_tiles.push_back(i);
+            missing_count++;
+            if (first_missing.empty()) {
+                first_missing = tile_name;
+            }
         }
-    }
-    
-    if (!missing_tiles.empty()) {
-        std::cerr << "Warning: Failed to load " << missing_tiles.size() 
-                  << " tiles for tileset '" << level_name << "': ";
-        for (size_t i = 0; i < missing_tiles.size() && i < 10; i++) {
-            std::cerr << "0x" << std::hex << missing_tiles[i] << std::dec;
-            if (i < missing_tiles.size() - 1 && i < 9) std::cerr << ", ";
-        }
-        if (missing_tiles.size() > 10) {
-            std::cerr << " ... and " << (missing_tiles.size() - 10) << " more";
-        }
-        std::cerr << std::endl;
     }
     
     if (tileset.tiles.empty()) {
         std::cerr << "Error: Failed to load any tiles for tileset: " << level_name << std::endl;
         return false;
+    }
+
+    if (missing_count > 0) {
+        std::cerr << "Warning: Tileset '" << level_name << "' missing "
+                  << missing_count << " tile(s)"
+                  << " (loaded " << loaded_count << ")"
+                  << (first_missing.empty() ? "" : ", e.g. ")
+                  << (first_missing.empty() ? "" : first_missing)
+                  << std::endl;
     }
     
     tilesets[level_name] = tileset;
@@ -152,6 +162,7 @@ bool GraphicsSystem::load_sprite(const std::string& sprite_name, const std::stri
     
     TextureInfo texture = load_png(filepath);
     if (texture.texture == nullptr) {
+        std::cerr << "Warning: Missing sprite asset: " << filename << std::endl;
         return false;
     }
     

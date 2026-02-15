@@ -16,6 +16,10 @@ add_executable(captain_comic
     src/main.cpp
     src/physics.cpp
     src/graphics.cpp
+    src/level_data.cpp
+    src/level_loader.cpp
+    src/level_tiles.cpp
+    src/doors.cpp
 )
 
 # Link libraries
@@ -30,6 +34,10 @@ add_executable(comic_tests
     tests/test_main.cpp
     src/physics.cpp
     src/graphics.cpp
+    src/level_data.cpp
+    src/level_loader.cpp
+    src/level_tiles.cpp
+    src/doors.cpp
 )
 
 target_link_libraries(comic_tests

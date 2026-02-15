@@ -2,6 +2,8 @@
 #include <iostream>
 #include "../include/physics.h"
 #include "../include/graphics.h"
+#include "../include/level_loader.h"
+#include "../include/doors.h"
 
 // Game state
 int comic_x = 20;
@@ -17,10 +19,31 @@ uint8_t key_state_jump = 0;
 uint8_t previous_key_state_jump = 0;
 uint8_t key_state_left = 0;
 uint8_t key_state_right = 0;
+uint8_t key_state_open = 0;  // Open key for doors
+uint8_t previous_key_state_open = 0;  // Track previous state for edge-triggered activation
 int camera_x = 0;
+
+// Item collection state
+uint8_t comic_has_door_key = 0;  // 1 if player has door key, 0 otherwise
+
+// Level/stage transition tracking
+uint8_t current_level_number = 1;  // Current level (0=LAKE, 1=FOREST, etc.)
+uint8_t current_stage_number = 0;  // Current stage (0-2 per level)
+const level_t* current_level_ptr = nullptr;  // Pointer to current level data
+int8_t source_door_level_number = -1;  // Set when entering via door for reciprocal positioning
+int8_t source_door_stage_number = -1;
+
+// Checkpoint position (for respawn and boundary crossing)
+uint8_t comic_y_checkpoint = 12;  // Y position to respawn at
+uint8_t comic_x_checkpoint = 14;  // X position to respawn at
 
 // Rendering scale: 16 pixels per game unit
 const int RENDER_SCALE = 16;
+
+// Level names (indexed by level number)
+static constexpr const char* level_names[] = {
+    "lake", "forest", "space", "base", "cave", "shed", "castle", "comp"
+};
 
 // Player animation state
 Animation comic_idle_right;
@@ -30,6 +53,18 @@ Animation comic_run_left;
 Animation comic_jump_right;
 Animation comic_jump_left;
 Animation* current_animation = nullptr;
+
+void process_door_input() {
+    // Edge-triggered door activation: only trigger on rising edge of open key
+    // This prevents the door from immediately re-triggering when entering a new stage
+    // (since load_new_stage positions Comic at the reciprocal door location)
+    if (comic_is_falling_or_jumping == 0 &&
+        key_state_open && !previous_key_state_open) {
+        check_door_activation();
+    }
+    
+    previous_key_state_open = key_state_open;
+}
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
@@ -56,18 +91,6 @@ int main(int argc, char* argv[]) {
     g_graphics = new GraphicsSystem(renderer);
     if (!g_graphics->initialize()) {
         std::cerr << "Graphics system initialization failed!" << std::endl;
-        delete g_graphics;
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
-
-    // Load tileset for the current level (Forest is the first playable level)
-    // Note: LEVEL_NUMBER_LAKE = 0, but LEVEL_NUMBER_FOREST = 1 is the actual starting level
-    std::string current_level = "forest";
-    if (!g_graphics->load_tileset(current_level)) {
-        std::cerr << "Failed to load tileset for level: " << current_level << std::endl;
         delete g_graphics;
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
@@ -109,8 +132,34 @@ int main(int argc, char* argv[]) {
     bool quit = false;
     SDL_Event e;
 
-    // Initialize test level
-    init_test_level();
+    // Initialize all level data (tile data is compiled-in as hex arrays)
+    initialize_level_data();
+
+    // Load the first playable level (FOREST = level 1, stage 0)
+    // Level numbers: 0=LAKE, 1=FOREST, 2=SPACE, 3=BASE, 4=CAVE, 5=SHED, 6=CASTLE, 7=COMP
+    current_level_number = LEVEL_NUMBER_FOREST;  // Forest is the first playable level
+    current_stage_number = 0;
+    source_door_level_number = -1;  // Not entering via door
+    
+    // Set initial spawn position
+    comic_x = 14;
+    comic_y = 12;
+    comic_y_vel = 0;
+    
+    // Load the level and stage
+    load_new_level();
+    
+    if (!current_level_ptr) {
+        std::cerr << "Failed to load game level. Falling back to test level." << std::endl;
+        init_test_level();  // Fall back to test level if loading fails
+    }
+
+    // Cache for tileset to avoid per-frame lookups
+    uint8_t cached_level_number = current_level_number;
+    Tileset* cached_tileset = nullptr;
+    if (current_level_number < 8) {
+        cached_tileset = g_graphics->get_tileset(level_names[current_level_number]);
+    }
 
     // Tick timing - match original game's ~18.2 Hz tick rate
     constexpr double TICK_RATE = 18.2065; // PC timer interrupt rate (1193182/65536 Hz)
@@ -137,6 +186,7 @@ int main(int argc, char* argv[]) {
                     case SDLK_LEFT: key_state_left = 1; break;
                     case SDLK_RIGHT: key_state_right = 1; break;
                     case SDLK_SPACE: key_state_jump = 1; break;
+                    case SDLK_k: comic_has_door_key = 1; break;  // 'K' key for debugging (grant door key)
                 }
             } else if (e.type == SDL_KEYUP) {
                 switch (e.key.keysym.sym) {
@@ -147,6 +197,9 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        // Update Alt key state using modifier mask (supports either left or right Alt)
+        key_state_open = (SDL_GetModState() & KMOD_ALT) ? 1 : 0;
+
         // Process physics ticks at ~18.2 Hz (original game speed)
         // This decouples physics from rendering rate
         int ticks_processed = 0;
@@ -156,6 +209,9 @@ int main(int argc, char* argv[]) {
 
             // Process jump input once per tick (edge-triggered)
             process_jump_input();
+
+            // Process door input once per tick (edge-triggered)
+            process_door_input();
 
             // Update physics (once per tick)
             handle_fall_or_jump();
@@ -198,8 +254,15 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        // Get current tileset
-        Tileset* tileset = g_graphics->get_tileset(current_level);
+        // Update tileset cache if level changed
+        if (current_level_number != cached_level_number) {
+            cached_level_number = current_level_number;
+            if (current_level_number < 8) {
+                cached_tileset = g_graphics->get_tileset(level_names[current_level_number]);
+            }
+        }
+
+        Tileset* tileset = cached_tileset;
 
         // Render tiles
         for (int ty = 0; ty < MAP_HEIGHT_TILES; ty++) {

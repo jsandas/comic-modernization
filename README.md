@@ -114,21 +114,20 @@ See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for the complete 10-phase imp
 7. ⏸️ **UI/Menus** - HUD, title, high scores
 8. ⏸️ **Game Loop** - Complete flow, states
 9. ⏸️ **Polish** - Testing, optimization
-10. ├── main.cpp                # Entry point and game loop
-│   └── physics.cpp             # Physics engine (complete)
-├── include/
-│   └── physics.h               # Physics constants and functions
+10. ⏸️ **Release** - Packaging, distribution
 ## Project Structure
 
 ```
 comic-modernization/
 ├── CMakeLists.txt              # Build configuration
 ├── README.md                   # This file
-├── MODERNIZATION_PLAN.md       #  (on ground or in air)
-- **Space** - Jump (hold for higher jump)
-- **Close Window** - Exit game Entry point and game loop
-├── include/                    # Headers (TBD)
-├── assets/                     # Game assets (not in repo)
+├── MODERNIZATION_PLAN.md       # Roadmap and status
+├── include/                    # Header files
+├── src/                        # Game source
+├── tests/                      # Test suite
+├── tools/                      # Development tools
+├── original/                   # Original game assets (local)
+├── assets/                     # Modernized assets (in progress)
 └── build/                      # Build output (generated)
 ```
 
@@ -156,6 +155,19 @@ comic-modernization/
 
 Currently manual testing. Automated tests planned for Phase 9.
 
+### Tools
+
+Generate compiled-in tile data from the original PT files:
+
+```bash
+g++ -std=c++17 -o tools/generate_tiles tools/generate_tiles.cpp
+./tools/generate_tiles            # Run from repo root
+./tools/generate_tiles /path/to/comic-modernization
+```
+
+The tool expects the original data in the `original/` directory and writes
+`src/level_tiles.cpp`.
+
 ## Contributing
 
 This is an active development project. Contributions welcome once core systems are complete.
@@ -175,15 +187,7 @@ Assets: Original game assets © Michael Denio - consult original licensing
 ## Credits
 
 - **Original Game**: Michael Denio (1988)
-- **C RefactPhase 2 Nearly Complete (85% - Physics System)
-
-**What's Working:**
-- Player falls with gravity and lands on platforms
-- Jump with space bar (hold for higher jumps)
-- Move left/right with arrow keys
-- Collision with walls, floors, and ceilings
-- Camera follows player as they move
-- Test level with ground, platforms, and walls(https://github.com/jsandas/comic-c)
+- **C Refactor**: [jsandas/comic-c](https://github.com/jsandas/comic-c)
 - **Modernization**: This project's contributors
 
 ## Links
@@ -194,5 +198,5 @@ Assets: Original game assets © Michael Denio - consult original licensing
 
 ---
 
-**Last Updated:** 2024-02-07  
-**Status:** Early Development (Phase 2 of 10)
+**Last Updated:** 2026-02-15  
+**Status:** Active Development (Phase 4 of 10)
