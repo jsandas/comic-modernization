@@ -43,3 +43,5 @@
 assets
 build
 original
+
+tools/genrate_tiles
