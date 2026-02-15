@@ -11,7 +11,7 @@
  * Embedded as C++ hex arrays to eliminate runtime file I/O.
  */
 
-#include "level_tiles.h"
+#include "../include/level_tiles.h"
 
 /* lake Stage 0 - Tile Map */
 extern const uint8_t lake_stage_0_tiles[128 * 10] = {

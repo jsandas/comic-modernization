@@ -6,10 +6,10 @@
  * eliminating all runtime file I/O dependencies.
  */
 
-#include "level_loader.h"
-#include "level_tiles.h"
-#include "physics.h"
-#include "graphics.h"
+#include "../include/level_loader.h"
+#include "../include/level_tiles.h"
+#include "../include/physics.h"
+#include "../include/graphics.h"
 #include <cstring>
 #include <iostream>
 

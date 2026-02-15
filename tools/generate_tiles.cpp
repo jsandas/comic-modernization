@@ -88,7 +88,7 @@ void write_cpp_header(std::ofstream& out) {
     out << " * Contains tile map data for all 8 levels, 3 stages each (24 total).\n";
     out << " * Embedded as C++ hex arrays to eliminate runtime file I/O.\n";
     out << " */\n\n";
-    out << "#include \"level_tiles.h\"\n\n";
+    out << "#include \"../include/level_tiles.h\"\n\n";
 }
 
 /**

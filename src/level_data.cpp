@@ -5,7 +5,7 @@
  * This data was originally in R3_levels.asm from the reference implementation.
  */
 
-#include "level.h"
+#include "../include/level.h"
 #include <algorithm>
 #include <cctype>
 
