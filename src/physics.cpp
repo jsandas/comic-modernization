@@ -332,7 +332,7 @@ void move_right() {
         const stage_t* stage = &current_level_ptr->stages[current_stage_number];
         
         // Check if there's a right exit
-        if (stage->exit_r == 0xFF) {  // EXIT_UNUSED
+        if (stage->exit_r == EXIT_UNUSED) {
             // No exit here, stop moving
             comic_x_momentum = 0;
             return;
