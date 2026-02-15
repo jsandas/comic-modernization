@@ -39,7 +39,7 @@ This project ports the game to modern systems while maintaining behavioral fidel
 
 ```bash
 # Install SDL2
-brew install sdl2
+brew install sdl2 sdl2_image sdl2_ttf
 
 # Build
 mkdir build && cd build
@@ -54,10 +54,10 @@ make
 
 ```bash
 # Install SDL2 (Ubuntu/Debian)
-sudo apt-get install libsdl2-dev
+sudo apt-get install cmake g++ libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
 
 # Or Fedora
-sudo dnf install SDL2-devel
+sudo dnf install cmake gcc-c++ sdl2-compat-devel SDL2_image-devel SDL2_ttf-devel
 
 # Build
 mkdir build && cd build
