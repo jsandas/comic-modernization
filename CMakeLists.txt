@@ -5,9 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 
 find_package(SDL2 REQUIRED)
 
-# Find SDL2_image using pkg-config with IMPORTED_TARGET
+# Find SDL2_image and SDL2_ttf using pkg-config with IMPORTED_TARGET
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2_IMAGE REQUIRED IMPORTED_TARGET SDL2_image)
+pkg_check_modules(SDL2_TTF REQUIRED IMPORTED_TARGET SDL2_ttf)
 
 include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR}/include)
@@ -20,12 +21,14 @@ add_executable(captain_comic
     src/level_loader.cpp
     src/level_tiles.cpp
     src/doors.cpp
+    src/cheats.cpp
 )
 
 # Link libraries
 target_link_libraries(captain_comic 
     ${SDL2_LIBRARIES}
     PkgConfig::SDL2_IMAGE
+    PkgConfig::SDL2_TTF
 )
 
 enable_testing()
@@ -38,11 +41,13 @@ add_executable(comic_tests
     src/level_loader.cpp
     src/level_tiles.cpp
     src/doors.cpp
+    src/cheats.cpp
 )
 
 target_link_libraries(comic_tests
     ${SDL2_LIBRARIES}
     PkgConfig::SDL2_IMAGE
+    PkgConfig::SDL2_TTF
 )
 
 add_test(NAME comic_tests_all COMMAND comic_tests)

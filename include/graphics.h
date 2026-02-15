@@ -2,6 +2,7 @@
 #define GRAPHICS_H
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <cstdint>
 #include <string>
 #include <map>
@@ -80,12 +81,19 @@ public:
     void render_sprite_centered(int screen_x, int screen_y, const Sprite& sprite, bool flip_h = false);
     void render_sprite_centered_scaled(int screen_x, int screen_y, const Sprite& sprite, int width, int height, bool flip_h = false);
     
+    // Text rendering
+    void render_text(int screen_x, int screen_y, const std::string& text, SDL_Color color);
+    
+    // Debug rendering
+    void render_debug_overlay();
+    
     // Cleanup
     
 private:
     void cleanup();
     SDL_Renderer* renderer;
     bool img_inited;
+    TTF_Font* debug_font;  // Font for debug overlay text
     std::map<std::string, Tileset> tilesets;
     std::map<std::string, Sprite> sprites;
     

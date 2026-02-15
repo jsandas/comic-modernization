@@ -1,9 +1,11 @@
 #include <SDL2/SDL.h>
 #include <iostream>
+#include <cstring>
 #include "../include/physics.h"
 #include "../include/graphics.h"
 #include "../include/level_loader.h"
 #include "../include/doors.h"
+#include "../include/cheats.h"
 
 // Game state
 int comic_x = 20;
@@ -67,6 +69,20 @@ void process_door_input() {
 }
 
 int main(int argc, char* argv[]) {
+    // Parse command-line arguments
+    bool debug_mode = false;
+    for (int i = 1; i < argc; ++i) {
+        if (std::strcmp(argv[i], "--debug") == 0) {
+            debug_mode = true;
+            std::cout << "Debug mode enabled" << std::endl;
+        } else if (std::strcmp(argv[i], "--help") == 0) {
+            std::cout << "Captain Comic - Usage:" << std::endl;
+            std::cout << "  --debug    Enable debug mode and cheat keys" << std::endl;
+            std::cout << "  --help     Show this help message" << std::endl;
+            return 0;
+        }
+    }
+    
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
         std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
         return 1;
@@ -91,6 +107,18 @@ int main(int argc, char* argv[]) {
     g_graphics = new GraphicsSystem(renderer);
     if (!g_graphics->initialize()) {
         std::cerr << "Graphics system initialization failed!" << std::endl;
+        delete g_graphics;
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_Quit();
+        return 1;
+    }
+    
+    // Initialize cheat system
+    g_cheats = new CheatSystem();
+    if (!g_cheats->initialize(debug_mode)) {
+        std::cerr << "Cheat system initialization failed!" << std::endl;
+        delete g_cheats;
         delete g_graphics;
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
@@ -182,12 +210,15 @@ int main(int argc, char* argv[]) {
             if (e.type == SDL_QUIT) {
                 quit = true;
             } else if (e.type == SDL_KEYDOWN) {
+                // Process regular gameplay keys
                 switch (e.key.keysym.sym) {
                     case SDLK_LEFT: key_state_left = 1; break;
                     case SDLK_RIGHT: key_state_right = 1; break;
                     case SDLK_SPACE: key_state_jump = 1; break;
-                    case SDLK_k: comic_has_door_key = 1; break;  // 'K' key for debugging (grant door key)
                 }
+                
+                // Process cheat keys (only active if --debug flag set)
+                g_cheats->process_input(e.key.keysym.sym);
             } else if (e.type == SDL_KEYUP) {
                 switch (e.key.keysym.sym) {
                     case SDLK_LEFT: key_state_left = 0; break;
@@ -294,6 +325,11 @@ int main(int argc, char* argv[]) {
                 g_graphics->render_sprite_centered_scaled(screen_x, screen_y, frame->sprite, player_width, player_height);
             }
         }
+        
+        // Render debug overlay if enabled via F3
+        if (g_cheats->should_show_debug_overlay()) {
+            g_graphics->render_debug_overlay();
+        }
 
         // Present
         SDL_RenderPresent(renderer);
@@ -307,6 +343,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Cleanup
+    delete g_cheats;
     delete g_graphics;
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);

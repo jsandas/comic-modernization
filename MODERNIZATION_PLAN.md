@@ -240,6 +240,105 @@ From jsandas/comic-c, key modules to port:
 
 ---
 
+## Developer Tools & Debug Features
+
+**Status:** ✅ COMPLETE
+**Implementation Date:** 2026-02-15
+**Goal:** Provide development and debugging aids for testing and validation
+
+### CheatSystem Class
+A centralized system for managing debug cheats and development tools. Activated via `--debug` command-line flag; all cheats remain silently disabled without it.
+
+**Architecture:**
+- Implemented as `CheatSystem` class following RAII pattern (matching `GraphicsSystem`)
+- Global instance `g_cheats` initialized at startup
+- Input processed during main game loop after regular keyboard handling
+- Command-line parsing in `main()` for debug mode activation
+
+**Features:**
+
+1. **Noclip Mode (F1)**
+   - Disables collision detection entirely
+   - Player walks through all solid tiles and obstacles
+   - Useful for: Testing level layouts, debugging physics edge cases, exploring level design
+
+2. **Level Warp (F2)**
+   - Interactive two-step menu: select level (0-7), then stage (0-2)
+   - Levels: LAKE (0), FOREST (1), SPACE (2), BASE (3), CAVE (4), SHED (5), CASTLE (6), COMP (7)
+   - Resets player position to safe spawn (20, 14) on warp
+   - Clears velocity and jump state
+   - Useful for: Testing specific levels without playing through, accessing late-game content
+
+3. **Position Warp (F4)**
+   - Teleport player to specific X,Y coordinates
+   - Input validation: X (0-255), Y (0-19)
+   - Auto-adjusts camera to keep player on-screen
+   - Resets velocity
+   - Useful for: Testing collision at specific tiles, placing player near objectives, testing boundaries
+
+4. **Debug Overlay (F3)**
+   - Semi-transparent overlay in top-left corner displaying:
+     - Player X,Y coordinates (in cyan text)
+     - Current level and stage (in cyan text)
+     - Visual velocity bar (red, vertical)
+     - Visual momentum bar (blue, horizontal)
+     - Noclip indicator (green square when active)
+   - Uses SDL2_ttf for text rendering with system font fallback chain
+   - Useful for: Verifying position during complex maneuvers, monitoring physics state, visual feedback on cheat status
+
+5. **Door Key Toggle (F5)**
+   - Toggle the door key inventory item on/off
+   - When active (1): Allows opening all doors
+   - When inactive (0): Cannot open doors even if they're nearby
+   - Useful for: Testing door mechanics, accessing specific areas, bypassing door locks for testing
+
+**Console Logging:**
+- All cheat activations logged to stdout with `[CHEAT]` prefix
+- Input validation feedback (e.g., invalid coordinates)
+- Level/stage warp confirmations
+- Door key grant/removal notifications
+- Users can see cheat activity in terminal even if overlay disabled
+
+**Command-Line Interface:**
+```bash
+./captain_comic --debug    # Enable all cheats and F-key controls
+./captain_comic --help     # Display help message
+./captain_comic            # Normal mode (cheats disabled)
+```
+
+**Implementation Details:**
+- Multi-step input handling for complex cheats (level warp, position warp)
+- Input buffering for coordinate entry with backspace support
+- Console prompts guide users through multi-step operations
+- Proper cleanup of system resources (SDL_ttf font) in destructor
+- Font loading with cross-platform fallback (Menlo, Courier on macOS; DejaVuSansMono on Linux; lucidaconsole on Windows)
+
+**Technical Specs:**
+- Dependencies: SDL2_ttf (added to CMakeLists.txt)
+- Code Coverage:
+  - New files: `include/cheats.h`, `src/cheats.cpp`
+  - Modified: `src/main.cpp` (command-line parsing, cheat input integration)
+  - Modified: `src/physics.cpp`, `include/physics.h` (noclip flag implementation)
+  - Modified: `src/graphics.cpp`, `include/graphics.h` (debug overlay rendering, text support)
+  - Modified: `CMakeLists.txt` (cheats.cpp, SDL2_ttf)
+
+**Testing:**
+- Builds without warnings or errors ✅
+- All existing tests pass ✅
+- Cheats silently ignored when --debug not specified ✅
+- Debug overlay font loads successfully ✅
+- Position validation prevents out-of-bounds warping ✅
+
+**Future Enhancements:**
+- God mode (invincibility) - deferred to Phase 5 when damage system exists
+- Item granting (give inventory items) - deferred to Phase 5 when actor system complete
+- Teleport wand testing mode
+- Enemy spawner/despawner controls
+- Speed-up/slow-down time controls
+- Collision visualization (show collision boxes)
+
+---
+
 ### Phase 5: Actor System
 **Status:** In Progress
 **Completion Date:** TBD
