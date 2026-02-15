@@ -21,6 +21,7 @@
 #include <iomanip>
 #include <string>
 #include <cstdint>
+#include <filesystem>
 
 /* Level names in order */
 static const char* level_names[] = {
@@ -125,8 +126,7 @@ int main(int argc, char* argv[]) {
     std::string output_file = base_path + "/src/level_tiles.cpp";
     
     /* Verify original directory exists */
-    struct stat st;
-    if (stat(original_dir.c_str(), &st) != 0 || !S_ISDIR(st.st_mode)) {
+    if (!std::filesystem::is_directory(original_dir)) {
         std::cerr << "Error: Directory not found: " << original_dir << std::endl;
         std::cerr << "Usage: " << argv[0] << " [path_to_comic-modernization]" << std::endl;
         std::cerr << "  Example: ./tools/generate_tiles ." << std::endl;
