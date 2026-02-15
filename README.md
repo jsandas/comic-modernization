@@ -33,7 +33,7 @@ This project ports the game to modern systems while maintaining behavioral fidel
 
 - CMake 3.16+
 - C++17 compiler (GCC 7+, Clang 5+, MSVC 2017+)
-- SDL2 development libraries
+- SDL2 development libraries (SDL2, SDL2_image, SDL2_ttf)
 
 ### macOS
 
@@ -100,6 +100,12 @@ cmake --build .
 - ✅ Player rendering (yellow rectangle, 2x4 game units)
 - ✅ Tile rendering (gray blocks for solid tiles)
 - ✅ Modular architecture (separate physics module)
+- ✅ **Debug/Cheat System** (development tool):
+  - ✅ Noclip mode (walk through walls)
+  - ✅ Level/stage warping (teleport to any level)
+  - ✅ Position warping (teleport to coordinates)
+  - ✅ Debug overlay (display coordinates, velocity, active cheats)
+  - Toggled via `--debug` flag; all cheats disabled without it
 
 ## Roadmap
 
@@ -135,7 +141,15 @@ comic-modernization/
 
 - **Arrow Keys** - Move left/right
 - **Space** - Jump
+- **Alt** - Open doors
 - **ESC** - (Not yet implemented)
+
+### Debug Mode (with `--debug` flag)
+
+- **F1** - Toggle noclip (walk through walls)
+- **F2** - Level warp (interactive menu to select level 0-7 and stage 0-2)
+- **F3** - Toggle debug overlay (shows X/Y coordinates, velocity, level/stage)
+- **F4** - Position warp (teleport to specific coordinates)
 
 ## Development
 
