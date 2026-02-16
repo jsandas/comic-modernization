@@ -227,8 +227,8 @@ const level_t level_data_space = {
             .exit_l = EXIT_UNUSED,
             .exit_r = 1,
             .doors = {
-                {12, 2, 0, 0},
-                {14, 248, 5, 0},
+                {12, 2, 0, 2},
+                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
@@ -251,17 +251,17 @@ const level_t level_data_space = {
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
-                {1, ENEMY_BEHAVIOR_BOUNCE},
-                {1, ENEMY_BEHAVIOR_BOUNCE},
-                {0, ENEMY_BEHAVIOR_UNUSED},
-                {1, ENEMY_BEHAVIOR_BOUNCE | ENEMY_BEHAVIOR_FAST}
+                {0, ENEMY_BEHAVIOR_BOUNCE},
+                {0, ENEMY_BEHAVIOR_BOUNCE},
+                {0, ENEMY_BEHAVIOR_BOUNCE},
+                {1, ENEMY_BEHAVIOR_BOUNCE}
             }
         },
         /* space2 */
         {
             .item_type = ITEM_GEMS,
-            .item_y = 4,
-            .item_x = 230,
+            .item_y = 6,
+            .item_x = 198,
             .exit_l = 1,
             .exit_r = EXIT_UNUSED,
             .doors = {
