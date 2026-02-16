@@ -446,7 +446,9 @@ void GraphicsSystem::cleanup() {
         TTF_CloseFont(debug_font);
         debug_font = nullptr;
     }
-    TTF_Quit();
+    if (TTF_WasInit() != 0) {
+        TTF_Quit();
+    }
     
     // Only quit SDL_image once to prevent double-quit errors
     if (img_inited) {
