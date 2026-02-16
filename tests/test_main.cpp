@@ -572,25 +572,57 @@ static void test_cave_level_solidity() {
 static void test_problematic_levels_have_solid_tiles() {
     initialize_level_data();
     
-    // Test SHED level
+    // Test SHED level configuration and solidity
     const level_t* shed = get_level_by_number(LEVEL_NUMBER_SHED);
     check(shed != nullptr, "shed level should exist");
     check(shed->tileset_last_passable == 0x17, "shed level tileset_last_passable should be 0x17");
     
-    // Test BASE level
+    current_level_number = LEVEL_NUMBER_SHED;
+    current_stage_number = 0;
+    current_level_ptr = nullptr;
+    load_new_level();
+    check(is_tile_solid(0x18), "shed tile 0x18 should be solid (> 0x17)");
+    check(!is_tile_solid(0x17), "shed tile 0x17 should be passable (<= 0x17)");
+    reset_level_tiles();
+    
+    // Test BASE level configuration and solidity
     const level_t* base = get_level_by_number(LEVEL_NUMBER_BASE);
     check(base != nullptr, "base level should exist");
     check(base->tileset_last_passable == 0x3b, "base level tileset_last_passable should be 0x3b");
     
-    // Test COMP level
+    current_level_number = LEVEL_NUMBER_BASE;
+    current_stage_number = 0;
+    current_level_ptr = nullptr;
+    load_new_level();
+    check(is_tile_solid(0x3c), "base tile 0x3c should be solid (> 0x3b)");
+    check(!is_tile_solid(0x3b), "base tile 0x3b should be passable (<= 0x3b)");
+    reset_level_tiles();
+    
+    // Test COMP level configuration and solidity
     const level_t* comp = get_level_by_number(LEVEL_NUMBER_COMP);
     check(comp != nullptr, "comp level should exist");
     check(comp->tileset_last_passable == 0x1d, "comp level tileset_last_passable should be 0x1d");
     
-    // Test CAVE level
+    current_level_number = LEVEL_NUMBER_COMP;
+    current_stage_number = 0;
+    current_level_ptr = nullptr;
+    load_new_level();
+    check(is_tile_solid(0x1e), "comp tile 0x1e should be solid (> 0x1d)");
+    check(!is_tile_solid(0x1d), "comp tile 0x1d should be passable (<= 0x1d)");
+    reset_level_tiles();
+    
+    // Test CAVE level configuration and solidity
     const level_t* cave = get_level_by_number(LEVEL_NUMBER_CAVE);
     check(cave != nullptr, "cave level should exist");
     check(cave->tileset_last_passable == 0x09, "cave level tileset_last_passable should be 0x09");
+    
+    current_level_number = LEVEL_NUMBER_CAVE;
+    current_stage_number = 0;
+    current_level_ptr = nullptr;
+    load_new_level();
+    check(is_tile_solid(0x0a), "cave tile 0x0a should be solid (> 0x09)");
+    check(!is_tile_solid(0x09), "cave tile 0x09 should be passable (<= 0x09)");
+    reset_level_tiles();
 }
 
 struct TestCase {
