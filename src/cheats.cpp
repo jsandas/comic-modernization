@@ -203,9 +203,13 @@ void CheatSystem::handle_position_warp_input(SDL_Keycode key) {
     
     // Handle numeric input
     if (key >= SDLK_0 && key <= SDLK_9) {
-        position_input_buffer += static_cast<char>('0' + (key - SDLK_0));
-        std::cout << static_cast<char>('0' + (key - SDLK_0));
-        std::cout.flush();
+        // Limit input to 3 digits (sufficient for 0-255 range)
+        constexpr size_t MAX_INPUT_LENGTH = 3;
+        if (position_input_buffer.length() < MAX_INPUT_LENGTH) {
+            position_input_buffer += static_cast<char>('0' + (key - SDLK_0));
+            std::cout << static_cast<char>('0' + (key - SDLK_0));
+            std::cout.flush();
+        }
         return;
     }
     
