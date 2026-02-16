@@ -71,8 +71,8 @@ private:
     bool awaiting_x_input;
     bool awaiting_y_input;
     std::string position_input_buffer;
-    int target_x;
-    int target_y;
+    int16_t target_x;
+    int16_t target_y;
 };
 
 // Global cheat system instance
