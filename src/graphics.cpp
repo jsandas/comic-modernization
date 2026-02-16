@@ -1,14 +1,29 @@
 #include "../include/graphics.h"
+#include "../include/cheats.h"
+#include "../include/physics.h"
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <cstdio>
 #include <iostream>
 #include <fstream>
 #include <unordered_set>
+#include <iomanip>
+#include <sstream>
+
+// External game state (defined in main.cpp)
+extern int comic_x;
+extern int comic_y;
+extern int8_t comic_y_vel;
+extern int8_t comic_x_momentum;
+extern uint8_t comic_facing;
+extern uint8_t current_level_number;
+extern uint8_t current_stage_number;
+extern int camera_x;
 
 // Global graphics system
 GraphicsSystem* g_graphics = nullptr;
 
-GraphicsSystem::GraphicsSystem(SDL_Renderer* renderer) : renderer(renderer), img_inited(false) {}
+GraphicsSystem::GraphicsSystem(SDL_Renderer* renderer) : renderer(renderer), img_inited(false), ttf_inited(false), debug_font(nullptr) {}
 
 GraphicsSystem::~GraphicsSystem() {
     cleanup();
@@ -22,6 +37,50 @@ bool GraphicsSystem::initialize() {
         return false;
     }
     img_inited = true;
+    
+    // Initialize SDL_ttf
+    if (TTF_Init() < 0) {
+        std::cerr << "SDL_ttf initialization failed: " << TTF_GetError() << std::endl;
+        IMG_Quit();
+        img_inited = false;
+        return false;
+    }
+    ttf_inited = true;
+    
+    // Try to load a monospace font for debug overlay
+    // Try multiple possible font paths and names
+    std::string font_candidates[] = {
+        // macOS system fonts
+        "/System/Library/Fonts/Menlo.ttc",
+        "/System/Library/Fonts/Courier.ttc",
+        "/System/Library/Fonts/SFNSMono.ttf",
+        "/Library/Fonts/Menlo.ttc",
+        
+        // Linux fonts
+        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+        
+        // Windows fonts
+        "C:\\Windows\\Fonts\\lucidaconsole.ttf",
+        "C:\\Windows\\Fonts\\consola.ttf",
+        
+        // Bundled fonts
+        "assets/fonts/monospace.ttf"
+    };
+    
+    const int debug_font_size = 12;
+    for (const auto& font_path : font_candidates) {
+        debug_font = TTF_OpenFont(font_path.c_str(), debug_font_size);
+        if (debug_font != nullptr) {
+            break;
+        }
+    }
+    
+    if (debug_font == nullptr) {
+        std::cerr << "Warning: Could not load debug font, debug overlay will not display coordinates" << std::endl;
+        std::cerr << "  Tried: Menlo, Courier, DejaVuSansMono, LiberationMono, and others" << std::endl;
+    }
+    
     return true;
 }
 
@@ -284,6 +343,80 @@ void GraphicsSystem::render_sprite_centered_scaled(int screen_x, int screen_y, c
     render_sprite_scaled(x, y, sprite, width, height, flip_h);
 }
 
+void GraphicsSystem::render_text(int screen_x, int screen_y, const std::string& text, SDL_Color color) {
+    if (debug_font == nullptr) {
+        return;  // Font not available
+    }
+    
+    SDL_Surface* surface = TTF_RenderText_Solid(debug_font, text.c_str(), color);
+    if (surface == nullptr) {
+        return;
+    }
+    
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+    if (texture == nullptr) {
+        SDL_FreeSurface(surface);
+        return;
+    }
+    
+    SDL_Rect dst_rect = {screen_x, screen_y, surface->w, surface->h};
+    SDL_RenderCopy(renderer, texture, nullptr, &dst_rect);
+    
+    SDL_DestroyTexture(texture);
+    SDL_FreeSurface(surface);
+}
+
+void GraphicsSystem::render_debug_overlay() {
+    // Draw a semi-transparent debug indicator in top-left corner
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    
+    // Background box
+    SDL_Rect bg_rect = {5, 5, 200, 100};
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 180);  // Semi-transparent black
+    SDL_RenderFillRect(renderer, &bg_rect);
+    
+    // Border
+    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);  // Yellow border
+    SDL_RenderDrawRect(renderer, &bg_rect);
+    
+    // Draw noclip indicator if active
+    if (cheat_noclip) {
+        SDL_Rect noclip_indicator = {10, 10, 20, 20};
+        SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);  // Green square for noclip
+        SDL_RenderFillRect(renderer, &noclip_indicator);
+    }
+    
+    // Draw simple bars to visualize velocity
+    // Y velocity bar (vertical)
+    int vel_bar_height = std::abs(comic_y_vel) * 2;
+    if (vel_bar_height > 50) vel_bar_height = 50;
+    SDL_Rect vel_bar = {40, 50 - vel_bar_height / 2, 10, vel_bar_height};
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);  // Red for velocity
+    SDL_RenderFillRect(renderer, &vel_bar);
+    
+    // X momentum bar (horizontal)
+    int momentum_bar_width = std::abs(comic_x_momentum) * 3;
+    if (momentum_bar_width > 50) momentum_bar_width = 50;
+    SDL_Rect momentum_bar = {60, 40, momentum_bar_width, 10};
+    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);  // Blue for momentum
+    SDL_RenderFillRect(renderer, &momentum_bar);
+    
+    // Reset blend mode
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+    
+    // Render coordinate information as text
+    if (debug_font != nullptr) {
+        std::ostringstream coord_text;
+        coord_text << "X: " << static_cast<int>(comic_x) << " Y: " << static_cast<int>(comic_y);
+        render_text(10, 70, coord_text.str(), {0, 255, 255, 255});  // Cyan text
+        
+        std::ostringstream level_text;
+        level_text << "L" << static_cast<int>(current_level_number) 
+                   << " S" << static_cast<int>(current_stage_number);
+        render_text(10, 85, level_text.str(), {0, 255, 255, 255});  // Cyan text
+    }
+}
+
 void GraphicsSystem::cleanup() {
     // Clean up tilesets
     for (auto& pair : tilesets) {
@@ -298,6 +431,16 @@ void GraphicsSystem::cleanup() {
         }
     }
     sprites.clear();
+    
+    // Clean up fonts
+    if (debug_font != nullptr) {
+        TTF_CloseFont(debug_font);
+        debug_font = nullptr;
+    }
+    if (ttf_inited) {
+        TTF_Quit();
+        ttf_inited = false;
+    }
     
     // Only quit SDL_image once to prevent double-quit errors
     if (img_inited) {

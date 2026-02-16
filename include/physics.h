@@ -20,6 +20,9 @@ constexpr int MAP_HEIGHT = 20;             // Map height in game units (10 * 2)
 constexpr int PLAYFIELD_WIDTH = 24;        // Visible playfield width in game units
 constexpr int PLAYFIELD_HEIGHT = 20;       // Visible playfield height in game units
 
+// Cheat system flags
+extern bool cheat_noclip;  // When true, disables collision detection
+
 // Functions
 void process_jump_input();
 void handle_fall_or_jump();

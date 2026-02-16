@@ -33,13 +33,13 @@ This project ports the game to modern systems while maintaining behavioral fidel
 
 - CMake 3.16+
 - C++17 compiler (GCC 7+, Clang 5+, MSVC 2017+)
-- SDL2 development libraries
+- SDL2 development libraries (SDL2, SDL2_image, SDL2_ttf)
 
 ### macOS
 
 ```bash
 # Install SDL2
-brew install sdl2
+brew install sdl2 sdl2_image sdl2_ttf
 
 # Build
 mkdir build && cd build
@@ -54,10 +54,10 @@ make
 
 ```bash
 # Install SDL2 (Ubuntu/Debian)
-sudo apt-get install libsdl2-dev
+sudo apt-get install cmake g++ libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
 
 # Or Fedora
-sudo dnf install SDL2-devel
+sudo dnf install cmake gcc-c++ sdl2-compat-devel SDL2_image-devel SDL2_ttf-devel
 
 # Build
 mkdir build && cd build
@@ -100,6 +100,12 @@ cmake --build .
 - ✅ Player rendering (yellow rectangle, 2x4 game units)
 - ✅ Tile rendering (gray blocks for solid tiles)
 - ✅ Modular architecture (separate physics module)
+- ✅ **Debug/Cheat System** (development tool):
+  - ✅ Noclip mode (walk through walls)
+  - ✅ Level/stage warping (teleport to any level)
+  - ✅ Position warping (teleport to coordinates)
+  - ✅ Debug overlay (display coordinates, velocity, active cheats)
+  - Toggled via `--debug` flag; all cheats disabled without it
 
 ## Roadmap
 
@@ -135,7 +141,16 @@ comic-modernization/
 
 - **Arrow Keys** - Move left/right
 - **Space** - Jump
+- **Alt** - Open doors
 - **ESC** - (Not yet implemented)
+
+### Debug Mode (with `--debug` flag)
+
+- **F1** - Toggle noclip (walk through walls)
+- **F2** - Level warp (interactive menu to select level 0-7 and stage 0-2)
+- **F3** - Toggle debug overlay (shows X/Y coordinates, velocity, level/stage)
+- **F4** - Position warp (teleport to specific coordinates)
+- **F5** - Toggle door key (grant/remove ability to open doors)
 
 ## Development
 

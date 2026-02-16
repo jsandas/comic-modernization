@@ -4,6 +4,9 @@
 #include <cstring>
 #include <iostream>
 
+// Cheat system flags
+bool cheat_noclip = false;
+
 // External game state (defined in main.cpp)
 extern int comic_x;
 extern int comic_y;
@@ -82,6 +85,11 @@ uint8_t get_tile_at(uint8_t x, uint8_t y) {
 }
 
 bool is_tile_solid(uint8_t tile_id) {
+    // Cheat: noclip disables all collision detection
+    if (cheat_noclip) {
+        return false;
+    }
+    
     // Check if tile is a door or door frame tile (always passable)
     if (current_level_ptr != nullptr) {
         // Check door tiles
