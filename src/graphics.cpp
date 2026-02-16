@@ -23,7 +23,7 @@ extern int camera_x;
 // Global graphics system
 GraphicsSystem* g_graphics = nullptr;
 
-GraphicsSystem::GraphicsSystem(SDL_Renderer* renderer) : renderer(renderer), img_inited(false), debug_font(nullptr) {}
+GraphicsSystem::GraphicsSystem(SDL_Renderer* renderer) : renderer(renderer), img_inited(false), ttf_inited(false), debug_font(nullptr) {}
 
 GraphicsSystem::~GraphicsSystem() {
     cleanup();
@@ -45,6 +45,7 @@ bool GraphicsSystem::initialize() {
         img_inited = false;
         return false;
     }
+    ttf_inited = true;
     
     // Try to load a monospace font for debug overlay
     // Try multiple possible font paths and names
@@ -436,8 +437,9 @@ void GraphicsSystem::cleanup() {
         TTF_CloseFont(debug_font);
         debug_font = nullptr;
     }
-    if (TTF_WasInit() != 0) {
+    if (ttf_inited) {
         TTF_Quit();
+        ttf_inited = false;
     }
     
     // Only quit SDL_image once to prevent double-quit errors

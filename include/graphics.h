@@ -93,6 +93,7 @@ private:
     void cleanup();
     SDL_Renderer* renderer;
     bool img_inited;
+    bool ttf_inited;
     TTF_Font* debug_font;  // Font for debug overlay text
     std::map<std::string, Tileset> tilesets;
     std::map<std::string, Sprite> sprites;
