@@ -17,6 +17,9 @@ const level_t level_data_lake = {
     .pt1_filename = "LAKE1.PT    ",
     .pt2_filename = "LAKE2.PT    ",
     
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x44,
+    
     /* Door tiles */
     .door_tile_ul = 16,
     .door_tile_ur = 17,
@@ -103,6 +106,9 @@ const level_t level_data_forest = {
     .pt0_filename = "FOREST0.PT  ",
     .pt1_filename = "FOREST1.PT  ",
     .pt2_filename = "FOREST2.PT  ",
+    
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x44,
     
     /* Door tiles */
     .door_tile_ul = 48,
@@ -191,6 +197,9 @@ const level_t level_data_space = {
     .pt1_filename = "SPACE1.PT   ",
     .pt2_filename = "SPACE2.PT   ",
     
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x47,
+    
     /* Door tiles */
     .door_tile_ul = 51,
     .door_tile_ur = 52,
@@ -277,6 +286,9 @@ const level_t level_data_base = {
     .pt0_filename = "BASE0.PT    ",
     .pt1_filename = "BASE1.PT    ",
     .pt2_filename = "BASE2.PT    ",
+    
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x3b,
     
     /* Door tiles */
     .door_tile_ul = 9,
@@ -365,6 +377,9 @@ const level_t level_data_cave = {
     .pt1_filename = "CAVE1.PT    ",
     .pt2_filename = "CAVE2.PT    ",
     
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x09,
+    
     /* Door tiles */
     .door_tile_ul = 5,
     .door_tile_ur = 5,
@@ -451,6 +466,9 @@ const level_t level_data_shed = {
     .pt0_filename = "SHED0.PT    ",
     .pt1_filename = "SHED1.PT    ",
     .pt2_filename = "SHED2.PT    ",
+    
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x17,
     
     /* Door tiles */
     .door_tile_ul = 10,
@@ -539,6 +557,9 @@ const level_t level_data_castle = {
     .pt1_filename = "CASTLE1.PT  ",
     .pt2_filename = "CASTLE2.PT  ",
     
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x48,
+    
     /* Door tiles */
     .door_tile_ul = 26,
     .door_tile_ur = 27,
@@ -625,6 +646,9 @@ const level_t level_data_comp = {
     .pt0_filename = "COMP0.PT    ",
     .pt1_filename = "COMP1.PT    ",
     .pt2_filename = "COMP2.PT    ",
+    
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x1d,
     
     /* Door tiles */
     .door_tile_ul = 2,

@@ -546,6 +546,52 @@ static void test_stage_right_edge_detection() {
     check(comic_x_momentum == 0, "momentum should be cleared when blocked at edge");
 }
 
+static void test_cave_level_solidity() {
+    initialize_level_data();
+    current_level_number = LEVEL_NUMBER_CAVE;
+    current_stage_number = 0;
+    source_door_level_number = -1;
+    source_door_stage_number = -1;
+    current_level_ptr = nullptr;
+
+    load_new_level();
+    check(current_level_ptr != nullptr, "current_level_ptr should be set after load_new_level");
+    check(current_level_ptr->tileset_last_passable == 0x09, 
+          "cave level tileset_last_passable should be 0x09");
+    
+    // Tiles above 0x09 should be solid
+    check(is_tile_solid(0x0a), "cave tile 0x0a should be solid");
+    check(is_tile_solid(0x14), "cave tile 0x14 should be solid");
+    check(!is_tile_solid(0x09), "cave tile 0x09 should be passable");
+    check(!is_tile_solid(0x00), "cave tile 0x00 should be passable");
+    
+    reset_door_state();
+}
+
+static void test_problematic_levels_have_solid_tiles() {
+    initialize_level_data();
+    
+    // Test SHED level
+    const level_t* shed = get_level_by_number(LEVEL_NUMBER_SHED);
+    check(shed != nullptr, "shed level should exist");
+    check(shed->tileset_last_passable == 0x17, "shed level tileset_last_passable should be 0x17");
+    
+    // Test BASE level
+    const level_t* base = get_level_by_number(LEVEL_NUMBER_BASE);
+    check(base != nullptr, "base level should exist");
+    check(base->tileset_last_passable == 0x3b, "base level tileset_last_passable should be 0x3b");
+    
+    // Test COMP level
+    const level_t* comp = get_level_by_number(LEVEL_NUMBER_COMP);
+    check(comp != nullptr, "comp level should exist");
+    check(comp->tileset_last_passable == 0x1d, "comp level tileset_last_passable should be 0x1d");
+    
+    // Test CAVE level
+    const level_t* cave = get_level_by_number(LEVEL_NUMBER_CAVE);
+    check(cave != nullptr, "cave level should exist");
+    check(cave->tileset_last_passable == 0x09, "cave level tileset_last_passable should be 0x09");
+}
+
 struct TestCase {
     const char* name;
     void (*run)();
@@ -567,6 +613,8 @@ static const std::vector<TestCase>& test_registry() {
         {"door_state_update_same_level", test_door_state_update_same_level},
         {"door_state_update_different_level", test_door_state_update_different_level},
         {"runtime_level_tiles_populated", test_runtime_level_tiles_populated},
+        {"cave_level_solidity", test_cave_level_solidity},
+        {"problematic_levels_have_solid_tiles", test_problematic_levels_have_solid_tiles},
         {"stage_left_exit_blocked", test_stage_left_exit_blocked},
         {"stage_right_exit_blocked", test_stage_right_exit_blocked},
         {"stage_left_edge_detection", test_stage_left_edge_detection},

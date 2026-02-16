@@ -125,6 +125,9 @@ struct level_t {
     char pt1_filename[14];          /* Stage 1 map filename */
     char pt2_filename[14];          /* Stage 2 map filename */
     
+    /* Tile solidity threshold */
+    uint8_t tileset_last_passable;  /* Tile IDs > this value are solid obstacles */
+    
     /* Door tile appearance */
     uint8_t door_tile_ul;           /* Door tile: upper-left */
     uint8_t door_tile_ur;           /* Door tile: upper-right */
