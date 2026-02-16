@@ -116,15 +116,7 @@ int main(int argc, char* argv[]) {
     
     // Initialize cheat system
     g_cheats = new CheatSystem();
-    if (!g_cheats->initialize(debug_mode)) {
-        std::cerr << "Cheat system initialization failed!" << std::endl;
-        delete g_cheats;
-        delete g_graphics;
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
-    }
+    g_cheats->initialize(debug_mode);
 
     // Pre-load player sprites and create animations
     const char* sprite_names[] = {
