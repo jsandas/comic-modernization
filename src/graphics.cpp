@@ -366,16 +366,6 @@ void GraphicsSystem::render_text(int screen_x, int screen_y, const std::string& 
 }
 
 void GraphicsSystem::render_debug_overlay() {
-    // External game state for debug display
-    extern int comic_x;
-    extern int comic_y;
-    extern int8_t comic_y_vel;
-    extern int8_t comic_x_momentum;
-    extern uint8_t current_level_number;
-    extern uint8_t current_stage_number;
-    extern int camera_x;
-    extern bool cheat_noclip;
-    
     // Draw a semi-transparent debug indicator in top-left corner
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     
