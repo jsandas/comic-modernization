@@ -71,6 +71,14 @@ void init_test_level() {
     }
 }
 
+void reset_level_tiles() {
+    // Reset physics module internal state (tile map and solidity threshold) to clean/empty state
+    // This is useful for test cleanup to ensure one test doesn't affect the next
+    std::memset(current_tiles, 0, sizeof(current_tiles));
+    tileset_last_passable = 0x3F;  // Default threshold (tiles > 0x3F are solid)
+    ceiling_stick_flag = false;
+}
+
 uint8_t get_tile_at(uint8_t x, uint8_t y) {
     // Convert game units to tile coordinates (divide by 2)
     uint8_t tile_x = x / 2;

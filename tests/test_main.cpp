@@ -566,6 +566,7 @@ static void test_cave_level_solidity() {
     check(!is_tile_solid(0x00), "cave tile 0x00 should be passable");
     
     reset_door_state();
+    reset_level_tiles();  // Reset physics module state for test isolation
 }
 
 static void test_problematic_levels_have_solid_tiles() {
