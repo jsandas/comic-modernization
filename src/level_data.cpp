@@ -356,7 +356,7 @@ const level_t level_data_base = {
             .exit_r = EXIT_UNUSED,
             .doors = {
                 {14, 236, 4, 0},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
+                {8, 138, 3, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
