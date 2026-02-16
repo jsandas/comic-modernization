@@ -317,9 +317,9 @@ const level_t level_data_base = {
             .exit_l = 1,
             .exit_r = 2,
             .doors = {
-                {14, 240, 0, 2},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
+                {14, 240, 3, 2},
+                {14, 114, 3, 1},
+                {8, 138, 2, 2}
             },
             .enemies = {
                 {0, ENEMY_BEHAVIOR_LEAP},
@@ -355,8 +355,8 @@ const level_t level_data_base = {
             .exit_l = 0,
             .exit_r = EXIT_UNUSED,
             .doors = {
-                {2, 154, 4, 2},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
+                {14, 236, 4, 0},
+                {14, 236, 4, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
@@ -407,9 +407,9 @@ const level_t level_data_cave = {
             .exit_l = EXIT_UNUSED,
             .exit_r = 1,
             .doors = {
-                {12, 12, 1, 2},
-                {14, 248, 5, 0},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
+                {12, 8, 0, 2},
+                {4, 40, 4, 1},
+                {2, 154, 4, 2}
             },
             .enemies = {
                 {0, ENEMY_BEHAVIOR_LEAP},
@@ -426,8 +426,8 @@ const level_t level_data_cave = {
             .exit_l = 0,
             .exit_r = 2,
             .doors = {
-                {6, 0, 0, 2},
-                {14, 112, 3, 0},
+                {14, 236, 4, 0},
+                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
@@ -445,8 +445,8 @@ const level_t level_data_cave = {
             .exit_l = 1,
             .exit_r = EXIT_UNUSED,
             .doors = {
-                {14, 236, 4, 0},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
+                {14, 4, 5, 1},
+                {8, 242, 7, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
@@ -588,8 +588,8 @@ const level_t level_data_castle = {
             .exit_r = EXIT_UNUSED,
             .doors = {
                 {14, 246, 1, 0},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
+                {4, 228, 6, 2},
+                {8, 8, 6, 1}
             },
             .enemies = {
                 {0, ENEMY_BEHAVIOR_BOUNCE},
@@ -606,7 +606,7 @@ const level_t level_data_castle = {
             .exit_l = EXIT_UNUSED,
             .exit_r = EXIT_UNUSED,
             .doors = {
-                {8, 8, 6, 0},
+                {14, 8, 6, 0},
                 {2, 8, 6, 2},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
@@ -625,7 +625,7 @@ const level_t level_data_castle = {
             .exit_l = EXIT_UNUSED,
             .exit_r = EXIT_UNUSED,
             .doors = {
-                {14, 246, 6, 1},
+                {8, 8, 6, 1},
                 {4, 246, 6, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
@@ -696,7 +696,7 @@ const level_t level_data_comp = {
             .exit_l = 0,
             .exit_r = 2,
             .doors = {
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
+                {14, 244, 1, 2},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
