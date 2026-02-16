@@ -579,6 +579,8 @@ static void test_problematic_levels_have_solid_tiles() {
     
     current_level_number = LEVEL_NUMBER_SHED;
     current_stage_number = 0;
+    source_door_level_number = -1;
+    source_door_stage_number = -1;
     current_level_ptr = nullptr;
     load_new_level();
     check(is_tile_solid(0x18), "shed tile 0x18 should be solid (> 0x17)");
@@ -592,6 +594,8 @@ static void test_problematic_levels_have_solid_tiles() {
     
     current_level_number = LEVEL_NUMBER_BASE;
     current_stage_number = 0;
+    source_door_level_number = -1;
+    source_door_stage_number = -1;
     current_level_ptr = nullptr;
     load_new_level();
     check(is_tile_solid(0x3c), "base tile 0x3c should be solid (> 0x3b)");
@@ -605,6 +609,8 @@ static void test_problematic_levels_have_solid_tiles() {
     
     current_level_number = LEVEL_NUMBER_COMP;
     current_stage_number = 0;
+    source_door_level_number = -1;
+    source_door_stage_number = -1;
     current_level_ptr = nullptr;
     load_new_level();
     check(is_tile_solid(0x1e), "comp tile 0x1e should be solid (> 0x1d)");
@@ -618,6 +624,8 @@ static void test_problematic_levels_have_solid_tiles() {
     
     current_level_number = LEVEL_NUMBER_CAVE;
     current_stage_number = 0;
+    source_door_level_number = -1;
+    source_door_stage_number = -1;
     current_level_ptr = nullptr;
     load_new_level();
     check(is_tile_solid(0x0a), "cave tile 0x0a should be solid (> 0x09)");
