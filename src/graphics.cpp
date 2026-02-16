@@ -77,7 +77,7 @@ bool GraphicsSystem::initialize() {
     
     if (debug_font == nullptr) {
         std::cerr << "Warning: Could not load debug font, debug overlay will not display coordinates" << std::endl;
-        std::cerr << "  Tried: Monaco.dfont, DejaVuSansMono.ttf, LiberationMono, and others" << std::endl;
+        std::cerr << "  Tried: Menlo, Courier, DejaVuSansMono, LiberationMono, and others" << std::endl;
     }
     
     return true;
