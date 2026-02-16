@@ -31,6 +31,7 @@ void move_right();
 
 // Tile system
 void init_test_level();
+void reset_level_tiles();
 bool load_stage_tiles(const std::string& level_name, int stage_number);
 uint8_t get_tile_at(uint8_t x, uint8_t y);
 bool is_tile_solid(uint8_t tile_id);

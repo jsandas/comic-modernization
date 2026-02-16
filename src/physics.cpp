@@ -71,6 +71,14 @@ void init_test_level() {
     }
 }
 
+void reset_level_tiles() {
+    // Reset physics module internal state (tile map and solidity threshold) to clean/empty state
+    // This is useful for test cleanup to ensure one test doesn't affect the next
+    std::memset(current_tiles, 0, sizeof(current_tiles));
+    tileset_last_passable = 0x3F;  // Default threshold (tiles > 0x3F are solid)
+    ceiling_stick_flag = false;
+}
+
 uint8_t get_tile_at(uint8_t x, uint8_t y) {
     // Convert game units to tile coordinates (divide by 2)
     uint8_t tile_x = x / 2;
@@ -407,9 +415,10 @@ bool load_stage_tiles(const std::string& level_name, int stage_number) {
     const stage_t& stage = level->stages[stage_number];
     std::memcpy(current_tiles, stage.tiles, sizeof(current_tiles));
     
-    // Set last_passable from the level's metadata
-    // For now, use default value 0x3E (tiles with ID > 0x3E are solid)
-    tileset_last_passable = 0x3E;
+    // Load level-specific tileset_last_passable threshold from compiled-in level metadata
+    // This value comes from level_data.cpp (initialized via initialize_level_data())
+    // and determines which tiles are solid obstacles
+    tileset_last_passable = level->tileset_last_passable;
     
     return true;
 }

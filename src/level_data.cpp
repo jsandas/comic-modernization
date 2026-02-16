@@ -17,6 +17,9 @@ const level_t level_data_lake = {
     .pt1_filename = "LAKE1.PT    ",
     .pt2_filename = "LAKE2.PT    ",
     
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x44,
+    
     /* Door tiles */
     .door_tile_ul = 16,
     .door_tile_ur = 17,
@@ -103,6 +106,9 @@ const level_t level_data_forest = {
     .pt0_filename = "FOREST0.PT  ",
     .pt1_filename = "FOREST1.PT  ",
     .pt2_filename = "FOREST2.PT  ",
+    
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x44,
     
     /* Door tiles */
     .door_tile_ul = 48,
@@ -191,6 +197,9 @@ const level_t level_data_space = {
     .pt1_filename = "SPACE1.PT   ",
     .pt2_filename = "SPACE2.PT   ",
     
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x47,
+    
     /* Door tiles */
     .door_tile_ul = 51,
     .door_tile_ur = 52,
@@ -218,8 +227,8 @@ const level_t level_data_space = {
             .exit_l = EXIT_UNUSED,
             .exit_r = 1,
             .doors = {
-                {12, 2, 0, 0},
-                {14, 248, 5, 0},
+                {12, 2, 0, 2},
+                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
@@ -242,17 +251,17 @@ const level_t level_data_space = {
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
-                {1, ENEMY_BEHAVIOR_BOUNCE},
-                {1, ENEMY_BEHAVIOR_BOUNCE},
-                {0, ENEMY_BEHAVIOR_UNUSED},
-                {1, ENEMY_BEHAVIOR_BOUNCE | ENEMY_BEHAVIOR_FAST}
+                {0, ENEMY_BEHAVIOR_BOUNCE},
+                {0, ENEMY_BEHAVIOR_BOUNCE},
+                {0, ENEMY_BEHAVIOR_BOUNCE},
+                {1, ENEMY_BEHAVIOR_BOUNCE}
             }
         },
         /* space2 */
         {
             .item_type = ITEM_GEMS,
-            .item_y = 4,
-            .item_x = 230,
+            .item_y = 6,
+            .item_x = 198,
             .exit_l = 1,
             .exit_r = EXIT_UNUSED,
             .doors = {
@@ -277,6 +286,9 @@ const level_t level_data_base = {
     .pt0_filename = "BASE0.PT    ",
     .pt1_filename = "BASE1.PT    ",
     .pt2_filename = "BASE2.PT    ",
+    
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x3b,
     
     /* Door tiles */
     .door_tile_ul = 9,
@@ -305,9 +317,9 @@ const level_t level_data_base = {
             .exit_l = 1,
             .exit_r = 2,
             .doors = {
-                {14, 240, 0, 2},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
+                {14, 240, 3, 2},
+                {14, 114, 3, 1},
+                {8, 138, 2, 2}
             },
             .enemies = {
                 {0, ENEMY_BEHAVIOR_LEAP},
@@ -343,8 +355,8 @@ const level_t level_data_base = {
             .exit_l = 0,
             .exit_r = EXIT_UNUSED,
             .doors = {
-                {2, 154, 4, 2},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
+                {14, 236, 4, 0},
+                {8, 138, 3, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
@@ -364,6 +376,9 @@ const level_t level_data_cave = {
     .pt0_filename = "CAVE0.PT    ",
     .pt1_filename = "CAVE1.PT    ",
     .pt2_filename = "CAVE2.PT    ",
+    
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x09,
     
     /* Door tiles */
     .door_tile_ul = 5,
@@ -392,9 +407,9 @@ const level_t level_data_cave = {
             .exit_l = EXIT_UNUSED,
             .exit_r = 1,
             .doors = {
-                {12, 12, 1, 2},
-                {14, 248, 5, 0},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
+                {12, 8, 0, 2},
+                {4, 40, 4, 1},
+                {2, 154, 4, 2}
             },
             .enemies = {
                 {0, ENEMY_BEHAVIOR_LEAP},
@@ -411,8 +426,8 @@ const level_t level_data_cave = {
             .exit_l = 0,
             .exit_r = 2,
             .doors = {
-                {6, 0, 0, 2},
-                {14, 112, 3, 0},
+                {14, 236, 4, 0},
+                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
@@ -430,8 +445,8 @@ const level_t level_data_cave = {
             .exit_l = 1,
             .exit_r = EXIT_UNUSED,
             .doors = {
-                {14, 236, 4, 0},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
+                {14, 4, 5, 1},
+                {8, 242, 7, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
@@ -451,6 +466,9 @@ const level_t level_data_shed = {
     .pt0_filename = "SHED0.PT    ",
     .pt1_filename = "SHED1.PT    ",
     .pt2_filename = "SHED2.PT    ",
+    
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x17,
     
     /* Door tiles */
     .door_tile_ul = 10,
@@ -539,6 +557,9 @@ const level_t level_data_castle = {
     .pt1_filename = "CASTLE1.PT  ",
     .pt2_filename = "CASTLE2.PT  ",
     
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x48,
+    
     /* Door tiles */
     .door_tile_ul = 26,
     .door_tile_ur = 27,
@@ -567,8 +588,8 @@ const level_t level_data_castle = {
             .exit_r = EXIT_UNUSED,
             .doors = {
                 {14, 246, 1, 0},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
+                {4, 228, 6, 2},
+                {8, 8, 6, 1}
             },
             .enemies = {
                 {0, ENEMY_BEHAVIOR_BOUNCE},
@@ -585,7 +606,7 @@ const level_t level_data_castle = {
             .exit_l = EXIT_UNUSED,
             .exit_r = EXIT_UNUSED,
             .doors = {
-                {8, 8, 6, 0},
+                {14, 8, 6, 0},
                 {2, 8, 6, 2},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
@@ -604,7 +625,7 @@ const level_t level_data_castle = {
             .exit_l = EXIT_UNUSED,
             .exit_r = EXIT_UNUSED,
             .doors = {
-                {14, 246, 6, 1},
+                {8, 8, 6, 1},
                 {4, 246, 6, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
@@ -625,6 +646,9 @@ const level_t level_data_comp = {
     .pt0_filename = "COMP0.PT    ",
     .pt1_filename = "COMP1.PT    ",
     .pt2_filename = "COMP2.PT    ",
+    
+    /* Tile solidity threshold (tiles > this ID are solid) */
+    .tileset_last_passable = 0x1d,
     
     /* Door tiles */
     .door_tile_ul = 2,
@@ -672,7 +696,7 @@ const level_t level_data_comp = {
             .exit_l = 0,
             .exit_r = 2,
             .doors = {
-                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
+                {14, 244, 1, 2},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
