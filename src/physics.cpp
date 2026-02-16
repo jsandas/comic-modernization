@@ -407,8 +407,9 @@ bool load_stage_tiles(const std::string& level_name, int stage_number) {
     const stage_t& stage = level->stages[stage_number];
     std::memcpy(current_tiles, stage.tiles, sizeof(current_tiles));
     
-    // Load level-specific tileset_last_passable threshold from level metadata
-    // This value is stored in the level's .TT2 file and determines which tiles are solid
+    // Load level-specific tileset_last_passable threshold from compiled-in level metadata
+    // This value comes from level_data.cpp (initialized via initialize_level_data())
+    // and determines which tiles are solid obstacles
     tileset_last_passable = level->tileset_last_passable;
     
     return true;
