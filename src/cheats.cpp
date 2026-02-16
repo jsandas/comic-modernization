@@ -270,6 +270,9 @@ void CheatSystem::execute_level_warp() {
     current_stage_number = static_cast<uint8_t>(target_stage);
     
     // Load the new level and stage
+    // Note: load_new_level() and load_new_stage() are void functions that handle their
+    // own error logging. They log warnings if assets are missing but continue gracefully.
+    // If tileset loading fails, the renderer will display fallback behavior.
     load_new_level();
     load_new_stage();
     
