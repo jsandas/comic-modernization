@@ -333,7 +333,7 @@ void ActorSystem::check_enemy_player_collision(enemy_t* enemy) {
     int16_t x_diff = static_cast<int16_t>(static_cast<int>(enemy->x) - static_cast<int>(g_comic_x));
     int16_t y_diff = static_cast<int16_t>(static_cast<int>(enemy->y) - static_cast<int>(g_comic_y));
 
-    // Collision box: horizontal abs(enemy.x - comic.x) < 2, vertical 0 <= (enemy.y - comic.y) < 4
+    // Collision box: horizontal abs(enemy.x - comic.x) <= 1, vertical 0 <= (enemy.y - comic.y) < 4
     if (x_diff >= -1 && x_diff <= 1 && y_diff >= 0 && y_diff < 4) {
         // Collision! Start red spark death animation
         enemy->state = ENEMY_STATE_RED_SPARK;
