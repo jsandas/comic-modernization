@@ -243,6 +243,22 @@ Sprite* GraphicsSystem::get_sprite(const std::string& sprite_name, const std::st
     return nullptr;
 }
 
+SpriteAnimationData* GraphicsSystem::load_enemy_sprite(const std::string& sprite_name) {
+    // Check if already loaded
+    auto it = enemy_sprites.find(sprite_name);
+    if (it != enemy_sprites.end()) {
+        return it->second;
+    }
+
+    // TODO: Implement proper enemy sprite loading
+    // For now, create a stub that will be filled in Phase 5.1
+    // This will load sprite frames for left and right directions
+    // and store animation metadata from the sprite descriptor
+    
+    std::cerr << "Warning: Enemy sprite loading not yet implemented: " << sprite_name << std::endl;
+    return nullptr;
+}
+
 Animation GraphicsSystem::create_animation(const std::vector<std::string>& sprite_names, const std::string& direction, int frame_duration_ms, bool looping) {
     Animation anim;
     anim.looping = looping;
@@ -431,6 +447,24 @@ void GraphicsSystem::cleanup() {
         }
     }
     sprites.clear();
+    
+    // Clean up enemy sprites
+    for (auto& pair : enemy_sprites) {
+        if (pair.second) {
+            for (auto& frame : pair.second->frames_left) {
+                if (frame.texture) {
+                    SDL_DestroyTexture(frame.texture);
+                }
+            }
+            for (auto& frame : pair.second->frames_right) {
+                if (frame.texture) {
+                    SDL_DestroyTexture(frame.texture);
+                }
+            }
+            delete pair.second;
+        }
+    }
+    enemy_sprites.clear();
     
     // Clean up fonts
     if (debug_font != nullptr) {

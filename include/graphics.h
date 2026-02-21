@@ -52,6 +52,14 @@ struct Animation {
     Animation() : current_frame(0), frame_start_time(0), looping(true) {}
 };
 
+// Enemy sprite animation data
+struct SpriteAnimationData {
+    std::vector<TextureInfo> frames_left;   /* Left-facing animation frames */
+    std::vector<TextureInfo> frames_right;  /* Right-facing animation frames */
+    int num_frames;
+    bool horizontal_duplicated;  /* True if right frames are mirrored copies */
+};
+
 // Graphics system
 class GraphicsSystem {
 public:
@@ -68,6 +76,9 @@ public:
     // Sprite loading
     bool load_sprite(const std::string& sprite_name, const std::string& direction);
     Sprite* get_sprite(const std::string& sprite_name, const std::string& direction);
+    
+    // Enemy sprite loading
+    SpriteAnimationData* load_enemy_sprite(const std::string& sprite_name);
     
     // Animation management
     Animation create_animation(const std::vector<std::string>& sprite_names, const std::string& direction, int frame_duration_ms, bool looping = true);
@@ -97,6 +108,7 @@ private:
     TTF_Font* debug_font;  // Font for debug overlay text
     std::map<std::string, Tileset> tilesets;
     std::map<std::string, Sprite> sprites;
+    std::map<std::string, SpriteAnimationData*> enemy_sprites;  // Enemy sprite animation data
     
     // Helper functions
     TextureInfo load_png(const std::string& filepath);
