@@ -664,7 +664,7 @@ void ActorSystem::enemy_behavior_seek(enemy_t* enemy) {
     if (!enemy) return;
 
     uint8_t next_x, next_y;
-    unsigned char collision;
+    bool collision;
 
     // Handle restraint
     if (enemy->restraint == ENEMY_RESTRAINT_SKIP_THIS_TICK) {
