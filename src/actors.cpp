@@ -748,12 +748,15 @@ void ActorSystem::enemy_behavior_shy(enemy_t* enemy) {
     unsigned char collision;
     int16_t camera_rel_x;
 
-    // Check restraint
-    if (enemy->restraint > 0) {
-        enemy->restraint--;
-        return;  // Skip movement this tick
+    // Check restraint: use toggle semantics (move every other tick)
+    if (enemy->restraint == ENEMY_RESTRAINT_SKIP_THIS_TICK) {
+        // Skip movement this tick, allow movement on the next tick
+        enemy->restraint = ENEMY_RESTRAINT_MOVE_THIS_TICK;
+        return;
     }
 
+    // Set restraint so that the next tick will be skipped
+    enemy->restraint = ENEMY_RESTRAINT_SKIP_THIS_TICK;
     // Determine if Comic is facing this enemy
     if (g_comic_facing == COMIC_FACING_RIGHT && enemy->x > g_comic_x) {
         comic_facing_enemy = 1;  // Comic facing enemy on right
