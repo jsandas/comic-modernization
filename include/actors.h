@@ -10,8 +10,9 @@
 /* Enemy state constants */
 constexpr uint8_t ENEMY_STATE_DESPAWNED = 0;      /* Not yet spawned */
 constexpr uint8_t ENEMY_STATE_SPAWNED = 1;        /* Active and moving */
-constexpr uint8_t ENEMY_STATE_WHITE_SPARK = 2;    /* Death animation (frames 2-6) */
-constexpr uint8_t ENEMY_STATE_RED_SPARK = 8;      /* Death animation (frames 8-12) */
+constexpr uint8_t ENEMY_STATE_WHITE_SPARK = 2;    /* Death animation (frames 2-7) */
+constexpr uint8_t ENEMY_STATE_RED_SPARK = 8;      /* Death animation (frames 8-13) */
+constexpr uint8_t DEATH_ANIMATION_LAST_FRAME = 5; /* Offset from start to last frame */
 
 /* Enemy restraint (movement throttle) */
 constexpr uint8_t ENEMY_RESTRAINT_MOVE_THIS_TICK = 0;   /* Move, then skip next */
@@ -22,6 +23,11 @@ constexpr uint8_t ENEMY_RESTRAINT_MOVE_EVERY_TICK = 2;  /* Always move (fast) */
 constexpr int ENEMY_DESPAWN_RADIUS = 30;  /* Game units from Comic */
 constexpr int ENEMY_VELOCITY_SHIFT = 3;   /* Bit shift for 1/8 unit movement precision */
 constexpr int8_t ENEMY_GRAVITY = 2;       /* Acceleration per tick (vs COMIC_GRAVITY = 5) */
+
+/* Respawn timer cycle: 20→40→60→80→100→20 */
+constexpr uint8_t RESPAWN_TIMER_MIN = 20;
+constexpr uint8_t RESPAWN_TIMER_MAX = 100;
+constexpr uint8_t RESPAWN_TIMER_STEP = 20;
 
 /* Enemy facing directions (animation frame offsets) */
 constexpr uint8_t ENEMY_FACING_LEFT = 0;

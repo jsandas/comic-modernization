@@ -15,7 +15,7 @@ ActorSystem::ActorSystem()
       tileset_last_passable(0x3E),
       spawned_this_tick(0),
       spawn_offset_cycle(PLAYFIELD_WIDTH),
-      enemy_respawn_counter_cycle(20),
+      enemy_respawn_counter_cycle(RESPAWN_TIMER_MIN),
       g_comic_x(0),
       g_comic_y(0),
       g_comic_facing(COMIC_FACING_LEFT),
@@ -154,18 +154,18 @@ void ActorSystem::update(
         }
 
         // Handle death animation states (white spark or red spark)
-        if (enemy.state >= ENEMY_STATE_WHITE_SPARK && enemy.state != ENEMY_STATE_SPAWNED) {
+        if (enemy.state >= ENEMY_STATE_WHITE_SPARK) {
             // Still animating spark effect
-            if ((enemy.state == ENEMY_STATE_WHITE_SPARK + 5) ||
-                (enemy.state == ENEMY_STATE_RED_SPARK + 5)) {
+            if ((enemy.state == ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME) ||
+                (enemy.state == ENEMY_STATE_RED_SPARK + DEATH_ANIMATION_LAST_FRAME)) {
                 // Animation finished; despawn
                 enemy.state = ENEMY_STATE_DESPAWNED;
                 enemy.spawn_timer_and_animation = enemy_respawn_counter_cycle;
                 
-                // Cycle respawn: 20→40→60→80→100→20
-                enemy_respawn_counter_cycle += 20;
-                if (enemy_respawn_counter_cycle > 100) {
-                    enemy_respawn_counter_cycle = 20;
+                // Cycle respawn timer: 20→40→60→80→100→20
+                enemy_respawn_counter_cycle += RESPAWN_TIMER_STEP;
+                if (enemy_respawn_counter_cycle > RESPAWN_TIMER_MAX) {
+                    enemy_respawn_counter_cycle = RESPAWN_TIMER_MIN;
                 }
             } else {
                 // Advance animation frame
@@ -591,7 +591,7 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
 
     // Check if enemy fell off bottom of playfield
     if (enemy->y >= PLAYFIELD_HEIGHT - 2) {
-        enemy->state = ENEMY_STATE_WHITE_SPARK + 5;
+        enemy->state = ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME;
         enemy->y = PLAYFIELD_HEIGHT - 2;
         return;
     }
@@ -610,7 +610,7 @@ void ActorSystem::enemy_behavior_roll(enemy_t* enemy) {
     if (enemy->y_vel > 0) {
         // Falling: check if near bottom and despawn
         if (enemy->y + 1 >= PLAYFIELD_HEIGHT - 3) {
-            enemy->state = ENEMY_STATE_WHITE_SPARK + 5;
+            enemy->state = ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME;
             enemy->y = PLAYFIELD_HEIGHT - 2;
             return;
         }
