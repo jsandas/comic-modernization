@@ -745,7 +745,7 @@ void ActorSystem::enemy_behavior_shy(enemy_t* enemy) {
 
     uint8_t next_x, next_y;
     int8_t comic_facing_enemy;
-    unsigned char collision;
+    bool collision;
     int16_t camera_rel_x;
 
     // Check restraint: use toggle semantics (move every other tick)
