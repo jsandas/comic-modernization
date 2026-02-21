@@ -341,11 +341,11 @@ A centralized system for managing debug cheats and development tools. Activated 
 
 ### Phase 5: Actor System
 **Status:** In Progress
-**Current Stage:** Phase 5.1 - Enemy System Foundation
+**Current Stage:** Phase 5.5 - Fireball & Item Systems
 **Completion Date:** TBD
 **Goal:** Implement enemies, fireballs, and items
 
-**Phase 5.1: Enemy System Core (In Progress)**
+**Phase 5.1: Enemy System Core ✅ COMPLETE**
 **Objective:** Port complete enemy spawning, AI behaviors, collision, and despawning systems from reference C code
 
 **Completed:**
@@ -367,24 +367,35 @@ A centralized system for managing debug cheats and development tools. Activated 
 - [x] Created `include/actors.h` header with complete API
 - [x] Created `src/actors.cpp` implementation (1000+ lines of AI logic)
 - [x] Updated `CMakeLists.txt` to build actors.cpp
-- [x] Added stub `load_enemy_sprite()` to GraphicsSystem for future sprite loading
 - [x] Compilation successful, all tests passing
 
+**Phase 5.2: Sprite/Animation Loading ✅ COMPLETE**
+- [x] Implemented `load_enemy_sprite()` in `GraphicsSystem` with GIF-based asset loading
+- [x] Load left/right facing animation frames using `IMG_LoadAnimation()` (SDL_image)
+- [x] Handle `ENEMY_HORIZONTAL_DUPLICATED` (mirror left frames for right direction)
+- [x] Handle `ENEMY_HORIZONTAL_SEPARATE` (load independent right-facing GIF)
+- [x] Handle `ENEMY_ANIMATION_LOOP` (0,1,2,0,1,... forward loop)
+- [x] Handle `ENEMY_ANIMATION_ALTERNATE` (0,1,2,1,0,... ping-pong)
+- [x] `frame_sequence` vector added to `SpriteAnimationData` struct
+- [x] `build_enemy_animation_sequence()` free function generates frame index sequences
+- [x] Composite cache key (`name:num_frames:horizontal:animation`) avoids redundant loads
+- [x] Added `test_enemy_animation_sequence` unit test; all tests passing
+
+**Phase 5.3: Enemy Rendering ✅ COMPLETE**
+- [x] Implemented `render_enemies()` in `ActorSystem`
+- [x] Renders each spawned enemy using current `frame_sequence` index
+- [x] Uses `frames_right` for `ENEMY_HORIZONTAL_SEPARATE` + right-facing, otherwise flips `frames_left`
+- [x] Camera culling: only renders enemies within the visible viewport
+- [x] Enemies rendered before player sprite (correct draw order)
+
+**Phase 5.4: Integration ✅ COMPLETE**
+- [x] `ActorSystem` instantiated and initialized in `main()`
+- [x] `setup_enemies_for_stage()` called after level load and on level/stage change
+- [x] `actor_system.update()` called each physics tick with Comic position, facing, tiles, camera
+- [x] `actor_system.render_enemies()` called each frame before player rendering
+- [x] Level/stage change detection triggers enemy re-setup on transitions
+
 **Remaining Tasks:**
-- [ ] Sprite/Animation Loading (Phase 5.2)
-  - [ ] Implement `load_enemy_sprite()` in GraphicsSystem
-  - [ ] Load left/right facing animation frames from PNG files
-  - [ ] Handle horizontal_duplicated vs horizontal_separate animation types
-  - [ ] Handle animation_loop vs animation_alternate animation types
-- [ ] Rendering (Phase 5.3)
-  - [ ] Render enemies with current animation frame
-  - [ ] Handle left/right facing direction
-  - [ ] Camera culling (only render visible enemies)
-- [ ] Integration (Phase 5.4)
-  - [ ] Add ActorSystem to main game loop
-  - [ ] Call setup_enemies_for_stage() when loading stages
-  - [ ] Call update() each frame with Comic position/state
-  - [ ] Render enemies each frame
 - [ ] Port fireball system from actors.c
   - [ ] Fireball spawning
   - [ ] Horizontal movement
