@@ -109,9 +109,8 @@ void ActorSystem::setup_enemies_for_stage(
             continue;
         }
 
-        // Set initial state
-        enemy.state = ENEMY_STATE_DESPAWNED;
-        enemy.spawn_timer_and_animation = 0;
+        // Set initial velocities and facing
+        // (state and spawn_timer_and_animation will be set by reset_for_stage())
         enemy.x_vel = 0;
         enemy.y_vel = 0;
         enemy.facing = ENEMY_FACING_LEFT;
