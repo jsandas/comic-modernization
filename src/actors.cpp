@@ -484,7 +484,7 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
 
     uint8_t next_x, next_y;
     int16_t camera_rel_x;
-    unsigned char collision;
+    bool collision = false;
 
     // Handle restraint
     if (enemy->restraint == ENEMY_RESTRAINT_SKIP_THIS_TICK) {
