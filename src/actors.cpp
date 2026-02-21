@@ -51,6 +51,12 @@ void ActorSystem::reset_for_stage() {
         enemy.spawn_timer_and_animation = enemy_respawn_counter_cycle;
     }
     spawned_this_tick = 0;
+    // NOTE: spawn_offset_cycle is intentionally NOT reset here.
+    // In the original game (jsandas/comic-c: src/actors.c maybe_spawn_enemy),
+    // it is a static local variable initialized once at program start and never
+    // cleared on stage load, so it naturally persists across stage transitions.
+    // Persisting it here matches that behavior and adds variety to spawn positions
+    // across stage changes.
 }
 
 /**
