@@ -375,7 +375,7 @@ uint8_t ActorSystem::get_tile_at(uint8_t x, uint8_t y) const {
 bool ActorSystem::check_horizontal_enemy_map_collision(uint8_t x, uint8_t y) const {
     // Check 2 tiles (4 game units) ahead
     return is_tile_solid(get_tile_at(x + 1, y)) ||
-           is_tile_solid(get_tile_at(x + 1, y - 1));
+           is_tile_solid(get_tile_at(x + 2, y));
 }
 
 /**
