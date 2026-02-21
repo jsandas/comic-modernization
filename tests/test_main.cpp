@@ -648,7 +648,7 @@ static void reset_actor_state(ActorSystem& actor_system) {
 }
 
 static void setup_test_enemy(std::vector<enemy_t>& enemies, int index, uint8_t behavior) {
-    enemy_t& enemy = const_cast<enemy_t&>(enemies[index]);
+    enemy_t& enemy = enemies[index];
     enemy.state = ENEMY_STATE_DESPAWNED;
     enemy.spawn_timer_and_animation = 0;  // Ready to spawn
     enemy.x = 0;
