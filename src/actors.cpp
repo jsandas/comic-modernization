@@ -226,14 +226,23 @@ bool ActorSystem::maybe_spawn_enemy(int enemy_index) {
         spawn_offset_cycle = PLAYFIELD_WIDTH;
     }
 
-    uint8_t spawn_x;
+    // Use int for intermediate calculation to avoid overflow
+    int spawn_x_temp;
     if (g_comic_facing == COMIC_FACING_RIGHT) {
         // Spawn to the right
-        spawn_x = static_cast<uint8_t>(g_camera_x + spawn_offset_cycle);
+        spawn_x_temp = g_camera_x + spawn_offset_cycle;
     } else {
         // Spawn to the left
-        spawn_x = static_cast<uint8_t>(g_camera_x - (spawn_offset_cycle - PLAYFIELD_WIDTH + 2));
+        spawn_x_temp = g_camera_x - (spawn_offset_cycle - PLAYFIELD_WIDTH + 2);
     }
+
+    // Clamp to valid uint8_t range [0, 255]
+    if (spawn_x_temp < 0) {
+        spawn_x_temp = 0;
+    } else if (spawn_x_temp > 255) {
+        spawn_x_temp = 255;
+    }
+    uint8_t spawn_x = static_cast<uint8_t>(spawn_x_temp);
 
     // Determine spawn Y: search for passable tile at Comic's foot level or higher
     uint8_t spawn_y = g_comic_y;
@@ -552,15 +561,19 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
         }
     } else if (enemy->x_vel < 0) {
         // Moving left
-        next_x = static_cast<uint8_t>(enemy->x - 1);
-        collision = check_horizontal_enemy_map_collision(next_x, proposed_y);
-        if (collision) {
-            enemy->x_vel = 1;  // Bounce right
+        if (enemy->x == 0) {
+            enemy->x_vel = 1;  // Hit left edge, bounce
         } else {
-            enemy->x = next_x;
-            camera_rel_x = static_cast<int16_t>(enemy->x) - static_cast<int16_t>(g_camera_x);
-            if (camera_rel_x <= 0) {
-                enemy->x_vel = 1;  // Hit left edge
+            next_x = static_cast<uint8_t>(enemy->x - 1);
+            collision = check_horizontal_enemy_map_collision(next_x, proposed_y);
+            if (collision) {
+                enemy->x_vel = 1;  // Bounce right
+            } else {
+                enemy->x = next_x;
+                camera_rel_x = static_cast<int16_t>(enemy->x) - static_cast<int16_t>(g_camera_x);
+                if (camera_rel_x <= 0) {
+                    enemy->x_vel = 1;  // Hit left edge
+                }
             }
         }
     } else {
