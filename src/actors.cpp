@@ -83,6 +83,8 @@ void ActorSystem::setup_enemies_for_stage(
 
         // Validate sprite descriptor index to avoid out-of-bounds access
         if (record.shp_index >= 4) {
+            std::cerr << "Invalid sprite index " << static_cast<int>(record.shp_index) 
+                      << " for enemy slot " << i << " (max is 3)" << std::endl;
             enemy.state = ENEMY_STATE_DESPAWNED;
             enemy.spawn_timer_and_animation = 100;
             enemy.animation_data = nullptr;
