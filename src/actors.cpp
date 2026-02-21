@@ -2,7 +2,6 @@
 #include "level.h"
 #include "physics.h"
 #include <iostream>
-#include <cstring>
 
 /**
  * ActorSystem constructor
