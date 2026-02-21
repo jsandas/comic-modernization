@@ -150,6 +150,12 @@ void ActorSystem::render_enemies(GraphicsSystem* graphics_system, int camera_x, 
             continue;
         }
 
+        // Cull enemies outside the visible viewport; 2-unit margin covers sprite width
+        if (static_cast<int>(enemy.x) < camera_x - 2 ||
+            static_cast<int>(enemy.x) >= camera_x + PLAYFIELD_WIDTH + 2) {
+            continue;
+        }
+
         if (!enemy.animation_data || enemy.animation_data->frames_left.empty()) {
             continue;
         }

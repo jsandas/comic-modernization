@@ -385,7 +385,7 @@ A centralized system for managing debug cheats and development tools. Activated 
 - [x] Implemented `render_enemies()` in `ActorSystem`
 - [x] Renders each spawned enemy using current `frame_sequence` index
 - [x] Uses `frames_right` for `ENEMY_HORIZONTAL_SEPARATE` + right-facing, otherwise flips `frames_left`
-- [x] Camera culling: only renders enemies within the visible viewport
+- [x] Camera culling: skips enemies whose X position is outside `[camera_x - 2, camera_x + PLAYFIELD_WIDTH + 2)` game units
 - [x] Enemies rendered before player sprite (correct draw order)
 
 **Phase 5.4: Integration ✅ COMPLETE**
