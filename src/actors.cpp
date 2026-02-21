@@ -114,7 +114,7 @@ void ActorSystem::setup_enemies_for_stage(
         enemy.spawn_timer_and_animation = 0;
         enemy.x_vel = 0;
         enemy.y_vel = 0;
-        enemy.facing = COMIC_FACING_LEFT;
+        enemy.facing = ENEMY_FACING_LEFT;
         enemy.restraint = ENEMY_RESTRAINT_MOVE_THIS_TICK;
     }
 
@@ -257,7 +257,7 @@ bool ActorSystem::maybe_spawn_enemy(int enemy_index) {
         case ENEMY_BEHAVIOR_SHY:
             enemy.x_vel = -1;  // Start moving left
             enemy.y_vel = -1;  // Start moving up
-            enemy.facing = COMIC_FACING_LEFT;
+            enemy.facing = ENEMY_FACING_LEFT;
             break;
 
         case ENEMY_BEHAVIOR_LEAP:
@@ -266,7 +266,7 @@ bool ActorSystem::maybe_spawn_enemy(int enemy_index) {
         default:
             enemy.x_vel = 0;
             enemy.y_vel = 0;
-            enemy.facing = COMIC_FACING_LEFT;
+            enemy.facing = ENEMY_FACING_LEFT;
             break;
     }
 
@@ -416,7 +416,7 @@ void ActorSystem::enemy_behavior_bounce(enemy_t* enemy) {
 
     if (enemy->x_vel > 0) {
         // Moving right
-        enemy->facing = COMIC_FACING_RIGHT;
+        enemy->facing = ENEMY_FACING_RIGHT;
         next_x = static_cast<uint8_t>(enemy->x + 2);
         if (check_horizontal_enemy_map_collision(next_x, enemy->y)) {
             enemy->x_vel = -1;  // Bounce left
@@ -429,7 +429,7 @@ void ActorSystem::enemy_behavior_bounce(enemy_t* enemy) {
         }
     } else {
         // Moving left
-        enemy->facing = COMIC_FACING_LEFT;
+        enemy->facing = ENEMY_FACING_LEFT;
         if (enemy->x == 0) {
             enemy->x_vel = 1;  // Hit left edge, bounce
         } else {
@@ -709,7 +709,7 @@ void ActorSystem::enemy_behavior_seek(enemy_t* enemy) {
             }
         }
 
-        enemy->facing = (enemy->x_vel < 0) ? COMIC_FACING_LEFT : COMIC_FACING_RIGHT;
+        enemy->facing = (enemy->x_vel < 0) ? ENEMY_FACING_LEFT : ENEMY_FACING_RIGHT;
         return;  // Continue to next tick after x movement
     }
 
@@ -740,7 +740,7 @@ void ActorSystem::enemy_behavior_seek(enemy_t* enemy) {
         }
     }
 
-    enemy->facing = (enemy->x_vel < 0) ? COMIC_FACING_LEFT : COMIC_FACING_RIGHT;
+    enemy->facing = (enemy->x_vel < 0) ? ENEMY_FACING_LEFT : ENEMY_FACING_RIGHT;
 }
 
 /**
@@ -776,7 +776,7 @@ void ActorSystem::enemy_behavior_shy(enemy_t* enemy) {
     // Horizontal movement
     if (enemy->x_vel > 0) {
         // Moving right
-        enemy->facing = COMIC_FACING_RIGHT;
+        enemy->facing = ENEMY_FACING_RIGHT;
         next_x = static_cast<uint8_t>(enemy->x + 2);
         collision = check_horizontal_enemy_map_collision(next_x, enemy->y);
         if (collision) {
@@ -790,7 +790,7 @@ void ActorSystem::enemy_behavior_shy(enemy_t* enemy) {
         }
     } else {
         // Moving left
-        enemy->facing = COMIC_FACING_LEFT;
+        enemy->facing = ENEMY_FACING_LEFT;
         if (enemy->x == 0) {
             enemy->x_vel = 1;
         } else {

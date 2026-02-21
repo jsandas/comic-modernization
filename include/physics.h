@@ -20,6 +20,10 @@ constexpr int MAP_HEIGHT = 20;             // Map height in game units (10 * 2)
 constexpr int PLAYFIELD_WIDTH = 24;        // Visible playfield width in game units
 constexpr int PLAYFIELD_HEIGHT = 20;       // Visible playfield height in game units
 
+// Comic facing directions (used in main.cpp and physics.cpp)
+constexpr uint8_t COMIC_FACING_LEFT = 0;
+constexpr uint8_t COMIC_FACING_RIGHT = 1;
+
 // Cheat system flags
 extern bool cheat_noclip;  // When true, disables collision detection
 

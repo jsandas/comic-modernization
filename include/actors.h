@@ -21,9 +21,9 @@ constexpr uint8_t ENEMY_RESTRAINT_MOVE_EVERY_TICK = 2;  /* Always move (fast) */
 /* Enemy physics constants */
 constexpr int ENEMY_DESPAWN_RADIUS = 30;  /* Game units from Comic */
 
-/* Facing directions (from physics.h) */
-constexpr uint8_t COMIC_FACING_LEFT = 0;
-constexpr uint8_t COMIC_FACING_RIGHT = 5;
+/* Enemy facing directions (animation frame offsets) */
+constexpr uint8_t ENEMY_FACING_LEFT = 0;
+constexpr uint8_t ENEMY_FACING_RIGHT = 5;
 
 /**
  * enemy_t - Enemy state
