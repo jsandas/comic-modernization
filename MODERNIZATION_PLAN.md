@@ -341,20 +341,50 @@ A centralized system for managing debug cheats and development tools. Activated 
 
 ### Phase 5: Actor System
 **Status:** In Progress
+**Current Stage:** Phase 5.1 - Enemy System Foundation
 **Completion Date:** TBD
 **Goal:** Implement enemies, fireballs, and items
 
-**Tasks:**
-- [ ] Port enemy system from actors.c
-  - [ ] Enemy spawning logic
-  - [ ] 5 AI behaviors:
-    - [ ] Bounce (Fire Ball, Brave Bird)
-    - [ ] Leap (Bug-eyes, Beach Ball)
-    - [ ] Roll (Glow Globe)
-    - [ ] Seek (Killer Bee)
-    - [ ] Shy (Shy Bird, Spinner)
-  - [ ] Enemy-player collision
-  - [ ] Enemy despawn logic
+**Phase 5.1: Enemy System Core (In Progress)**
+**Objective:** Port complete enemy spawning, AI behaviors, collision, and despawning systems from reference C code
+
+**Completed:**
+- [x] Created `ActorSystem` class with core architecture
+  - [x] Enemy data structure (`enemy_t`) with position, velocity, animation, behavior, state
+  - [x] Enemy spawning logic: off-screen spawn positions, spawn rate limiting (1 per tick)
+  - [x] All 5 AI behaviors fully implemented:
+    - [x] Bounce: Diagonal bouncing with independent X/Y velocities
+    - [x] Leap: Jumping arc with gravity (Bug-eyes, Beach Ball)
+    - [x] Roll: Ground-following locomotion (Glow Globe)
+    - [x] Seek: Pathfinding toward player (Killer Bee)
+    - [x] Shy: Fleeing when player faces, approaching otherwise (Shy Bird)
+  - [x] Enemy-player collision detection (2×4 unit collision box)
+  - [x] Enemy despawn logic: distance-based and bottom-of-screen despawn
+  - [x] Death animation states: white spark (despawned), red spark (hit by player)
+  - [x] Respawn cycling: 20→40→60→80→100→20 tick intervals
+  - [x] Movement throttling: alternating motion for slow enemies, every-tick for fast
+  - [x] Animation frame handling and looping
+- [x] Created `include/actors.h` header with complete API
+- [x] Created `src/actors.cpp` implementation (1000+ lines of AI logic)
+- [x] Updated `CMakeLists.txt` to build actors.cpp
+- [x] Added stub `load_enemy_sprite()` to GraphicsSystem for future sprite loading
+- [x] Compilation successful, all tests passing
+
+**Remaining Tasks:**
+- [ ] Sprite/Animation Loading (Phase 5.2)
+  - [ ] Implement `load_enemy_sprite()` in GraphicsSystem
+  - [ ] Load left/right facing animation frames from PNG files
+  - [ ] Handle horizontal_duplicated vs horizontal_separate animation types
+  - [ ] Handle animation_loop vs animation_alternate animation types
+- [ ] Rendering (Phase 5.3)
+  - [ ] Render enemies with current animation frame
+  - [ ] Handle left/right facing direction
+  - [ ] Camera culling (only render visible enemies)
+- [ ] Integration (Phase 5.4)
+  - [ ] Add ActorSystem to main game loop
+  - [ ] Call setup_enemies_for_stage() when loading stages
+  - [ ] Call update() each frame with Comic position/state
+  - [ ] Render enemies each frame
 - [ ] Port fireball system from actors.c
   - [ ] Fireball spawning
   - [ ] Horizontal movement

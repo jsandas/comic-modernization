@@ -22,6 +22,7 @@ add_executable(captain_comic
     src/level_tiles.cpp
     src/doors.cpp
     src/cheats.cpp
+    src/actors.cpp
 )
 
 # Link libraries
@@ -42,6 +43,7 @@ add_executable(comic_tests
     src/level_tiles.cpp
     src/doors.cpp
     src/cheats.cpp
+    src/actors.cpp
 )
 
 target_link_libraries(comic_tests
