@@ -503,6 +503,10 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
     }
 
     // Vertical velocity handling and gravity
+    // NOTE: Position is calculated BEFORE gravity is applied (order verified from assembly reference).
+    // This is intentional: position update uses velocity from START of frame,
+    // gravity modifies velocity for NEXT frame. Differs from typical physics engines
+    // but matches original game behavior frame-by-frame.
     uint8_t proposed_y = enemy->y;
 
     if (enemy->y_vel < 0) {
@@ -524,7 +528,7 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
         proposed_y = static_cast<uint8_t>(proposed_y + vel_div_8);
     }
 
-    // Apply gravity
+    // Apply gravity (modifies velocity for NEXT frame)
     enemy->y_vel += ENEMY_GRAVITY;
     if (enemy->y_vel > TERMINAL_VELOCITY) {
         enemy->y_vel = TERMINAL_VELOCITY;
