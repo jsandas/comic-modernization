@@ -525,7 +525,7 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
     }
 
     // Apply gravity
-    enemy->y_vel += 2;  // Gravity
+    enemy->y_vel += ENEMY_GRAVITY;
     if (enemy->y_vel > TERMINAL_VELOCITY) {
         enemy->y_vel = TERMINAL_VELOCITY;
     }
