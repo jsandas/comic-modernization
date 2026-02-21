@@ -6,6 +6,7 @@
 #include "../include/level_loader.h"
 #include "../include/doors.h"
 #include "../include/cheats.h"
+#include "../include/actors.h"
 
 // Game state
 int comic_x = 20;
@@ -118,6 +119,9 @@ int main(int argc, char* argv[]) {
     g_cheats = new CheatSystem();
     g_cheats->initialize(debug_mode);
 
+    ActorSystem actor_system;
+    actor_system.initialize();
+
     // Pre-load player sprites and create animations
     const char* sprite_names[] = {
         "comic_standing", "comic_running_1", "comic_running_2", "comic_running_3", "comic_jumping"
@@ -176,9 +180,14 @@ int main(int argc, char* argv[]) {
 
     // Cache for tileset to avoid per-frame lookups
     uint8_t cached_level_number = current_level_number;
+    uint8_t cached_stage_number = current_stage_number;
     Tileset* cached_tileset = nullptr;
     if (current_level_number < 8) {
         cached_tileset = g_graphics->get_tileset(level_names[current_level_number]);
+    }
+
+    if (current_level_ptr) {
+        actor_system.setup_enemies_for_stage(current_level_ptr, current_stage_number, g_graphics);
     }
 
     // Tick timing - match original game's ~18.2 Hz tick rate
@@ -248,6 +257,11 @@ int main(int argc, char* argv[]) {
                     move_right();
                 }
             }
+
+            const uint8_t* tiles = current_level_ptr
+                ? current_level_ptr->stages[current_stage_number].tiles
+                : nullptr;
+            actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x);
         }
 
         // Update animation based on state (updates every frame for smooth animation)
@@ -277,11 +291,21 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
+        bool level_changed = current_level_number != cached_level_number;
+        bool stage_changed = current_stage_number != cached_stage_number;
+
         // Update tileset cache if level changed
-        if (current_level_number != cached_level_number) {
+        if (level_changed) {
             cached_level_number = current_level_number;
             if (current_level_number < 8) {
                 cached_tileset = g_graphics->get_tileset(level_names[current_level_number]);
+            }
+        }
+
+        if (level_changed || stage_changed) {
+            cached_stage_number = current_stage_number;
+            if (current_level_ptr) {
+                actor_system.setup_enemies_for_stage(current_level_ptr, current_stage_number, g_graphics);
             }
         }
 
@@ -303,6 +327,8 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
+
+        actor_system.render_enemies(g_graphics, camera_x, RENDER_SCALE);
 
         // Render player sprite
         if (current_animation) {

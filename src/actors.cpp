@@ -51,7 +51,12 @@ void ActorSystem::reset_for_stage() {
         enemy.spawn_timer_and_animation = enemy_respawn_counter_cycle;
     }
     spawned_this_tick = 0;
-    spawn_offset_cycle = PLAYFIELD_WIDTH;
+    // NOTE: spawn_offset_cycle is intentionally NOT reset here.
+    // In the original game (jsandas/comic-c: src/actors.c maybe_spawn_enemy),
+    // it is a static local variable initialized once at program start and never
+    // cleared on stage load, so it naturally persists across stage transitions.
+    // Persisting it here matches that behavior and adds variety to spawn positions
+    // across stage changes.
 }
 
 /**
@@ -98,16 +103,27 @@ void ActorSystem::setup_enemies_for_stage(
         enemy.behavior = record.behavior;
 
         // Load sprite animation from graphics system
-        std::string sprite_name = sprite_desc.filename;
-        // Remove null padding if present
-        size_t null_pos = sprite_name.find('\0');
-        if (null_pos != std::string::npos) {
-            sprite_name = sprite_name.substr(0, null_pos);
+        enemy.animation_data = graphics_system->load_enemy_sprite(sprite_desc);
+        if (!enemy.animation_data) {
+            std::string sprite_name = sprite_desc.filename;
+            size_t null_pos = sprite_name.find('\0');
+            if (null_pos != std::string::npos) {
+                sprite_name = sprite_name.substr(0, null_pos);
+            }
+            while (!sprite_name.empty() && sprite_name.back() == ' ') {
+                sprite_name.pop_back();
+            }
+            std::cerr << "Failed to load sprite animation data for "
+                      << (sprite_name.empty() ? "<unknown>" : sprite_name) << std::endl;
+            enemy.state = ENEMY_STATE_DESPAWNED;
+            enemy.sprite_descriptor = nullptr;
+            enemy.animation_data = nullptr;
+            continue;
         }
 
-        enemy.animation_data = graphics_system->load_enemy_sprite(sprite_name);
-        if (!enemy.animation_data) {
-            std::cerr << "Failed to load sprite: " << sprite_name << std::endl;
+        enemy.num_animation_frames = static_cast<uint8_t>(enemy.animation_data->frame_sequence.size());
+        if (enemy.num_animation_frames == 0) {
+            std::cerr << "Invalid animation sequence for enemy sprite" << std::endl;
             enemy.state = ENEMY_STATE_DESPAWNED;
             enemy.sprite_descriptor = nullptr;
             enemy.animation_data = nullptr;
@@ -123,6 +139,80 @@ void ActorSystem::setup_enemies_for_stage(
     }
 
     reset_for_stage();
+}
+
+void ActorSystem::render_enemies(GraphicsSystem* graphics_system, int camera_x, int render_scale) const {
+    if (!graphics_system) {
+        return;
+    }
+
+    const int scale_factor = (render_scale * 2) / TILE_SIZE;
+    if (scale_factor <= 0) {
+        return;
+    }
+
+    for (const auto& enemy : enemies) {
+        if (enemy.state != ENEMY_STATE_SPAWNED) {
+            continue;
+        }
+
+        // Cull enemies outside the visible viewport; 2-unit margin covers sprite width
+        if (static_cast<int>(enemy.x) < camera_x - 2 ||
+            static_cast<int>(enemy.x) >= camera_x + PLAYFIELD_WIDTH + 2) {
+            continue;
+        }
+
+        if (!enemy.animation_data || enemy.animation_data->frames_left.empty()) {
+            continue;
+        }
+
+        const auto& sequence = enemy.animation_data->frame_sequence;
+        if (sequence.empty()) {
+            continue;
+        }
+
+        uint8_t sequence_index = enemy.spawn_timer_and_animation % sequence.size();
+        uint8_t frame_index = sequence[sequence_index];
+
+        const TextureInfo* frame_info = nullptr;
+        bool flip_h = false;
+
+        if (enemy.sprite_descriptor && enemy.sprite_descriptor->horizontal == ENEMY_HORIZONTAL_SEPARATE) {
+            const auto& right_frames = enemy.animation_data->frames_right;
+            if (enemy.facing == ENEMY_FACING_RIGHT && !right_frames.empty()) {
+                frame_info = &right_frames[frame_index % right_frames.size()];
+            } else {
+                frame_info = &enemy.animation_data->frames_left[frame_index % enemy.animation_data->frames_left.size()];
+            }
+        } else {
+            frame_info = &enemy.animation_data->frames_left[frame_index % enemy.animation_data->frames_left.size()];
+            flip_h = (enemy.facing == ENEMY_FACING_RIGHT);
+        }
+
+        if (!frame_info || !frame_info->texture) {
+            continue;
+        }
+
+        int enemy_screen_x = (static_cast<int>(enemy.x) - camera_x) * render_scale + render_scale;
+        int enemy_screen_y = static_cast<int>(enemy.y) * render_scale + render_scale;
+
+        int render_width = frame_info->width * scale_factor;
+        int render_height = frame_info->height * scale_factor;
+
+        Sprite sprite;
+        sprite.texture = *frame_info;
+        sprite.width = frame_info->width;
+        sprite.height = frame_info->height;
+
+        graphics_system->render_sprite_centered_scaled(
+            enemy_screen_x,
+            enemy_screen_y,
+            sprite,
+            render_width,
+            render_height,
+            flip_h
+        );
+    }
 }
 
 /**
