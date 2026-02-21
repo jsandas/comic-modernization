@@ -96,6 +96,9 @@ public:
         GraphicsSystem* graphics_system
     );
 
+    /* Render enemies for the current frame */
+    void render_enemies(GraphicsSystem* graphics_system, int camera_x, int render_scale) const;
+
     /* Check if a specific tile is solid */
     bool is_tile_solid(uint8_t tile_id) const;
 

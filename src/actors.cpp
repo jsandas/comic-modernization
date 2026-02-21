@@ -135,6 +135,74 @@ void ActorSystem::setup_enemies_for_stage(
     reset_for_stage();
 }
 
+void ActorSystem::render_enemies(GraphicsSystem* graphics_system, int camera_x, int render_scale) const {
+    if (!graphics_system) {
+        return;
+    }
+
+    const int scale_factor = (render_scale * 2) / TILE_SIZE;
+    if (scale_factor <= 0) {
+        return;
+    }
+
+    for (const auto& enemy : enemies) {
+        if (enemy.state != ENEMY_STATE_SPAWNED) {
+            continue;
+        }
+
+        if (!enemy.animation_data || enemy.animation_data->frames_left.empty()) {
+            continue;
+        }
+
+        const auto& sequence = enemy.animation_data->frame_sequence;
+        if (sequence.empty()) {
+            continue;
+        }
+
+        uint8_t sequence_index = enemy.spawn_timer_and_animation % sequence.size();
+        uint8_t frame_index = sequence[sequence_index];
+
+        const TextureInfo* frame_info = nullptr;
+        bool flip_h = false;
+
+        if (enemy.sprite_descriptor && enemy.sprite_descriptor->horizontal == ENEMY_HORIZONTAL_SEPARATE) {
+            const auto& right_frames = enemy.animation_data->frames_right;
+            if (enemy.facing == ENEMY_FACING_RIGHT && !right_frames.empty()) {
+                frame_info = &right_frames[frame_index % right_frames.size()];
+            } else {
+                frame_info = &enemy.animation_data->frames_left[frame_index % enemy.animation_data->frames_left.size()];
+            }
+        } else {
+            frame_info = &enemy.animation_data->frames_left[frame_index % enemy.animation_data->frames_left.size()];
+            flip_h = (enemy.facing == ENEMY_FACING_RIGHT);
+        }
+
+        if (!frame_info || !frame_info->texture) {
+            continue;
+        }
+
+        int enemy_screen_x = (static_cast<int>(enemy.x) - camera_x) * render_scale + render_scale;
+        int enemy_screen_y = static_cast<int>(enemy.y) * render_scale + render_scale;
+
+        int render_width = frame_info->width * scale_factor;
+        int render_height = frame_info->height * scale_factor;
+
+        Sprite sprite;
+        sprite.texture = *frame_info;
+        sprite.width = frame_info->width;
+        sprite.height = frame_info->height;
+
+        graphics_system->render_sprite_centered_scaled(
+            enemy_screen_x,
+            enemy_screen_y,
+            sprite,
+            render_width,
+            render_height,
+            flip_h
+        );
+    }
+}
+
 /**
  * Main update function - called once per game tick
  */
