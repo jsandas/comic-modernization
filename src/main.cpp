@@ -190,9 +190,13 @@ int main(int argc, char* argv[]) {
         actor_system.setup_enemies_for_stage(current_level_ptr, current_stage_number, g_graphics);
     }
 
-    // Tick timing - match original game's ~18.2 Hz tick rate
-    constexpr double TICK_RATE = 18.2065; // PC timer interrupt rate (1193182/65536 Hz)
-    constexpr double MS_PER_TICK = 1000.0 / TICK_RATE; // ~54.93 ms per tick
+    // Tick timing - match original game's ~9.1 Hz tick rate.
+    // The PC timer interrupt (IRQ 0) fires at 18.2065 Hz but game_tick_flag is
+    // only set on *odd* interrupt cycles (irq0_parity toggles 0,1,0,1,...),
+    // so the actual game logic runs at half the interrupt rate: ~9.1032 Hz.
+    // See reference/disassembly/R5sw1991.asm: "the game's tick rate is half that"
+    constexpr double TICK_RATE = 18.2065 / 2.0; // ~9.1032 Hz - actual game tick rate
+    constexpr double MS_PER_TICK = 1000.0 / TICK_RATE; // ~109.86 ms per tick
     constexpr int MAX_TICKS_PER_FRAME = 5;
     constexpr double MAX_ACCUMULATED_MS = MS_PER_TICK * MAX_TICKS_PER_FRAME;
     uint32_t last_tick_time = SDL_GetTicks();
