@@ -594,19 +594,18 @@ void ActorSystem::enemy_behavior_roll(enemy_t* enemy) {
 
     uint8_t next_x;
 
-    // Falling state
+    // Vertical movement: falling or on ground
     if (enemy->y_vel > 0) {
-        // Check if near bottom
+        // Falling: check if near bottom and despawn
         if (enemy->y + 1 >= PLAYFIELD_HEIGHT - 3) {
-            // Near bottom - despawn
             enemy->state = ENEMY_STATE_WHITE_SPARK + 5;
             enemy->y = PLAYFIELD_HEIGHT - 2;
             return;
         }
-        // Move down one unit
+        // Move down one unit (maintains horizontal momentum from before falling)
         enemy->y = static_cast<uint8_t>(enemy->y + 1);
     } else {
-        // Rolling (on ground) - set direction toward Comic
+        // On ground: update direction toward Comic
         if (enemy->x < g_comic_x) {
             enemy->x_vel = 1;
         } else if (enemy->x > g_comic_x) {
@@ -616,7 +615,7 @@ void ActorSystem::enemy_behavior_roll(enemy_t* enemy) {
         }
     }
 
-    // Handle restraint
+    // Handle restraint (applies to both falling and rolling)
     if (enemy->restraint == ENEMY_RESTRAINT_SKIP_THIS_TICK) {
         enemy->restraint = ENEMY_RESTRAINT_MOVE_THIS_TICK;
         return;
