@@ -597,7 +597,7 @@ void ActorSystem::enemy_behavior_roll(enemy_t* enemy) {
     // Falling state
     if (enemy->y_vel > 0) {
         // Check if near bottom
-        if (static_cast<uint8_t>(enemy->y + 1) >= PLAYFIELD_HEIGHT - 2 - 1) {
+        if (enemy->y + 1 >= PLAYFIELD_HEIGHT - 3) {
             // Near bottom - despawn
             enemy->state = ENEMY_STATE_WHITE_SPARK + 5;
             enemy->y = PLAYFIELD_HEIGHT - 2;
