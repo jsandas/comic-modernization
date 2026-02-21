@@ -131,14 +131,14 @@ void ActorSystem::setup_enemies_for_stage(
 void ActorSystem::update(
     uint8_t comic_x, uint8_t comic_y,
     uint8_t comic_facing,
-    const uint8_t* current_tiles,
+    const uint8_t* tiles,
     int camera_x) {
     // Store global state for use by behavior functions
     g_comic_x = comic_x;
     g_comic_y = comic_y;
     g_comic_facing = comic_facing;
     g_camera_x = camera_x;
-    current_tiles = current_tiles;
+    current_tiles = tiles;
 
     spawned_this_tick = 0;
 

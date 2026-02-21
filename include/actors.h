@@ -79,7 +79,7 @@ public:
     void update(
         uint8_t comic_x, uint8_t comic_y,
         uint8_t comic_facing,
-        const uint8_t* current_tiles,
+        const uint8_t* tiles,
         int camera_x
     );
 
