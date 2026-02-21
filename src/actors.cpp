@@ -81,6 +81,13 @@ void ActorSystem::setup_enemies_for_stage(
             continue;
         }
 
+        // Validate sprite descriptor index to avoid out-of-bounds access
+        if (record.shp_index >= 4) {
+            enemy.state = ENEMY_STATE_DESPAWNED;
+            enemy.spawn_timer_and_animation = 100;
+            enemy.animation_data = nullptr;
+            continue;
+        }
         // Load animation data from sprite descriptor
         const shp_t& sprite_desc = level->shp[record.shp_index];
         enemy.num_animation_frames = sprite_desc.num_distinct_frames;
