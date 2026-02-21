@@ -404,14 +404,31 @@ SpriteAnimationData* GraphicsSystem::load_enemy_sprite(const shp_t& sprite_desc)
         if (animation_data->frames_left.size() != animation_data->frames_right.size()) {
             std::cerr << "Warning: Animation frame count mismatch for " << sprite_name
                       << " (left=" << animation_data->frames_left.size()
-                      << ", right=" << animation_data->frames_right.size() << ")" << std::endl;
+                      << ", right=" << animation_data->frames_right.size()
+                      << "), truncating to " << distinct_frames << std::endl;
+            // Destroy excess textures before truncating to avoid leaks
+            for (size_t i = distinct_frames; i < animation_data->frames_left.size(); ++i) {
+                if (animation_data->frames_left[i].texture) {
+                    SDL_DestroyTexture(animation_data->frames_left[i].texture);
+                    animation_data->frames_left[i].texture = nullptr;
+                }
+            }
+            for (size_t i = distinct_frames; i < animation_data->frames_right.size(); ++i) {
+                if (animation_data->frames_right[i].texture) {
+                    SDL_DestroyTexture(animation_data->frames_right[i].texture);
+                    animation_data->frames_right[i].texture = nullptr;
+                }
+            }
             animation_data->frames_left.resize(distinct_frames);
             animation_data->frames_right.resize(distinct_frames);
         }
     }
 
+    // Clamp to uint8_t range before cast — enemy animations are defined in
+    // level_data.cpp with num_distinct_frames as uint8_t (max 255), so this
+    // is a safety guard rather than an expected runtime condition.
     animation_data->frame_sequence = build_enemy_animation_sequence(
-        static_cast<uint8_t>(distinct_frames),
+        static_cast<uint8_t>(std::min(distinct_frames, static_cast<size_t>(255))),
         sprite_desc.animation
     );
 
