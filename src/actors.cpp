@@ -664,9 +664,13 @@ void ActorSystem::enemy_behavior_roll(enemy_t* enemy) {
         }
     } else {
         // Moving left
-        next_x = static_cast<uint8_t>(enemy->x - 1);
-        if (!check_horizontal_enemy_map_collision(next_x, enemy->y)) {
-            enemy->x = next_x;
+        if (enemy->x == 0) {
+            enemy->x_vel = 1;  // Hit left edge, reverse direction
+        } else {
+            next_x = static_cast<uint8_t>(enemy->x - 1);
+            if (!check_horizontal_enemy_map_collision(next_x, enemy->y)) {
+                enemy->x = next_x;
+            }
         }
     }
 
@@ -716,14 +720,18 @@ void ActorSystem::enemy_behavior_seek(enemy_t* enemy) {
             }
         } else {
             // Move left
-            next_x = static_cast<uint8_t>(enemy->x - 1);
-            collision = check_horizontal_enemy_map_collision(next_x, enemy->y);
-
-            if (!collision) {
-                enemy->x = next_x;
-                enemy->x_vel = -1;
+            if (enemy->x == 0) {
+                enemy->x_vel = 1;  // Hit left edge, reverse direction
             } else {
-                enemy->x_vel = 1;  // Blocked, try right next time
+                next_x = static_cast<uint8_t>(enemy->x - 1);
+                collision = check_horizontal_enemy_map_collision(next_x, enemy->y);
+
+                if (!collision) {
+                    enemy->x = next_x;
+                    enemy->x_vel = -1;
+                } else {
+                    enemy->x_vel = 1;  // Blocked, try right next time
+                }
             }
         }
 
@@ -773,15 +781,15 @@ void ActorSystem::enemy_behavior_shy(enemy_t* enemy) {
     bool collision;
     int16_t camera_rel_x;
 
-    // Check restraint: use toggle semantics (move every other tick)
+    // Handle restraint (movement throttle)
     if (enemy->restraint == ENEMY_RESTRAINT_SKIP_THIS_TICK) {
-        // Skip movement this tick, allow movement on the next tick
         enemy->restraint = ENEMY_RESTRAINT_MOVE_THIS_TICK;
-        return;
+        return;  // Skip this tick
     }
 
-    // Set restraint so that the next tick will be skipped
-    enemy->restraint = ENEMY_RESTRAINT_SKIP_THIS_TICK;
+    if (enemy->restraint == ENEMY_RESTRAINT_MOVE_THIS_TICK) {
+        enemy->restraint = ENEMY_RESTRAINT_SKIP_THIS_TICK;  // Skip next tick
+    }
     // Determine if Comic is facing this enemy
     if (g_comic_facing == COMIC_FACING_RIGHT && enemy->x > g_comic_x) {
         comic_facing_enemy = 1;  // Comic facing enemy on right
@@ -866,17 +874,6 @@ void ActorSystem::enemy_behavior_shy(enemy_t* enemy) {
             if (!collision) {
                 enemy->y = next_y;
             }
-        }
-    }
-
-    // Normalize restraint state
-    if (enemy->restraint == ENEMY_RESTRAINT_SKIP_THIS_TICK) {
-        enemy->restraint = ENEMY_RESTRAINT_MOVE_THIS_TICK;
-    } else if (enemy->restraint == ENEMY_RESTRAINT_MOVE_THIS_TICK) {
-        enemy->restraint = ENEMY_RESTRAINT_SKIP_THIS_TICK;
-    } else {
-        if (enemy->restraint > ENEMY_RESTRAINT_MOVE_EVERY_TICK) {
-            enemy->restraint = ENEMY_RESTRAINT_MOVE_THIS_TICK;
         }
     }
 }
