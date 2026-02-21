@@ -30,9 +30,11 @@ constexpr uint8_t RESPAWN_TIMER_MIN = 20;
 constexpr uint8_t RESPAWN_TIMER_MAX = 100;
 constexpr uint8_t RESPAWN_TIMER_STEP = 20;
 
-/* Enemy facing directions (animation frame offsets) */
-constexpr uint8_t ENEMY_FACING_LEFT = 0;
-constexpr uint8_t ENEMY_FACING_RIGHT = 5;
+/* Enemy facing directions - frame offsets for sprite animation
+ * Left-facing frames: 0-4, Right-facing frames: 5-9
+ * These values are added to the current animation frame index */
+constexpr uint8_t ENEMY_FACING_LEFT = 0;   /* Left-facing animation starts at frame 0 */
+constexpr uint8_t ENEMY_FACING_RIGHT = 5;  /* Right-facing animation starts at frame 5 */
 
 /**
  * enemy_t - Enemy state
