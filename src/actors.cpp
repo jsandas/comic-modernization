@@ -595,7 +595,7 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
         } else {
             // Ground exists - initiate jump
             enemy->x_vel = (enemy->x < g_comic_x) ? 1 : (enemy->x > g_comic_x) ? -1 : 0;
-            enemy->y_vel = -7;  // Jump velocity
+            enemy->y_vel = ENEMY_JUMP_VELOCITY;
         }
     }
 

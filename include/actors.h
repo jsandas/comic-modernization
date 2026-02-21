@@ -23,6 +23,7 @@ constexpr uint8_t ENEMY_RESTRAINT_MOVE_EVERY_TICK = 2;  /* Always move (fast) */
 constexpr int ENEMY_DESPAWN_RADIUS = 30;  /* Game units from Comic */
 constexpr int ENEMY_VELOCITY_SHIFT = 3;   /* Bit shift for 1/8 unit movement precision */
 constexpr int8_t ENEMY_GRAVITY = 2;       /* Acceleration per tick (vs COMIC_GRAVITY = 5) */
+constexpr int8_t ENEMY_JUMP_VELOCITY = -7; /* Initial upward velocity for LEAP behavior */
 
 /* Respawn timer cycle: 20→40→60→80→100→20 */
 constexpr uint8_t RESPAWN_TIMER_MIN = 20;
