@@ -763,7 +763,7 @@ static void test_actor_player_collision() {
     auto& enemies = const_cast<std::vector<enemy_t>&>(actor_system.get_enemies());
     
     // Manually position enemy at Comic's location to trigger collision
-    //Collision box: horizontal abs(enemy.x - comic.x) < 2, vertical 0 <= (enemy.y - comic.y) < 4
+    //Collision box: horizontal abs(enemy.x - comic.x) <= 1, vertical 0 <= (enemy.y - comic.y) < 4
     setup_test_enemy(enemies, 0, ENEMY_BEHAVIOR_BOUNCE);
     enemies[0].state = ENEMY_STATE_SPAWNED;
     enemies[0].x = comic_x;
