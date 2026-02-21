@@ -661,7 +661,8 @@ static void setup_test_enemy(std::vector<enemy_t>& enemies, int index, uint8_t b
     enemy.restraint = (behavior & ENEMY_BEHAVIOR_FAST) ? 
                       ENEMY_RESTRAINT_MOVE_EVERY_TICK : 
                       ENEMY_RESTRAINT_MOVE_THIS_TICK;
-    enemy.animation_data = nullptr;  // Tests don't need actual sprite data
+    enemy.sprite_descriptor = nullptr;   // Tests don't need actual level data
+    enemy.animation_data = nullptr;      // Tests don't need actual sprite data
 }
 
 static void test_actor_spawn_one_per_tick() {

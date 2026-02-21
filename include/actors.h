@@ -50,14 +50,15 @@ struct enemy_t {
     /* Dual-use field: spawn timer when despawned, animation frame when spawned */
     uint8_t spawn_timer_and_animation;
 
-    uint8_t num_animation_frames;        /* Frames in animation */
+    uint8_t num_animation_frames;        /* Cached from sprite_descriptor for fast access */
     uint8_t behavior;                    /* AI behavior type (see ENEMY_BEHAVIOR_*) */
     uint8_t state;                       /* Current state (ENEMY_STATE_*) */
     uint8_t facing;                      /* 0=left, 5=right (in units of animation frames) */
     uint8_t restraint;                   /* Movement throttle (ENEMY_RESTRAINT_*) */
 
-    /* Cached references for animation and sprite rendering */
-    SpriteAnimationData* animation_data;
+    /* References to sprite metadata and textures */
+    const shp_t* sprite_descriptor;      /* Source sprite metadata (horizontal, animation type, etc.) */
+    SpriteAnimationData* animation_data; /* Loaded texture frames */
 };
 
 /**

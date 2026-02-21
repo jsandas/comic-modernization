@@ -53,11 +53,11 @@ struct Animation {
 };
 
 // Enemy sprite animation data
+// Note: Metadata (num_frames, horizontal orientation) is stored in the level's shp_t descriptor.
+// This struct only contains the loaded texture data.
 struct SpriteAnimationData {
     std::vector<TextureInfo> frames_left;   /* Left-facing animation frames */
     std::vector<TextureInfo> frames_right;  /* Right-facing animation frames */
-    int num_frames;
-    bool horizontal_duplicated;  /* True if right frames are mirrored copies */
 };
 
 // Graphics system

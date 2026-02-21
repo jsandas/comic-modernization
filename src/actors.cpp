@@ -23,6 +23,7 @@ ActorSystem::ActorSystem()
     for (auto& enemy : enemies) {
         enemy.state = ENEMY_STATE_DESPAWNED;
         enemy.spawn_timer_and_animation = 100;
+        enemy.sprite_descriptor = nullptr;
         enemy.animation_data = nullptr;
     }
 }
@@ -87,12 +88,14 @@ void ActorSystem::setup_enemies_for_stage(
                       << " for enemy slot " << i << " (max is 3)" << std::endl;
             enemy.state = ENEMY_STATE_DESPAWNED;
             enemy.spawn_timer_and_animation = 100;
+            enemy.sprite_descriptor = nullptr;
             enemy.animation_data = nullptr;
             continue;
         }
         // Load animation data from sprite descriptor
         const shp_t& sprite_desc = level->shp[record.shp_index];
-        enemy.num_animation_frames = sprite_desc.num_distinct_frames;
+        enemy.sprite_descriptor = &sprite_desc;  // Store reference to source metadata
+        enemy.num_animation_frames = sprite_desc.num_distinct_frames;  // Cache for performance
         enemy.behavior = record.behavior;
 
         // Load sprite animation from graphics system
@@ -107,6 +110,7 @@ void ActorSystem::setup_enemies_for_stage(
         if (!enemy.animation_data) {
             std::cerr << "Failed to load sprite: " << sprite_name << std::endl;
             enemy.state = ENEMY_STATE_DESPAWNED;
+            enemy.sprite_descriptor = nullptr;
             enemy.animation_data = nullptr;
             continue;
         }
