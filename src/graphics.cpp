@@ -250,13 +250,23 @@ SpriteAnimationData* GraphicsSystem::load_enemy_sprite(const std::string& sprite
         return it->second;
     }
 
-    // TODO: Implement proper enemy sprite loading
-    // For now, create a stub that will be filled in Phase 5.1
-    // This will load sprite frames for left and right directions
-    // and store animation metadata from the sprite descriptor
+    // TODO (Phase 5.2): Implement enemy sprite loading
+    // This function should:
+    // 1. Load sprite frames from assets/{sprite_name}.shp-*.png files
+    // 2. Create SpriteAnimationData with frames for left/right directions
+    // 3. Cache in enemy_sprites map and return pointer
+    //
+    // STUB BEHAVIOR: Currently returns nullptr to indicate unavailable sprite.
+    // This matches the error handling pattern of load_png (returns null on failure).
+    // Callers in ActorSystem check for nullptr and handle gracefully.
     
-    std::cerr << "Warning: Enemy sprite loading not yet implemented: " << sprite_name << std::endl;
-    return nullptr;
+    static std::unordered_set<std::string> logged_stubs;
+    if (logged_stubs.insert(sprite_name).second) {
+        std::cerr << "Warning: Enemy sprite loading not yet implemented (stub): " 
+                  << sprite_name << std::endl;
+    }
+    
+    return nullptr;  // Stub: will be implemented in Phase 5.2
 }
 
 Animation GraphicsSystem::create_animation(const std::vector<std::string>& sprite_names, const std::string& direction, int frame_duration_ms, bool looping) {
