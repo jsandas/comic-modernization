@@ -502,12 +502,14 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
     if (enemy->y_vel < 0) {
         // Moving up - apply upward movement with fractional velocity
         int8_t vel_div_8 = enemy->y_vel >> 3;  // y_vel / 8
-        if (enemy->y + vel_div_8 >= 254) {
-            proposed_y = 0;  // Underflow check
+        uint8_t target_y = static_cast<uint8_t>(proposed_y + vel_div_8);
+        
+        if (target_y >= 254) {  // Underflow check
+            proposed_y = 0;
         } else {
-            collision = check_vertical_enemy_map_collision(enemy->x, static_cast<uint8_t>(proposed_y + vel_div_8));
+            collision = check_vertical_enemy_map_collision(enemy->x, target_y);
             if (!collision) {
-                proposed_y = static_cast<uint8_t>(proposed_y + vel_div_8);
+                proposed_y = target_y;
             }
         }
     } else if (enemy->y_vel > 0) {
