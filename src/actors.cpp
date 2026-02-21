@@ -526,11 +526,15 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
     if (enemy->y_vel < 0) {
         // Moving up - apply upward movement with fractional velocity
         int8_t vel_div_8 = enemy->y_vel >> ENEMY_VELOCITY_SHIFT;  // y_vel / 8 for smooth movement
-        uint8_t target_y = static_cast<uint8_t>(proposed_y + vel_div_8);
         
-        if (target_y >= 254) {  // Underflow check
+        // Check for uint8_t underflow when adding negative velocity
+        // If proposed_y + vel_div_8 would be negative (e.g., y=1, vel=-2 → -1),
+        // casting to uint8_t wraps around to 255, 254, etc.
+        // Clamp to 0 if underflow would occur.
+        if (static_cast<int16_t>(proposed_y) + vel_div_8 < 0) {
             proposed_y = 0;
         } else {
+            uint8_t target_y = static_cast<uint8_t>(proposed_y + vel_div_8);
             collision = check_vertical_enemy_map_collision(enemy->x, target_y);
             if (!collision) {
                 proposed_y = target_y;
