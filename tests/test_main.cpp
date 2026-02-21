@@ -115,6 +115,23 @@ static void test_animation_zero_duration() {
           "zero duration: frame index should stay in range");
 }
 
+static void test_enemy_animation_sequence() {
+    std::vector<uint8_t> loop_sequence = build_enemy_animation_sequence(3, ENEMY_ANIMATION_LOOP);
+    check(loop_sequence == std::vector<uint8_t>({0, 1, 2}),
+        "enemy loop sequence should be 0,1,2 for 3 frames");
+
+    std::vector<uint8_t> alternate_sequence = build_enemy_animation_sequence(3, ENEMY_ANIMATION_ALTERNATE);
+    check(alternate_sequence == std::vector<uint8_t>({0, 1, 2, 1}),
+        "enemy alternate sequence should be 0,1,2,1 for 3 frames");
+
+    std::vector<uint8_t> alternate_sequence_four = build_enemy_animation_sequence(4, ENEMY_ANIMATION_ALTERNATE);
+    check(alternate_sequence_four == std::vector<uint8_t>({0, 1, 2, 3, 2, 1}),
+        "enemy alternate sequence should be 0,1,2,3,2,1 for 4 frames");
+
+    std::vector<uint8_t> empty_sequence = build_enemy_animation_sequence(0, ENEMY_ANIMATION_LOOP);
+    check(empty_sequence.empty(), "enemy sequence should be empty for 0 frames");
+}
+
 static void reset_physics_state() {
     init_test_level();
     comic_x = 4;
@@ -740,7 +757,8 @@ static void test_actor_despawn_distance() {
     setup_test_enemy(enemies, 0, ENEMY_BEHAVIOR_BOUNCE);
     enemies[0].state = ENEMY_STATE_SPAWNED;
     enemies[0].x = comic_x;
-    enemies[0].y = comic_y;
+    enemies[0].y = static_cast<uint8_t>(comic_y - 2);
+    enemies[0].restraint = ENEMY_RESTRAINT_SKIP_THIS_TICK;
     
     actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x);
     check(enemies[0].state == ENEMY_STATE_SPAWNED, "actor_despawn: enemy should remain spawned when close");
@@ -767,7 +785,8 @@ static void test_actor_player_collision() {
     setup_test_enemy(enemies, 0, ENEMY_BEHAVIOR_BOUNCE);
     enemies[0].state = ENEMY_STATE_SPAWNED;
     enemies[0].x = comic_x;
-    enemies[0].y = comic_y;
+    enemies[0].y = static_cast<uint8_t>(comic_y + 1);
+    enemies[0].restraint = ENEMY_RESTRAINT_SKIP_THIS_TICK;
     
     actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x);
     
@@ -872,6 +891,9 @@ static void test_actor_behavior_bounce_movement() {
     enemies[0].x_vel = 1;  // Moving right
     enemies[0].y_vel = -1; // Moving up
     enemies[0].restraint = ENEMY_RESTRAINT_MOVE_THIS_TICK;
+
+    comic_x = 0;
+    comic_y = 0;
     
     uint8_t start_x = enemies[0].x;
     uint8_t start_y = enemies[0].y;
@@ -924,6 +946,7 @@ static const std::vector<TestCase>& test_registry() {
         {"animation_looping", test_animation_looping},
         {"animation_non_looping", test_animation_non_looping},
         {"animation_zero_duration", test_animation_zero_duration},
+        {"enemy_animation_sequence", test_enemy_animation_sequence},
         {"jump_edge_trigger", test_jump_edge_trigger},
         {"jump_recharge", test_jump_recharge},
         {"jump_height", test_jump_height},

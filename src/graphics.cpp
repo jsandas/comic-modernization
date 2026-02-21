@@ -1,6 +1,7 @@
 #include "../include/graphics.h"
 #include "../include/cheats.h"
 #include "../include/physics.h"
+#include "../include/level.h"
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <cstdio>
@@ -9,6 +10,7 @@
 #include <unordered_set>
 #include <iomanip>
 #include <sstream>
+#include <algorithm>
 
 // External game state (defined in main.cpp)
 extern int comic_x;
@@ -153,6 +155,97 @@ TextureInfo GraphicsSystem::load_png(const std::string& filepath) {
     return info;
 }
 
+std::vector<uint8_t> build_enemy_animation_sequence(
+    uint8_t num_distinct_frames,
+    uint8_t animation_type) {
+    std::vector<uint8_t> sequence;
+    if (num_distinct_frames == 0) {
+        return sequence;
+    }
+
+    sequence.reserve(static_cast<size_t>(num_distinct_frames) * 2);
+    for (uint8_t i = 0; i < num_distinct_frames; ++i) {
+        sequence.push_back(i);
+    }
+
+    if (animation_type == ENEMY_ANIMATION_ALTERNATE && num_distinct_frames > 2) {
+        for (int i = static_cast<int>(num_distinct_frames) - 2; i >= 1; --i) {
+            sequence.push_back(static_cast<uint8_t>(i));
+        }
+    }
+
+    return sequence;
+}
+
+std::vector<TextureInfo> GraphicsSystem::load_animation_frames(
+    const std::string& filepath,
+    int expected_frames,
+    const std::string& label) {
+    std::vector<TextureInfo> frames;
+    if (renderer == nullptr) {
+        std::cerr << "Warning: Renderer unavailable; cannot load animation: " << label << std::endl;
+        return frames;
+    }
+
+    IMG_Animation* animation = nullptr;
+    std::string loaded_path;
+    std::string possible_paths[] = {
+        filepath,
+        "../" + filepath,
+        "../../" + filepath
+    };
+
+    for (const auto& path : possible_paths) {
+        std::ifstream f(path);
+        if (!f.good()) {
+            continue;
+        }
+        animation = IMG_LoadAnimation(path.c_str());
+        if (animation != nullptr) {
+            loaded_path = path;
+            break;
+        }
+        std::cerr << "Warning: Failed to load animation: " << path
+                  << " (" << IMG_GetError() << ")" << std::endl;
+    }
+
+    if (animation == nullptr) {
+        return frames;
+    }
+
+    int available_frames = animation->count;
+    int frame_count = available_frames;
+    if (expected_frames > 0 && available_frames > expected_frames) {
+        frame_count = expected_frames;
+    }
+
+    if (expected_frames > 0 && available_frames < expected_frames) {
+        std::cerr << "Warning: Animation '" << label << "' expected "
+                  << expected_frames << " frame(s), got "
+                  << available_frames << " in " << loaded_path << std::endl;
+    }
+
+    for (int i = 0; i < frame_count; ++i) {
+        SDL_Surface* surface = animation->frames[i];
+        if (surface == nullptr) {
+            continue;
+        }
+
+        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+        if (texture == nullptr) {
+            std::cerr << "Warning: Failed to create animation texture for '" << label
+                      << "' frame " << i << ": " << SDL_GetError() << std::endl;
+            continue;
+        }
+
+        TextureInfo info = {texture, surface->w, surface->h};
+        frames.push_back(info);
+    }
+
+    IMG_FreeAnimation(animation);
+    return frames;
+}
+
 bool GraphicsSystem::load_tileset(const std::string& level_name) {
     if (tilesets.find(level_name) != tilesets.end()) {
         return true;
@@ -243,30 +336,102 @@ Sprite* GraphicsSystem::get_sprite(const std::string& sprite_name, const std::st
     return nullptr;
 }
 
-SpriteAnimationData* GraphicsSystem::load_enemy_sprite(const std::string& sprite_name) {
+SpriteAnimationData* GraphicsSystem::load_enemy_sprite(const shp_t& sprite_desc) {
+    if (sprite_desc.num_distinct_frames == 0) {
+        return nullptr;
+    }
+
+    std::string sprite_name = sprite_desc.filename;
+    size_t null_pos = sprite_name.find('\0');
+    if (null_pos != std::string::npos) {
+        sprite_name = sprite_name.substr(0, null_pos);
+    }
+    while (!sprite_name.empty() && sprite_name.back() == ' ') {
+        sprite_name.pop_back();
+    }
+    if (sprite_name.empty()) {
+        return nullptr;
+    }
+
+    std::ostringstream cache_key;
+    cache_key << sprite_name << ":" << static_cast<int>(sprite_desc.num_distinct_frames)
+              << ":" << static_cast<int>(sprite_desc.horizontal)
+              << ":" << static_cast<int>(sprite_desc.animation);
+
     // Check if already loaded
-    auto it = enemy_sprites.find(sprite_name);
+    auto it = enemy_sprites.find(cache_key.str());
     if (it != enemy_sprites.end()) {
         return it->second;
     }
 
-    // TODO (Phase 5.2): Implement enemy sprite loading
-    // This function should:
-    // 1. Load sprite frames from assets/{sprite_name}.shp-*.png files
-    // 2. Create SpriteAnimationData with frames for left/right directions
-    // 3. Cache in enemy_sprites map and return pointer
-    //
-    // STUB BEHAVIOR: Currently returns nullptr to indicate unavailable sprite.
-    // This matches the error handling pattern of load_png (returns null on failure).
-    // Callers in ActorSystem check for nullptr and handle gracefully.
-    
-    static std::unordered_set<std::string> logged_stubs;
-    if (logged_stubs.insert(sprite_name).second) {
-        std::cerr << "Warning: Enemy sprite loading not yet implemented (stub): " 
-                  << sprite_name << std::endl;
+    std::string left_filename = sprite_name + "-left.gif";
+    std::string right_filename = sprite_name + "-right.gif";
+
+    auto* animation_data = new SpriteAnimationData();
+    animation_data->frames_left = load_animation_frames(
+        get_asset_path(left_filename),
+        sprite_desc.num_distinct_frames,
+        sprite_name + ":left"
+    );
+
+    if (sprite_desc.horizontal == ENEMY_HORIZONTAL_SEPARATE) {
+        animation_data->frames_right = load_animation_frames(
+            get_asset_path(right_filename),
+            sprite_desc.num_distinct_frames,
+            sprite_name + ":right"
+        );
     }
-    
-    return nullptr;  // Stub: will be implemented in Phase 5.2
+
+    if (animation_data->frames_left.empty()) {
+        delete animation_data;
+        return nullptr;
+    }
+
+    if (sprite_desc.horizontal == ENEMY_HORIZONTAL_SEPARATE &&
+        animation_data->frames_right.empty()) {
+        for (auto& frame : animation_data->frames_left) {
+            if (frame.texture) {
+                SDL_DestroyTexture(frame.texture);
+            }
+        }
+        delete animation_data;
+        return nullptr;
+    }
+
+    size_t distinct_frames = animation_data->frames_left.size();
+    if (sprite_desc.horizontal == ENEMY_HORIZONTAL_SEPARATE) {
+        distinct_frames = std::min(distinct_frames, animation_data->frames_right.size());
+        if (animation_data->frames_left.size() != animation_data->frames_right.size()) {
+            std::cerr << "Warning: Animation frame count mismatch for " << sprite_name
+                      << " (left=" << animation_data->frames_left.size()
+                      << ", right=" << animation_data->frames_right.size() << ")" << std::endl;
+            animation_data->frames_left.resize(distinct_frames);
+            animation_data->frames_right.resize(distinct_frames);
+        }
+    }
+
+    animation_data->frame_sequence = build_enemy_animation_sequence(
+        static_cast<uint8_t>(distinct_frames),
+        sprite_desc.animation
+    );
+
+    if (animation_data->frame_sequence.empty()) {
+        for (auto& frame : animation_data->frames_left) {
+            if (frame.texture) {
+                SDL_DestroyTexture(frame.texture);
+            }
+        }
+        for (auto& frame : animation_data->frames_right) {
+            if (frame.texture) {
+                SDL_DestroyTexture(frame.texture);
+            }
+        }
+        delete animation_data;
+        return nullptr;
+    }
+
+    enemy_sprites[cache_key.str()] = animation_data;
+    return animation_data;
 }
 
 Animation GraphicsSystem::create_animation(const std::vector<std::string>& sprite_names, const std::string& direction, int frame_duration_ms, bool looping) {

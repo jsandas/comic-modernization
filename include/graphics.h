@@ -58,7 +58,14 @@ struct Animation {
 struct SpriteAnimationData {
     std::vector<TextureInfo> frames_left;   /* Left-facing animation frames */
     std::vector<TextureInfo> frames_right;  /* Right-facing animation frames */
+    std::vector<uint8_t> frame_sequence;    /* Animation order (indexes into frames_*) */
 };
+
+// Build animation frame sequence for enemy sprites
+std::vector<uint8_t> build_enemy_animation_sequence(
+    uint8_t num_distinct_frames,
+    uint8_t animation_type
+);
 
 // Graphics system
 class GraphicsSystem {
@@ -78,7 +85,7 @@ public:
     Sprite* get_sprite(const std::string& sprite_name, const std::string& direction);
     
     // Enemy sprite loading
-    SpriteAnimationData* load_enemy_sprite(const std::string& sprite_name);
+    SpriteAnimationData* load_enemy_sprite(const struct shp_t& sprite_desc);
     
     // Animation management
     Animation create_animation(const std::vector<std::string>& sprite_names, const std::string& direction, int frame_duration_ms, bool looping = true);
@@ -112,6 +119,11 @@ private:
     
     // Helper functions
     TextureInfo load_png(const std::string& filepath);
+    std::vector<TextureInfo> load_animation_frames(
+        const std::string& filepath,
+        int expected_frames,
+        const std::string& label
+    );
     std::string get_asset_path(const std::string& filename);
 };
 

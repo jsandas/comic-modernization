@@ -51,7 +51,6 @@ void ActorSystem::reset_for_stage() {
         enemy.spawn_timer_and_animation = enemy_respawn_counter_cycle;
     }
     spawned_this_tick = 0;
-    spawn_offset_cycle = PLAYFIELD_WIDTH;
 }
 
 /**
@@ -98,16 +97,27 @@ void ActorSystem::setup_enemies_for_stage(
         enemy.behavior = record.behavior;
 
         // Load sprite animation from graphics system
-        std::string sprite_name = sprite_desc.filename;
-        // Remove null padding if present
-        size_t null_pos = sprite_name.find('\0');
-        if (null_pos != std::string::npos) {
-            sprite_name = sprite_name.substr(0, null_pos);
+        enemy.animation_data = graphics_system->load_enemy_sprite(sprite_desc);
+        if (!enemy.animation_data) {
+            std::string sprite_name = sprite_desc.filename;
+            size_t null_pos = sprite_name.find('\0');
+            if (null_pos != std::string::npos) {
+                sprite_name = sprite_name.substr(0, null_pos);
+            }
+            while (!sprite_name.empty() && sprite_name.back() == ' ') {
+                sprite_name.pop_back();
+            }
+            std::cerr << "Failed to load sprite animation data for "
+                      << (sprite_name.empty() ? "<unknown>" : sprite_name) << std::endl;
+            enemy.state = ENEMY_STATE_DESPAWNED;
+            enemy.sprite_descriptor = nullptr;
+            enemy.animation_data = nullptr;
+            continue;
         }
 
-        enemy.animation_data = graphics_system->load_enemy_sprite(sprite_name);
-        if (!enemy.animation_data) {
-            std::cerr << "Failed to load sprite: " << sprite_name << std::endl;
+        enemy.num_animation_frames = static_cast<uint8_t>(enemy.animation_data->frame_sequence.size());
+        if (enemy.num_animation_frames == 0) {
+            std::cerr << "Invalid animation sequence for enemy sprite" << std::endl;
             enemy.state = ENEMY_STATE_DESPAWNED;
             enemy.sprite_descriptor = nullptr;
             enemy.animation_data = nullptr;
