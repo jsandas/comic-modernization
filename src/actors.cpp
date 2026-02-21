@@ -572,18 +572,17 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
             enemy->x_vel = (enemy->x < g_comic_x) ? 1 : (enemy->x > g_comic_x) ? -1 : 0;
             enemy->y_vel = -7;  // Jump velocity
         }
-    } else {
-        // Moving down
-        if (enemy->y >= PLAYFIELD_HEIGHT - 2) {
-            // Near bottom - despawn
-            enemy->state = ENEMY_STATE_WHITE_SPARK + 5;
-            enemy->y = PLAYFIELD_HEIGHT - 2;
-            return;
-        }
-        enemy->y = static_cast<uint8_t>(enemy->y + 1);
     }
 
+    // Apply vertical position (calculated at top with velocity/8 for smooth movement)
     enemy->y = proposed_y;
+
+    // Check if enemy fell off bottom of playfield
+    if (enemy->y >= PLAYFIELD_HEIGHT - 2) {
+        enemy->state = ENEMY_STATE_WHITE_SPARK + 5;
+        enemy->y = PLAYFIELD_HEIGHT - 2;
+        return;
+    }
 }
 
 /**
