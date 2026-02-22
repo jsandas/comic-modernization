@@ -677,7 +677,7 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
             // .begin_leap: solid ground — initiate jump toward Comic
             // Assembly: cmp comic_x(ah), enemy.x(dh); jae (.unsigned >=) → x_vel=+1 else -1
             // jae means: if comic_x >= enemy.x → enemy is at/left-of Comic → move right (+1)
-            enemy->x_vel = (static_cast<uint8_t>(g_comic_x) >= static_cast<uint8_t>(enemy->x)) ? 1 : -1;
+            enemy->x_vel = (g_comic_x >= enemy->x) ? 1 : -1;
             enemy->y_vel = ENEMY_JUMP_VELOCITY;  // -7
             // Assembly jumps directly to .done: stores position (unchanged), no gravity this tick
             return;
