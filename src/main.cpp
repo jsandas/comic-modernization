@@ -237,7 +237,7 @@ int main(int argc, char* argv[]) {
         // Update Alt key state using modifier mask (supports either left or right Alt)
         key_state_open = (SDL_GetModState() & KMOD_ALT) ? 1 : 0;
 
-        // Process physics ticks at ~18.2 Hz (original game speed)
+        // Process physics ticks at ~9.1 Hz (original game speed)
         // This decouples physics from rendering rate
         int ticks_processed = 0;
         while (tick_accumulator >= MS_PER_TICK && ticks_processed < MAX_TICKS_PER_FRAME) {
@@ -357,7 +357,7 @@ int main(int argc, char* argv[]) {
         // Present
         SDL_RenderPresent(renderer);
 
-        // Cap rendering to ~60 FPS while physics runs at 18.2 Hz
+        // Cap rendering to ~60 FPS while physics runs at ~9.1 Hz
         if (tick_accumulator >= MS_PER_TICK) {
             SDL_Delay(0);
         } else {
