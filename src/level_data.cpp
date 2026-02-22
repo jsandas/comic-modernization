@@ -144,8 +144,8 @@ const level_t level_data_forest = {
             .enemies = {
                 {0, ENEMY_BEHAVIOR_BOUNCE},
                 {0, ENEMY_BEHAVIOR_BOUNCE},
-                {1, ENEMY_BEHAVIOR_LEAP},
-                {1, ENEMY_BEHAVIOR_LEAP}
+                {0, ENEMY_BEHAVIOR_UNUSED},
+                {0, ENEMY_BEHAVIOR_UNUSED}
             }
         },
         /* forest1 */
