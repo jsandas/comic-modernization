@@ -653,7 +653,7 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
         uint8_t new_y = static_cast<uint8_t>(proposed_y + vel_over_8);
 
         // Despawn at or below the bottom of the playfield
-        if (new_y >= static_cast<uint8_t>(PLAYFIELD_HEIGHT - 2)) {
+        if (new_y >= PLAYFIELD_HEIGHT - 2) {
             enemy->state = ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME;
             enemy->y = static_cast<uint8_t>(PLAYFIELD_HEIGHT - 2);
             return;
