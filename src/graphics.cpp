@@ -194,6 +194,15 @@ std::vector<TextureInfo> GraphicsSystem::load_animation_frames(
     // Try multiple asset directory prefixes
     static const std::string prefixes[] = {"assets/", "../assets/", "../../assets/"};
 
+    auto cleanup_frames = [](std::vector<TextureInfo>& f) {
+        for (auto& info : f) {
+            if (info.texture) {
+                SDL_DestroyTexture(info.texture);
+            }
+        }
+        f.clear();
+    };
+
     for (int i = 0; i < expected_frames; ++i) {
         std::string filename = base_path + "-" + std::to_string(i) + ".png";
         SDL_Surface* surface = nullptr;
@@ -213,9 +222,10 @@ std::vector<TextureInfo> GraphicsSystem::load_animation_frames(
         }
 
         if (surface == nullptr) {
-            std::cerr << "Warning: Could not find frame " << i
+            std::cerr << "Error: Could not find frame " << i
                       << " for '" << label << "' (tried " << filename << ")" << std::endl;
-            break;
+            cleanup_frames(frames);
+            return frames;
         }
 
         int w = surface->w;
@@ -224,19 +234,15 @@ std::vector<TextureInfo> GraphicsSystem::load_animation_frames(
         SDL_FreeSurface(surface);
 
         if (texture == nullptr) {
-            std::cerr << "Warning: Failed to create animation texture for '" << label
+            std::cerr << "Error: Failed to create animation texture for '" << label
                       << "' frame " << i << ": " << SDL_GetError() << std::endl;
-            break;
+            cleanup_frames(frames);
+            return frames;
         }
 
         frames.push_back({texture, w, h});
     }
 
-    if (expected_frames > 0 && static_cast<int>(frames.size()) < expected_frames) {
-        std::cerr << "Warning: Animation '" << label << "' expected "
-                  << expected_frames << " frame(s), got "
-                  << frames.size() << " for base path '" << base_path << "'" << std::endl;
-    }
     return frames;
 }
 
