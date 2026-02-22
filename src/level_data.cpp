@@ -325,7 +325,7 @@ const level_t level_data_base = {
                 {0, ENEMY_BEHAVIOR_LEAP},
                 {0, ENEMY_BEHAVIOR_LEAP},
                 {0, ENEMY_BEHAVIOR_LEAP},
-                {1, ENEMY_BEHAVIOR_SEEK}
+                {1, ENEMY_BEHAVIOR_ROLL}
             }
         },
         /* base1 */
@@ -343,8 +343,8 @@ const level_t level_data_base = {
             .enemies = {
                 {0, ENEMY_BEHAVIOR_LEAP},
                 {0, ENEMY_BEHAVIOR_LEAP},
-                {0, ENEMY_BEHAVIOR_UNUSED},
-                {1, ENEMY_BEHAVIOR_LEAP}
+                {0, ENEMY_BEHAVIOR_LEAP},
+                {1, ENEMY_BEHAVIOR_ROLL}
             }
         },
         /* base2 */
@@ -361,9 +361,9 @@ const level_t level_data_base = {
             },
             .enemies = {
                 {0, ENEMY_BEHAVIOR_LEAP},
-                {0, ENEMY_BEHAVIOR_LEAP | ENEMY_BEHAVIOR_FAST},
-                {1, ENEMY_BEHAVIOR_SEEK},
-                {1, ENEMY_BEHAVIOR_SEEK}
+                {0, ENEMY_BEHAVIOR_LEAP},
+                {1, ENEMY_BEHAVIOR_ROLL},
+                {1, ENEMY_BEHAVIOR_ROLL | ENEMY_BEHAVIOR_FAST}
             }
         }
     }
