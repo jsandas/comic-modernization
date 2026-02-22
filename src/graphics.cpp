@@ -232,6 +232,11 @@ std::vector<TextureInfo> GraphicsSystem::load_animation_frames(
         frames.push_back({texture, w, h});
     }
 
+    if (expected_frames > 0 && static_cast<int>(frames.size()) < expected_frames) {
+        std::cerr << "Warning: Animation '" << label << "' expected "
+                  << expected_frames << " frame(s), got "
+                  << frames.size() << " for base path '" << base_path << "'" << std::endl;
+    }
     return frames;
 }
 
