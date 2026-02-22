@@ -474,22 +474,36 @@ uint8_t ActorSystem::get_tile_at(uint8_t x, uint8_t y) const {
 
 /**
  * Check horizontal collision for enemy at (x, y)
- * Uses 2 tiles ahead for look-ahead
+ * Matches assembly check_horizontal_enemy_map_collision:
+ * Checks tile at (x, y). If y is odd (enemy spans two tiles vertically),
+ * also checks (x, y+1).
  */
 bool ActorSystem::check_horizontal_enemy_map_collision(uint8_t x, uint8_t y) const {
-    // Check 2 tiles (4 game units) ahead
-    return is_tile_solid(get_tile_at(x + 1, y)) ||
-           is_tile_solid(get_tile_at(x + 2, y));
+    if (is_tile_solid(get_tile_at(x, y))) {
+        return true;
+    }
+    // If y is odd, enemy spans two vertical tiles - check the one below
+    if (y & 1) {
+        return is_tile_solid(get_tile_at(x, static_cast<uint8_t>(y + 1)));
+    }
+    return false;
 }
 
 /**
  * Check vertical collision for enemy at (x, y)
- * Uses 2 tiles below for look-ahead
+ * Matches assembly check_vertical_enemy_map_collision:
+ * Checks tile at (x, y). If x is odd (enemy spans two tiles horizontally),
+ * also checks (x+1, y).
  */
 bool ActorSystem::check_vertical_enemy_map_collision(uint8_t x, uint8_t y) const {
-    // Check 2 tiles (4 game units) below
-    return is_tile_solid(get_tile_at(x, y + 1)) ||
-           is_tile_solid(get_tile_at(x - 1, y + 1));
+    if (is_tile_solid(get_tile_at(x, y))) {
+        return true;
+    }
+    // If x is odd, enemy spans two horizontal tiles - check the one to the right
+    if (x & 1) {
+        return is_tile_solid(get_tile_at(static_cast<uint8_t>(x + 1), y));
+    }
+    return false;
 }
 
 // ============================================================================
@@ -933,10 +947,8 @@ void ActorSystem::enemy_behavior_shy(enemy_t* enemy) {
 
     // Vertical movement depends on whether Comic is facing this enemy
     if (comic_facing_enemy) {
-        // Comic is facing this enemy - move up (flee)
-        if (enemy->y_vel <= 0) {
-            enemy->y_vel = -1;  // Keep moving up
-        }
+        // Comic is facing this enemy - always move up (flee upward unconditionally)
+        enemy->y_vel = -1;
     } else {
         // Comic is facing away - move toward Comic's y (approach)
         if (enemy->y < g_comic_y) {
@@ -961,15 +973,22 @@ void ActorSystem::enemy_behavior_shy(enemy_t* enemy) {
                 enemy->y_vel = -1;
             }
         }
-    } else {
-        // Moving up or stationary
+    } else if (enemy->y_vel < 0) {
+        // Moving up
         if (enemy->y == 0) {
-            enemy->y_vel = 1;  // Bounce down
+            enemy->y_vel = 1;  // Bounce down from top
         } else {
             next_y = static_cast<uint8_t>(enemy->y - 1);
             collision = check_vertical_enemy_map_collision(enemy->x, next_y);
-            if (!collision) {
+            if (collision) {
+                // Hit a solid tile above - bounce back down
+                enemy->y_vel = 1;
+            } else {
                 enemy->y = next_y;
+                // Hit the top of the playfield after moving - bounce back down
+                if (enemy->y == 0) {
+                    enemy->y_vel = 1;
+                }
             }
         }
     }
