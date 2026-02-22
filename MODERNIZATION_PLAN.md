@@ -340,9 +340,9 @@ A centralized system for managing debug cheats and development tools. Activated 
 ---
 
 ### Phase 5: Actor System
-**Status:** In Progress
-**Current Stage:** Phase 5.6 - Item System
-**Completion Date:** TBD
+**Status:** Complete
+**Current Stage:** Phase 5.6 - Item System ✅ COMPLETE
+**Completion Date:** 2026-02-22
 **Goal:** Implement enemies, fireballs, and items
 
 **Phase 5.1: Enemy System Core ✅ COMPLETE**
@@ -411,28 +411,66 @@ A centralized system for managing debug cheats and development tools. Activated 
   - [x] Fireball rendering (16×8 px sprites scaled 2× per game unit)
   - [x] Sprite loading (`sprite-fireball_0.png`, `sprite-fireball_1.png`)
   - [x] Fire key input wired to Left/Right Ctrl in game loop
-- [ ] Port item system from actors.c
-  - [ ] Item animation
-  - [ ] Item collision detection
-  - [ ] Item effects:
-    - [ ] Blastola Cola (firepower)
-    - [ ] Corkscrew (fireball motion)
-    - [ ] Boots (jump power)
-    - [ ] Lantern (castle lighting)
-    - [ ] Shield (protection)
-    - [ ] Gems, Crown, Gold (treasures)
-    - [ ] Door Key, Teleport Wand
+
+**Phase 5.6: Item System ✅ COMPLETE**
+**Objective:** Port item collection, animation, and effect application from reference C code
+
+**Completed:**
+- [x] Item data structures and tracking
+  - [x] Item collection state per [level][stage] (8×3 array)
+  - [x] Current item position and type from stage data
+  - [x] Item animation counter (toggles 0→1 each tick)
+  - [x] Item sprite storage for all item types (even/odd frames)
+- [x] Item sprite loading
+  - [x] Load 16×16 pixel sprites for all item types
+  - [x] Two-frame animation (even/odd frames)
+  - [x] Sprite names: `item_<name>_0`, `item_<name>_1`
+- [x] Item animation system
+  - [x] Two-frame toggle each game tick
+  - [x] Simple alternation: 0→1→0→1
+- [x] Item collision detection
+  - [x] Horizontal tolerance: ±1 game unit
+  - [x] Vertical tolerance: 0 to 4 game units
+  - [x] Check only when item visible in playfield
+  - [x] Mark as collected on collision
+- [x] Item collection effects
+  - [x] Blastola Cola: increment firepower (max 5)
+  - [x] Corkscrew: enable fireball vertical oscillation
+  - [x] Boots: increase jump power (4→5)
+  - [x] Lantern: castle lighting flag
+  - [x] Shield: HP refill (placeholder for future HP system)
+  - [x] Door Key: unlock doors
+  - [x] Teleport Wand: special teleport ability
+  - [x] Gems, Crown, Gold: treasure tracking (victory at 3/3)
+- [x] Item rendering
+  - [x] Render 16×16 pixel sprites at item position
+  - [x] Skip if already collected
+  - [x] Camera culling (off-screen items not rendered)
+  - [x] Scale to render_scale per game unit
+- [x] Integration with game loop
+  - [x] Call `handle_item()` each tick in `ActorSystem::update()`
+  - [x] Call `render_item()` each frame before player rendering
+  - [x] Update `comic_jump_power` from `get_jump_power()` (boots effect)
+  - [x] Pass level_index to `setup_enemies_for_stage()` for item tracking
+- [x] Unit tests
+  - [x] Test item collection tracking
+  - [x] Test Blastola Cola firepower increase (max 5)
+  - [x] Test Boots jump power increase
+  - [x] Test Corkscrew flag
+  - [x] Test treasure counting (3 treasures)
+  - [x] Test Door Key, Teleport Wand, Lantern flags
+  - [x] All 6 item tests passing
 
 **Reference Code:**
 - `src/actors.c`: Lines 1-1800+ (all actor systems)
 - `include/actors.h`: Data structures and constants
 
 **Success Criteria:**
-- All enemy behaviors work correctly
-- Enemies spawn at proper distances
-- Fireballs kill enemies on contact
-- Items grant correct abilities
-- Treasure collection triggers win sequence
+- All enemy behaviors work correctly ✅
+- Enemies spawn at proper distances ✅
+- Fireballs kill enemies on contact ✅
+- Items grant correct abilities ✅
+- Treasure collection triggers win sequence (victory logic pending)
 
 ---
 

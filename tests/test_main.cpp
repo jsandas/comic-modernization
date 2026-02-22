@@ -935,6 +935,172 @@ static void test_actor_restraint_throttling() {
     delete[] tiles;
 }
 
+/* ============================================================================
+ * ITEM SYSTEM TESTS
+ * ============================================================================ */
+
+/**
+ * Test item collection tracking
+ */
+static void test_item_collection_tracking() {
+    ActorSystem actor_system;
+    actor_system.initialize();
+
+    // Initially, no items collected
+    check(actor_system.comic_firepower == 0, 
+          "item_collection: firepower should start at 0");
+    check(actor_system.comic_has_boots == 0, 
+          "item_collection: should not have boots initially");
+
+    // Simulate collecting Blastola Cola
+    actor_system.apply_item_effect(ITEM_BLASTOLA_COLA);
+    check(actor_system.comic_firepower == 1, 
+          "item_collection: Blastola Cola should increase firepower to 1");
+
+    // Collect second Blastola Cola
+    actor_system.apply_item_effect(ITEM_BLASTOLA_COLA);
+    check(actor_system.comic_firepower == 2, 
+          "item_collection: second Blastola Cola should increase firepower to 2");
+
+    // Collect Boots
+    actor_system.apply_item_effect(ITEM_BOOTS);
+    check(actor_system.comic_has_boots == 1, 
+          "item_collection: should have boots after collection");
+}
+
+/**
+ * Test Blastola Cola firepower increase
+ */
+static void test_item_blastola_cola_firepower() {
+    ActorSystem actor_system;
+    actor_system.initialize();
+
+    // Initially no firepower
+    check(actor_system.comic_firepower == 0, 
+          "blastola_cola: firepower should start at 0");
+
+    // Collect 5 Blastola Colas (max firepower)
+    for (int i = 0; i < 5; i++) {
+        actor_system.apply_item_effect(ITEM_BLASTOLA_COLA);
+    }
+    check(actor_system.comic_firepower == 5, 
+          "blastola_cola: should reach max firepower of 5");
+
+    // Try to collect a 6th (should not exceed max)
+    actor_system.apply_item_effect(ITEM_BLASTOLA_COLA);
+    check(actor_system.comic_firepower == 5, 
+          "blastola_cola: firepower should not exceed 5");
+}
+
+/**
+ * Test Boots item increases jump power
+ */
+static void test_item_boots_jump_power() {
+    ActorSystem actor_system;
+    actor_system.initialize();
+
+    // Initially no boots
+    int default_jump_power = actor_system.get_jump_power();
+    check(default_jump_power == JUMP_POWER_DEFAULT, 
+          "boots_jump: should have default jump power initially");
+
+    // Collect Boots
+    actor_system.apply_item_effect(ITEM_BOOTS);
+    int boots_jump_power = actor_system.get_jump_power();
+    check(boots_jump_power == JUMP_POWER_WITH_BOOTS, 
+          "boots_jump: should have increased jump power with boots");
+    check(boots_jump_power > default_jump_power, 
+          "boots_jump: boots jump power should be greater than default");
+}
+
+/**
+ * Test Corkscrew item flag
+ */
+static void test_item_corkscrew_flag() {
+    ActorSystem actor_system;
+    actor_system.initialize();
+
+    check(actor_system.comic_has_corkscrew == 0, 
+          "corkscrew: should not have corkscrew initially");
+
+    actor_system.apply_item_effect(ITEM_CORKSCREW);
+    check(actor_system.comic_has_corkscrew == 1, 
+          "corkscrew: should have corkscrew after collection");
+}
+
+/**
+ * Test treasure collection and counting
+ */
+static void test_item_treasure_counting() {
+    ActorSystem actor_system;
+    actor_system.initialize();
+
+    // Initially no treasures
+    check(actor_system.comic_num_treasures == 0, 
+          "treasures: treasure count should start at 0");
+    check(actor_system.comic_has_gems == 0, 
+          "treasures: should not have gems initially");
+    check(actor_system.comic_has_crown == 0, 
+          "treasures: should not have crown initially");
+    check(actor_system.comic_has_gold == 0, 
+          "treasures: should not have gold initially");
+
+    // Collect Gems
+    actor_system.apply_item_effect(ITEM_GEMS);
+    check(actor_system.comic_has_gems == 1, 
+          "treasures: should have gems after collection");
+    check(actor_system.comic_num_treasures == 1, 
+          "treasures: treasure count should be 1 after gems");
+
+    // Collect Crown
+    actor_system.apply_item_effect(ITEM_CROWN);
+    check(actor_system.comic_has_crown == 1, 
+          "treasures: should have crown after collection");
+    check(actor_system.comic_num_treasures == 2, 
+          "treasures: treasure count should be 2 after crown");
+
+    // Collect Gold
+    actor_system.apply_item_effect(ITEM_GOLD);
+    check(actor_system.comic_has_gold == 1, 
+          "treasures: should have gold after collection");
+    check(actor_system.comic_num_treasures == 3, 
+          "treasures: treasure count should be 3 after gold");
+
+    // Collecting same treasure again should not increase count
+    actor_system.apply_item_effect(ITEM_GEMS);
+    check(actor_system.comic_num_treasures == 3, 
+          "treasures: duplicate collection should not increase count");
+}
+
+/**
+ * Test Door Key and Teleport Wand flags
+ */
+static void test_item_special_items() {
+    ActorSystem actor_system;
+    actor_system.initialize();
+
+    // Door Key
+    check(actor_system.comic_has_door_key == 0, 
+          "special_items: should not have door key initially");
+    actor_system.apply_item_effect(ITEM_DOOR_KEY);
+    check(actor_system.comic_has_door_key == 1, 
+          "special_items: should have door key after collection");
+
+    // Teleport Wand
+    check(actor_system.comic_has_teleport_wand == 0, 
+          "special_items: should not have teleport wand initially");
+    actor_system.apply_item_effect(ITEM_TELEPORT_WAND);
+    check(actor_system.comic_has_teleport_wand == 1, 
+          "special_items: should have teleport wand after collection");
+
+    // Lantern
+    check(actor_system.comic_has_lantern == 0, 
+          "special_items: should not have lantern initially");
+    actor_system.apply_item_effect(ITEM_LANTERN);
+    check(actor_system.comic_has_lantern == 1, 
+          "special_items: should have lantern after collection");
+}
+
 struct TestCase {
     const char* name;
     void (*run)();
@@ -971,7 +1137,13 @@ static const std::vector<TestCase>& test_registry() {
         {"actor_respawn_timer_cycling", test_actor_respawn_timer_cycling},
         {"actor_animation_frames", test_actor_animation_frames},
         {"actor_behavior_bounce_movement", test_actor_behavior_bounce_movement},
-        {"actor_restraint_throttling", test_actor_restraint_throttling}
+        {"actor_restraint_throttling", test_actor_restraint_throttling},
+        {"item_collection_tracking", test_item_collection_tracking},
+        {"item_blastola_cola_firepower", test_item_blastola_cola_firepower},
+        {"item_boots_jump_power", test_item_boots_jump_power},
+        {"item_corkscrew_flag", test_item_corkscrew_flag},
+        {"item_treasure_counting", test_item_treasure_counting},
+        {"item_special_items", test_item_special_items}
     };
     return tests;
 }

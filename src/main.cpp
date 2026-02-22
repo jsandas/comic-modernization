@@ -194,7 +194,12 @@ int main(int argc, char* argv[]) {
     }
 
     if (current_level_ptr) {
-        actor_system.setup_enemies_for_stage(current_level_ptr, current_stage_number, g_graphics);
+        actor_system.setup_enemies_for_stage(current_level_ptr, current_level_number, current_stage_number, g_graphics);
+    }
+    
+    // Load item sprites
+    if (!actor_system.load_item_sprites(g_graphics)) {
+        std::cerr << "Warning: Some item sprites failed to load" << std::endl;
     }
 
     // Tick timing - match original game's ~9.1 Hz tick rate.
@@ -261,6 +266,9 @@ int main(int argc, char* argv[]) {
             // Process door input once per tick (edge-triggered)
             process_door_input();
 
+            // Update jump power from item system (boots affect jump height)
+            comic_jump_power = static_cast<uint8_t>(actor_system.get_jump_power());
+
             // Update physics (once per tick)
             handle_fall_or_jump();
 
@@ -321,7 +329,7 @@ int main(int argc, char* argv[]) {
         if (level_changed || stage_changed) {
             cached_stage_number = current_stage_number;
             if (current_level_ptr) {
-                actor_system.setup_enemies_for_stage(current_level_ptr, current_stage_number, g_graphics);
+                actor_system.setup_enemies_for_stage(current_level_ptr, current_level_number, current_stage_number, g_graphics);
             }
         }
 
@@ -346,6 +354,7 @@ int main(int argc, char* argv[]) {
 
         actor_system.render_enemies(g_graphics, camera_x, RENDER_SCALE);
         actor_system.render_fireballs(g_graphics, camera_x, RENDER_SCALE);
+        actor_system.render_item(g_graphics, camera_x, RENDER_SCALE);
 
         // Render player sprite
         if (current_animation) {

@@ -10,10 +10,16 @@ ActorSystem::ActorSystem()
     : enemies(MAX_NUM_ENEMIES),
       fireballs(MAX_NUM_FIREBALLS),
       fireball_meter_counter(FIREBALL_METER_COUNTER_INIT),
+      item_animation_counter(0),
+      current_item_type(ITEM_UNUSED),
+      current_item_x(0),
+      current_item_y(0),
       current_tiles(nullptr),
       current_map_width_tiles(128),
       current_map_height_tiles(10),
       tileset_last_passable(0x3E),
+      current_level_index(0),
+      current_stage_index(0),
       spawned_this_tick(0),
       spawn_offset_cycle(PLAYFIELD_WIDTH),
       enemy_respawn_counter_cycle(RESPAWN_TIMER_MIN),
@@ -23,7 +29,15 @@ ActorSystem::ActorSystem()
       g_camera_x(0),
       comic_firepower(0),
       comic_has_corkscrew(0),
-      fireball_meter(MAX_FIREBALL_METER) {
+      fireball_meter(MAX_FIREBALL_METER),
+      comic_has_boots(0),
+      comic_has_lantern(0),
+      comic_has_door_key(0),
+      comic_has_teleport_wand(0),
+      comic_has_gems(0),
+      comic_has_crown(0),
+      comic_has_gold(0),
+      comic_num_treasures(0) {
     for (auto& enemy : enemies) {
         enemy.state = ENEMY_STATE_DESPAWNED;
         enemy.spawn_timer_and_animation = 100;
@@ -35,6 +49,17 @@ ActorSystem::ActorSystem()
     for (auto& fb : fireballs) {
         fb.x = FIREBALL_DEAD;
         fb.y = FIREBALL_DEAD;
+    }
+    // Initialize item sprites to nullptr
+    for (int i = 0; i < 15; i++) {
+        item_sprites[i][0] = nullptr;
+        item_sprites[i][1] = nullptr;
+    }
+    // Initialize items_collected array to 0 (not collected)
+    for (int level = 0; level < 8; level++) {
+        for (int stage = 0; stage < 3; stage++) {
+            items_collected[level][stage] = 0;
+        }
     }
 }
 
@@ -75,6 +100,7 @@ void ActorSystem::reset_for_stage() {
  */
 void ActorSystem::setup_enemies_for_stage(
     const level_t* level,
+    int level_index,
     int stage_number,
     GraphicsSystem* graphics_system) {
     if (!level || stage_number < 0 || stage_number >= 3) {
@@ -83,6 +109,14 @@ void ActorSystem::setup_enemies_for_stage(
 
     const stage_t& stage = level->stages[stage_number];
     tileset_last_passable = level->tileset_last_passable;
+    current_level_index = static_cast<uint8_t>(level_index);
+    current_stage_index = static_cast<uint8_t>(stage_number);
+
+    // Setup item for this stage
+    current_item_type = stage.item_type;
+    // Convert tile coordinates to game units (×2 because tiles are 2 game units wide/tall)
+    current_item_x = stage.item_x * 2;
+    current_item_y = stage.item_y * 2;
 
     // Initialize each enemy slot from stage data
     for (int i = 0; i < MAX_NUM_ENEMIES; i++) {
@@ -318,6 +352,13 @@ void ActorSystem::update(
 
     // Move fireballs and check enemy collisions
     handle_fireballs();
+
+    // ---- Item system ----
+    // Toggle animation counter each tick
+    item_animation_counter = (item_animation_counter == 0) ? 1 : 0;
+
+    // Handle item collection and rendering
+    handle_item();
 }
 
 /**
@@ -1270,4 +1311,240 @@ void ActorSystem::render_fireballs(GraphicsSystem* graphics_system, int camera_x
 
         graphics_system->render_sprite_centered_scaled(screen_x, screen_y, *sprite, sprite_w, sprite_h);
     }
+}
+/* ============================================================================
+ * ITEM SYSTEM
+ * ============================================================================ */
+
+/**
+ * Get current jump power based on boots status
+ */
+int ActorSystem::get_jump_power() const {
+    return comic_has_boots ? JUMP_POWER_WITH_BOOTS : JUMP_POWER_DEFAULT;
+}
+
+/**
+ * Load item sprites from assets.
+ * Item sprites are 16×16 pixels, and each item has two frames (even/odd) for animation.
+ * 
+ * Expected file naming: sprite-item_<name>_<frame>.png
+ * Example: sprite-item_blastola_cola_0.png, sprite-item_blastola_cola_1.png
+ */
+bool ActorSystem::load_item_sprites(GraphicsSystem* graphics_system) {
+    if (!graphics_system) {
+        std::cerr << "Error: GraphicsSystem is null in load_item_sprites" << std::endl;
+        return false;
+    }
+
+    // Item sprite names mapping (item_type → base filename)
+    const char* item_names[15] = {
+        "corkscrew",       // 0
+        "door_key",        // 1
+        "boots",           // 2
+        "lantern",         // 3
+        "teleport_wand",   // 4
+        "gems",            // 5
+        "crown",           // 6
+        "gold",            // 7
+        "blastola_cola",   // 8
+        nullptr,           // 9 (unused)
+        nullptr,           // 10 (unused)
+        nullptr,           // 11 (unused)
+        nullptr,           // 12 (unused)
+        nullptr,           // 13 (unused)
+        "shield"           // 14
+    };
+
+    bool all_loaded = true;
+
+    for (int item_type = 0; item_type < 15; item_type++) {
+        if (item_names[item_type] == nullptr) {
+            continue; // Skip unused slots
+        }
+
+        for (int frame = 0; frame < 2; frame++) {
+            std::string sprite_name = "item_" + std::string(item_names[item_type]) + "_" + std::to_string(frame);
+            
+            // Load sprite using GraphicsSystem (direction is empty for items)
+            if (!graphics_system->load_sprite(sprite_name, "")) {
+                std::cerr << "Warning: Failed to load item sprite: " << sprite_name << std::endl;
+                all_loaded = false;
+                continue;
+            }
+
+            // Get loaded sprite
+            item_sprites[item_type][frame] = graphics_system->get_sprite(sprite_name, "");
+            if (!item_sprites[item_type][frame]) {
+                std::cerr << "Warning: Failed to retrieve item sprite: " << sprite_name << std::endl;
+                all_loaded = false;
+            }
+        }
+    }
+
+    return all_loaded;
+}
+
+/**
+ * Handle item for the current stage: collision detection and rendering.
+ * Called each tick from update().
+ */
+void ActorSystem::handle_item() {
+    // Check if stage has an item
+    if (current_item_type == ITEM_UNUSED) {
+        return;
+    }
+
+    // Check if already collected
+    if (current_level_index >= 8 || current_stage_index >= 3) {
+        return; // Out of bounds
+    }
+    if (items_collected[current_level_index][current_stage_index] != 0) {
+        return; // Already collected
+    }
+
+    // Check if item is visible in playfield (camera bounds check)
+    int rel_x = static_cast<int>(current_item_x) - g_camera_x;
+    if (rel_x < 0 || rel_x > PLAYFIELD_WIDTH) {
+        return; // Off-screen, don't check collision (but don't render either)
+    }
+
+    // Check collision with Comic
+    // Horizontal: abs(item.x - comic_x) <= 1
+    int16_t x_diff = static_cast<int16_t>(static_cast<int>(current_item_x) - static_cast<int>(g_comic_x));
+    if (x_diff >= -1 && x_diff <= 1) {
+        // Vertical: 0 <= (item.y - comic_y) < 4
+        int16_t y_diff = static_cast<int16_t>(static_cast<int>(current_item_y) - static_cast<int>(g_comic_y));
+        if (y_diff >= 0 && y_diff < 4) {
+            // Collision detected!
+            collect_item();
+        }
+    }
+}
+
+/**
+ * Collect the current item: mark as collected and apply effects.
+ */
+void ActorSystem::collect_item() {
+    // Mark as collected
+    items_collected[current_level_index][current_stage_index] = 1;
+
+    // TODO: Award points (2000 = 20 × 100)
+    // TODO: Play collection sound
+
+    // Apply item effect
+    apply_item_effect(current_item_type);
+}
+
+/**
+ * Apply the effect of collecting a specific item type.
+ */
+void ActorSystem::apply_item_effect(uint8_t item_type) {
+    switch (item_type) {
+        case ITEM_BLASTOLA_COLA:
+            if (comic_firepower < MAX_NUM_FIREBALLS) {
+                comic_firepower++;
+            }
+            break;
+
+        case ITEM_CORKSCREW:
+            comic_has_corkscrew = 1;
+            break;
+
+        case ITEM_BOOTS:
+            comic_has_boots = 1;
+            break;
+
+        case ITEM_LANTERN:
+            comic_has_lantern = 1;
+            break;
+
+        case ITEM_DOOR_KEY:
+            comic_has_door_key = 1;
+            break;
+
+        case ITEM_TELEPORT_WAND:
+            comic_has_teleport_wand = 1;
+            break;
+
+        case ITEM_SHIELD:
+            // Shield refills HP (handled by main game loop)
+            // TODO: Implement HP refill logic
+            break;
+
+        case ITEM_GEMS:
+            if (!comic_has_gems) {
+                comic_has_gems = 1;
+                comic_num_treasures++;
+            }
+            break;
+
+        case ITEM_CROWN:
+            if (!comic_has_crown) {
+                comic_has_crown = 1;
+                comic_num_treasures++;
+            }
+            break;
+
+        case ITEM_GOLD:
+            if (!comic_has_gold) {
+                comic_has_gold = 1;
+                comic_num_treasures++;
+            }
+            break;
+
+        default:
+            // Unknown item type
+            break;
+    }
+}
+
+/**
+ * Render the current stage's item if not yet collected.
+ * Item sprites are 16×16 pixels (2 game units × 2 game units).
+ */
+void ActorSystem::render_item(GraphicsSystem* graphics_system, int camera_x, int render_scale) const {
+    if (!graphics_system) {
+        return;
+    }
+
+    // Check if stage has an item
+    if (current_item_type == ITEM_UNUSED) {
+        return;
+    }
+
+    // Check if already collected
+    if (current_level_index >= 8 || current_stage_index >= 3) {
+        return; // Out of bounds
+    }
+    if (items_collected[current_level_index][current_stage_index] != 0) {
+        return; // Already collected, don't render
+    }
+
+    // Check if item is visible in playfield
+    int rel_x = static_cast<int>(current_item_x) - camera_x;
+    if (rel_x < 0 || rel_x > PLAYFIELD_WIDTH) {
+        return; // Off-screen
+    }
+
+    // Get sprite based on animation counter
+    if (current_item_type >= 15) {
+        return; // Invalid item type
+    }
+
+    const Sprite* sprite = item_sprites[current_item_type][item_animation_counter];
+    if (!sprite || !sprite->texture.texture) {
+        return; // Sprite not loaded
+    }
+
+    // Item sprites are 16×16 pixels = 2×2 game units
+    // Scale to render_scale per game unit
+    const int scale = render_scale / 8; // 16/8 = 2
+    const int sprite_w = 16 * scale;
+    const int sprite_h = 16 * scale;
+
+    // Screen position: game unit × render_scale + render_scale offset
+    int screen_x = rel_x * render_scale + render_scale;
+    int screen_y = static_cast<int>(current_item_y) * render_scale + render_scale;
+
+    graphics_system->render_sprite_centered_scaled(screen_x, screen_y, *sprite, sprite_w, sprite_h);
 }

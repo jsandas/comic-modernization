@@ -119,6 +119,17 @@ cmake --build .
   - ✅ Corkscrew motion when Corkscrew item is held
   - ✅ Fireball-enemy collision detection and kill
   - ✅ Fireball meter with 2-tick charge/discharge rate
+- ✅ Item system:
+  - ✅ Item placement and rendering (16×16 px, 2-frame animation)
+  - ✅ Collision detection and collection
+  - ✅ Blastola Cola: increase firepower (max 5)
+  - ✅ Corkscrew: fireball vertical oscillation
+  - ✅ Boots: increased jump power (4→5)
+  - ✅ Lantern: castle lighting flag
+  - ✅ Shield: HP refill (placeholder)
+  - ✅ Door Key: unlock doors
+  - ✅ Teleport Wand: special teleport ability
+  - ✅ Treasures (Gems, Crown, Gold): victory tracking
 - ✅ **Debug/Cheat System** (development tool, `--debug` flag required):
   - ✅ Noclip mode (F1)
   - ✅ Level/stage warp (F2)
@@ -134,7 +145,7 @@ See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for the complete 10-phase imp
 2. ✅ **Core Physics** - Gravity, jumping, collision, stage transitions
 3. ✅ **Rendering** - Tiles, sprites, animations, hardware acceleration
 4. ✅ **Level System** - All 8 levels, doors, stage transitions
-5. 🔄 **Actors** - Enemies ✅, Fireballs ✅, Items 🔄
+5. ✅ **Actors** - Enemies ✅, Fireballs ✅, Items ✅
 6. ⏸️ **Audio** - Sound effects, music
 7. ⏸️ **UI/Menus** - HUD, title screen, high scores
 8. ⏸️ **Game Loop** - Complete game flow, states
