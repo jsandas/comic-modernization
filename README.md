@@ -136,6 +136,7 @@ cmake --build .
   - ✅ Debug overlay — coordinates, velocity, level/stage (F3)
   - ✅ Position warp (F4)
   - ✅ Door key toggle (F5)
+  - ✅ Item granting (F6) — grant any item for testing effects
 
 ## Roadmap
 
@@ -181,6 +182,7 @@ comic-modernization/
 - **F3** - Toggle debug overlay (shows X/Y coordinates, velocity, level/stage)
 - **F4** - Position warp (teleport to specific coordinates)
 - **F5** - Toggle door key (grant/remove ability to open doors)
+- **F6** - Grant item (select any item to test effects: Blastola Cola, Boots, Corkscrew, etc.)
 
 ## Development
 

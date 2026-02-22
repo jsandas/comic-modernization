@@ -39,6 +39,9 @@ int8_t source_door_stage_number = -1;
 uint8_t comic_y_checkpoint = 12;
 uint8_t comic_x_checkpoint = 14;
 
+// Global system pointers (for cheat system compatibility)
+ActorSystem* g_actor_system = nullptr;
+
 static int failures = 0;
 
 static void check(bool condition, const std::string& message) {

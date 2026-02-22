@@ -292,6 +292,21 @@ A centralized system for managing debug cheats and development tools. Activated 
    - When inactive (0): Cannot open doors even if they're nearby
    - Useful for: Testing door mechanics, accessing specific areas, bypassing door locks for testing
 
+6. **Item Granting (F6)**
+   - Interactive menu to select and grant any item (0-9)
+   - Items available:
+     - 0 = Corkscrew (fireball vertical oscillation)
+     - 1 = Door Key (unlock doors)
+     - 2 = Boots (increased jump power)
+     - 3 = Lantern (castle lighting)
+     - 4 = Teleport Wand (special teleport)
+     - 5 = Gems (treasure 1/3)
+     - 6 = Crown (treasure 2/3)
+     - 7 = Gold (treasure 3/3)
+     - 8 = Blastola Cola (increase firepower)
+     - 9 = Shield (HP refill)
+   - Useful for: Testing item effects without playing through levels, debugging item-dependent mechanics, validating item collection logic
+
 **Console Logging:**
 - All cheat activations logged to stdout with `[CHEAT]` prefix
 - Input validation feedback (e.g., invalid coordinates)
@@ -307,11 +322,12 @@ A centralized system for managing debug cheats and development tools. Activated 
 ```
 
 **Implementation Details:**
-- Multi-step input handling for complex cheats (level warp, position warp)
+- Multi-step input handling for complex cheats (level warp, position warp, item granting)
 - Input buffering for coordinate entry with backspace support
 - Console prompts guide users through multi-step operations
 - Proper cleanup of system resources (SDL_ttf font) in destructor
 - Font loading with cross-platform fallback (Menlo, Courier on macOS; DejaVuSansMono on Linux; lucidaconsole on Windows)
+- Item granting directly calls `ActorSystem::apply_item_effect()` for all 10 item types
 
 **Technical Specs:**
 - Dependencies: SDL2_ttf (added to CMakeLists.txt)
@@ -330,9 +346,7 @@ A centralized system for managing debug cheats and development tools. Activated 
 - Position validation prevents out-of-bounds warping ✅
 
 **Future Enhancements:**
-- God mode (invincibility) - deferred to Phase 5 when damage system exists
-- Item granting (give inventory items) - deferred to Phase 5 when actor system complete
-- Teleport wand testing mode
+- God mode (invincibility) - deferred to when damage/HP system exists
 - Enemy spawner/despawner controls
 - Speed-up/slow-down time controls
 - Collision visualization (show collision boxes)

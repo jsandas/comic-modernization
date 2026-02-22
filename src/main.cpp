@@ -41,6 +41,9 @@ int8_t source_door_stage_number = -1;
 uint8_t comic_y_checkpoint = 12;  // Y position to respawn at
 uint8_t comic_x_checkpoint = 14;  // X position to respawn at
 
+// Global system pointers (for access from other modules)
+ActorSystem* g_actor_system = nullptr;  // Actor system pointer (for cheat access)
+
 // Rendering scale: 16 pixels per game unit
 const int RENDER_SCALE = 16;
 
@@ -123,6 +126,9 @@ int main(int argc, char* argv[]) {
     ActorSystem actor_system;
     actor_system.initialize();
     actor_system.comic_firepower = 3;  // Start with 3 fireball slots for testing
+    
+    // Make actor system accessible to cheat system
+    g_actor_system = &actor_system;
 
     // Pre-load player sprites and create animations
     const char* sprite_names[] = {
@@ -387,6 +393,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Cleanup
+    g_actor_system = nullptr;  // Clear pointer before actor_system goes out of scope
     delete g_cheats;
     delete g_graphics;
     SDL_DestroyRenderer(renderer);
