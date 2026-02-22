@@ -629,9 +629,9 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
         // === .moving_up ===
         // Assembly: sar y_vel 3x (arithmetic) → y_vel/8, still negative (e.g. -7>>3 = -1)
         //           neg → positive upward delta; sub al, delta → proposed_y += delta (negative = up)
-        // Simplified: proposed_y += (int8_t)(y_vel >> 3)
+        // Simplified: proposed_y += (int8_t)(y_vel >> ENEMY_VELOCITY_SHIFT)
         // For y_vel=-7: delta=-1, proposed_y decreases by 1 (moves up 1 unit)
-        int8_t delta = static_cast<int8_t>(static_cast<int8_t>(enemy->y_vel) >> 3);
+        int8_t delta = static_cast<int8_t>(enemy->y_vel >> ENEMY_VELOCITY_SHIFT);
         int16_t new_y = static_cast<int16_t>(proposed_y) + static_cast<int16_t>(delta);
 
         if (new_y < 0) {
@@ -649,7 +649,7 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
     } else if (enemy->y_vel > 0) {
         // === .moving_down ===
         // Assembly: sar y_vel 3x → y_vel/8; proposed_y += that; e.g. y_vel=8 → move down 1
-        int8_t vel_over_8 = static_cast<int8_t>(static_cast<int8_t>(enemy->y_vel) >> 3);
+        int8_t vel_over_8 = static_cast<int8_t>(enemy->y_vel >> ENEMY_VELOCITY_SHIFT);
         uint8_t new_y = static_cast<uint8_t>(proposed_y + vel_over_8);
 
         // Despawn at or below the bottom of the playfield
