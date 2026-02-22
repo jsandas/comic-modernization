@@ -194,7 +194,8 @@ int main(int argc, char* argv[]) {
     // The PC timer interrupt (IRQ 0) fires at 18.2065 Hz but game_tick_flag is
     // only set on *odd* interrupt cycles (irq0_parity toggles 0,1,0,1,...),
     // so the actual game logic runs at half the interrupt rate: ~9.1032 Hz.
-    // See reference/disassembly/R5sw1991.asm: "the game's tick rate is half that"
+    // Based on analysis of the original DOS timer interrupt handler
+    // (original disassembly is not vendored in this repository).
     constexpr double TICK_RATE = 18.2065 / 2.0; // ~9.1032 Hz - actual game tick rate
     constexpr double MS_PER_TICK = 1000.0 / TICK_RATE; // ~109.86 ms per tick
     constexpr int MAX_TICKS_PER_FRAME = 5;
