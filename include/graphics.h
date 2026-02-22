@@ -119,8 +119,9 @@ private:
     
     // Helper functions
     TextureInfo load_png(const std::string& filepath);
+    // Load N individual PNG frames: {base_path}-0.png, {base_path}-1.png, ...
     std::vector<TextureInfo> load_animation_frames(
-        const std::string& filepath,
+        const std::string& base_path,
         int expected_frames,
         const std::string& label
     );
