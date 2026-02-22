@@ -600,124 +600,159 @@ void ActorSystem::enemy_behavior_bounce(enemy_t* enemy) {
 }
 
 /**
- * LEAP behavior: Jumping arc with gravity
+ * LEAP behavior: Jump toward Comic with gravity
  * Used by: Bug-eyes, Blind Toad, Beach Ball
+ *
+ * Mirrors R5sw1991.asm:enemy_behavior_leap exactly.
+ *
+ * Assembly flow:
+ *   y_vel < 0  (.moving_up):   delta = y_vel>>3 (arithmetic; e.g. -7>>3 = -1)
+ *                               proposed_y += delta  (moves up 1 unit for y_vel=-7)
+ *                               undo on ceiling collision or top-of-field underflow
+ *   y_vel > 0  (.moving_down): delta = y_vel>>3 (e.g. 8>>3 = 1, move down 1)
+ *                               despawn at PLAYFIELD_HEIGHT-2
+ *                               undo on solid at proposed_y+1 (.start_falling)
+ *   y_vel == 0: check y+2 for solid ground
+ *               solid   → .begin_leap: set x_vel toward Comic, y_vel=-7, return
+ *               no solid → .start_falling → .apply_gravity (fall through, NO early return)
+ *   .apply_gravity: y_vel += 2, clamp to TERMINAL_VELOCITY  (runs for all paths except .begin_leap)
+ *   Restraint only skips horizontal movement; gravity and .check_for_ground always run
+ *   .check_for_ground: if y_vel>0, check y+3; on solid: snap y=(y+1)&0xfe, y_vel=0
  */
 void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
     if (!enemy) return;
 
-    uint8_t next_x, next_y;
-    int16_t camera_rel_x;
-    bool collision = false;
-
-    // Handle restraint
-    if (enemy->restraint == ENEMY_RESTRAINT_SKIP_THIS_TICK) {
-        enemy->restraint = ENEMY_RESTRAINT_MOVE_THIS_TICK;
-        return;
-    }
-
-    if (enemy->restraint == ENEMY_RESTRAINT_MOVE_THIS_TICK) {
-        enemy->restraint = ENEMY_RESTRAINT_SKIP_THIS_TICK;
-    }
-
-    // Vertical velocity handling and gravity
-    // NOTE: Position is calculated BEFORE gravity is applied (order verified from assembly reference).
-    // This is intentional: position update uses velocity from START of frame,
-    // gravity modifies velocity for NEXT frame. Differs from typical physics engines
-    // but matches original game behavior frame-by-frame.
+    // proposed_y tracks vertical changes before committing (mirrors ax.lo in assembly)
     uint8_t proposed_y = enemy->y;
 
     if (enemy->y_vel < 0) {
-        // Moving up - apply upward movement with fractional velocity
-        int8_t vel_div_8 = enemy->y_vel >> ENEMY_VELOCITY_SHIFT;  // y_vel / 8 for smooth movement
-        
-        // Check for uint8_t underflow when adding negative velocity
-        // If proposed_y + vel_div_8 would be negative (e.g., y=1, vel=-2 → -1),
-        // casting to uint8_t wraps around to 255, 254, etc.
-        // Clamp to 0 if underflow would occur.
-        if (static_cast<int16_t>(proposed_y) + vel_div_8 < 0) {
-            proposed_y = 0;
+        // === .moving_up ===
+        // Assembly: sar y_vel 3x (arithmetic) → y_vel/8, still negative (e.g. -7>>3 = -1)
+        //           neg → positive upward delta; sub al, delta → proposed_y += delta (negative = up)
+        // Simplified: proposed_y += (int8_t)(y_vel >> 3)
+        // For y_vel=-7: delta=-1, proposed_y decreases by 1 (moves up 1 unit)
+        int8_t delta = static_cast<int8_t>(static_cast<int8_t>(enemy->y_vel) >> 3);
+        int16_t new_y = static_cast<int16_t>(proposed_y) + static_cast<int16_t>(delta);
+
+        if (new_y < 0) {
+            // Unsigned underflow → hit top of playfield (.undo_position_change)
+            proposed_y = enemy->y;  // restore original (no change)
         } else {
-            uint8_t target_y = static_cast<uint8_t>(proposed_y + vel_div_8);
-            collision = check_vertical_enemy_map_collision(enemy->x, target_y);
-            if (!collision) {
-                proposed_y = target_y;
+            uint8_t target_y = static_cast<uint8_t>(new_y);
+            if (!check_vertical_enemy_map_collision(enemy->x, target_y)) {
+                proposed_y = target_y;  // accept upward movement
             }
+            // else: ceiling collision → .undo_position_change (proposed_y stays = enemy->y)
         }
+        // fall through to .apply_gravity
+
     } else if (enemy->y_vel > 0) {
-        // Moving down
-        int8_t vel_div_8 = enemy->y_vel >> ENEMY_VELOCITY_SHIFT;
-        proposed_y = static_cast<uint8_t>(proposed_y + vel_div_8);
-    }
+        // === .moving_down ===
+        // Assembly: sar y_vel 3x → y_vel/8; proposed_y += that; e.g. y_vel=8 → move down 1
+        int8_t vel_over_8 = static_cast<int8_t>(static_cast<int8_t>(enemy->y_vel) >> 3);
+        uint8_t new_y = static_cast<uint8_t>(proposed_y + vel_over_8);
 
-    // Apply gravity (modifies velocity for NEXT frame)
-    enemy->y_vel += ENEMY_GRAVITY;
-    if (enemy->y_vel > TERMINAL_VELOCITY) {
-        enemy->y_vel = TERMINAL_VELOCITY;
-    }
-
-    // Horizontal movement toward Comic's x position
-    if (enemy->x_vel > 0) {
-        // Moving right
-        next_x = static_cast<uint8_t>(enemy->x + 2);
-        collision = check_horizontal_enemy_map_collision(next_x, proposed_y);
-        if (collision) {
-            enemy->x_vel = -1;  // Bounce left
-        } else {
-            enemy->x = static_cast<uint8_t>(enemy->x + 1);
-            camera_rel_x = static_cast<int16_t>(enemy->x) - static_cast<int16_t>(g_camera_x);
-            if (camera_rel_x >= PLAYFIELD_WIDTH - 2) {
-                enemy->x_vel = -1;  // Hit right edge
-            }
+        // Despawn at or below the bottom of the playfield
+        if (new_y >= static_cast<uint8_t>(PLAYFIELD_HEIGHT - 2)) {
+            enemy->state = ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME;
+            enemy->y = static_cast<uint8_t>(PLAYFIELD_HEIGHT - 2);
+            return;
         }
-    } else if (enemy->x_vel < 0) {
-        // Moving left
-        if (enemy->x == 0) {
-            enemy->x_vel = 1;  // Hit left edge, bounce
+
+        // .keep_moving_down: look-ahead check at new_y+1
+        // Assembly: inc al; check_vertical; dec al; jnc .apply_gravity (accept move)
+        //            else: .start_falling → .undo_position_change (restore original pos)
+        if (check_vertical_enemy_map_collision(enemy->x, static_cast<uint8_t>(new_y + 1))) {
+            proposed_y = enemy->y;  // collision: restore original (.undo_position_change)
         } else {
-            next_x = static_cast<uint8_t>(enemy->x - 1);
-            collision = check_horizontal_enemy_map_collision(next_x, proposed_y);
-            if (collision) {
-                enemy->x_vel = 1;  // Bounce right
+            proposed_y = new_y;     // no collision: accept downward movement
+        }
+        // fall through to .apply_gravity
+
+    } else {
+        // === y_vel == 0 ===
+        // Assembly: ax = [si+enemy.y]; al += 2; check_vertical;
+        //           if solid → .begin_leap; else → .start_falling
+        if (check_vertical_enemy_map_collision(enemy->x, static_cast<uint8_t>(enemy->y + 2))) {
+            // .begin_leap: solid ground — initiate jump toward Comic
+            // Assembly: cmp comic_x(ah), enemy.x(dh); jae (.unsigned >=) → x_vel=+1 else -1
+            // jae means: if comic_x >= enemy.x → enemy is at/left-of Comic → move right (+1)
+            enemy->x_vel = (static_cast<uint8_t>(g_comic_x) >= static_cast<uint8_t>(enemy->x)) ? 1 : -1;
+            enemy->y_vel = ENEMY_JUMP_VELOCITY;  // -7
+            // Assembly jumps directly to .done: stores position (unchanged), no gravity this tick
+            return;
+        }
+        // .start_falling → .undo_position_change → .apply_gravity
+        // proposed_y stays = enemy->y; y_vel stays = 0 (gravity below will set it to 2)
+        // CRITICAL: do NOT return here — must fall through to gravity + horizontal + ground check
+    }
+
+    // === .apply_gravity ===
+    // Runs for all paths except .begin_leap (which returned above).
+    // Assembly: dl += 2; clamp to TERMINAL_VELOCITY; store y_vel
+    {
+        int16_t new_vel = static_cast<int16_t>(enemy->y_vel) + ENEMY_GRAVITY;  // +2
+        enemy->y_vel = static_cast<int8_t>(new_vel > TERMINAL_VELOCITY ? TERMINAL_VELOCITY : new_vel);
+    }
+
+    // === Restraint — only gates horizontal movement; gravity and ground-check always run ===
+    bool skip_horizontal = false;
+    if (enemy->restraint == ENEMY_RESTRAINT_SKIP_THIS_TICK) {
+        // .skip_this_tick: set restraint to MOVE, then fall to .check_for_ground (skip horizontal)
+        enemy->restraint = ENEMY_RESTRAINT_MOVE_THIS_TICK;
+        skip_horizontal = true;
+    } else if (enemy->restraint == ENEMY_RESTRAINT_MOVE_THIS_TICK) {
+        // Slow enemy: transition MOVE → SKIP
+        enemy->restraint = ENEMY_RESTRAINT_SKIP_THIS_TICK;
+    }
+    // ENEMY_RESTRAINT_MOVE_EVERY_TICK: no state change
+
+    // === Horizontal movement (skipped when restraint was SKIP_THIS_TICK) ===
+    if (!skip_horizontal) {
+        int16_t camera_rel_x;
+        if (enemy->x_vel > 0) {
+            // Moving right: check tile at x+2, advance x by 1, bounce at right playfield edge
+            uint8_t next_x = static_cast<uint8_t>(enemy->x + 2);
+            if (check_horizontal_enemy_map_collision(next_x, proposed_y)) {
+                enemy->x_vel = -1;  // wall → bounce left
             } else {
-                enemy->x = next_x;
+                enemy->x = static_cast<uint8_t>(enemy->x + 1);
                 camera_rel_x = static_cast<int16_t>(enemy->x) - static_cast<int16_t>(g_camera_x);
-                if (camera_rel_x <= 0) {
-                    enemy->x_vel = 1;  // Hit left edge
+                if (camera_rel_x >= PLAYFIELD_WIDTH - 2) {
+                    enemy->x_vel = -1;  // right playfield edge
+                }
+            }
+        } else if (enemy->x_vel < 0) {
+            // Moving left: check tile at x-1, advance x by -1, bounce at left playfield edge
+            if (enemy->x == 0) {
+                enemy->x_vel = 1;  // already at left edge
+            } else {
+                uint8_t next_x = static_cast<uint8_t>(enemy->x - 1);
+                if (check_horizontal_enemy_map_collision(next_x, proposed_y)) {
+                    enemy->x_vel = 1;  // wall → bounce right
+                } else {
+                    enemy->x = next_x;
+                    camera_rel_x = static_cast<int16_t>(enemy->x) - static_cast<int16_t>(g_camera_x);
+                    if (camera_rel_x <= 0) {
+                        enemy->x_vel = 1;  // left playfield edge
+                    }
                 }
             }
         }
-    } else {
-        // x_vel == 0: determine direction toward Comic
-        if (enemy->x < g_comic_x) {
-            enemy->x_vel = 1;
-        } else if (enemy->x > g_comic_x) {
-            enemy->x_vel = -1;
-        }
     }
 
-    // Vertical movement and ground detection
-    if (enemy->y_vel <= 0) {
-        // Moving up or stationary - check for ground
-        collision = check_vertical_enemy_map_collision(enemy->x, static_cast<uint8_t>(enemy->y + 2));
-        if (!collision) {
-            // No ground - start falling
-            enemy->y_vel = 1;
-        } else {
-            // Ground exists - initiate jump
-            enemy->x_vel = (enemy->x < g_comic_x) ? 1 : (enemy->x > g_comic_x) ? -1 : 0;
-            enemy->y_vel = ENEMY_JUMP_VELOCITY;
-        }
-    }
-
-    // Apply vertical position (calculated at top with velocity/8 for smooth movement)
+    // === Commit vertical position (.done in assembly: "mov [si+enemy.y], dx") ===
     enemy->y = proposed_y;
 
-    // Check if enemy fell off bottom of playfield
-    if (enemy->y >= PLAYFIELD_HEIGHT - 2) {
-        enemy->state = ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME;
-        enemy->y = PLAYFIELD_HEIGHT - 2;
-        return;
+    // === .check_for_ground: landing detection ===
+    // Assembly: dx = ax; if y_vel <= 0: goto .done (still rising/hovering)
+    //           al += 3; check_vertical; if solid: .landed → inc dl; and dl, 0xfe; y_vel=0
+    if (enemy->y_vel > 0) {
+        if (check_vertical_enemy_map_collision(enemy->x, static_cast<uint8_t>(enemy->y + 3))) {
+            // .landed: snap to even tile boundary, stop vertical movement
+            enemy->y = static_cast<uint8_t>((enemy->y + 1) & 0xFE);
+            enemy->y_vel = 0;
+        }
     }
 }
 
