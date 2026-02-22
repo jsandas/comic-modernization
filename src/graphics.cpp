@@ -178,7 +178,7 @@ std::vector<uint8_t> build_enemy_animation_sequence(
 }
 
 std::vector<TextureInfo> GraphicsSystem::load_animation_frames(
-    const std::string& filepath,
+    const std::string& base_path,
     int expected_frames,
     const std::string& label) {
     std::vector<TextureInfo> frames;
@@ -187,62 +187,51 @@ std::vector<TextureInfo> GraphicsSystem::load_animation_frames(
         return frames;
     }
 
-    IMG_Animation* animation = nullptr;
-    std::string loaded_path;
-    std::string possible_paths[] = {
-        filepath,
-        "../" + filepath,
-        "../../" + filepath
-    };
-
-    for (const auto& path : possible_paths) {
-        std::ifstream f(path);
-        if (!f.good()) {
-            continue;
-        }
-        animation = IMG_LoadAnimation(path.c_str());
-        if (animation != nullptr) {
-            loaded_path = path;
-            break;
-        }
-        std::cerr << "Warning: Failed to load animation: " << path
-                  << " (" << IMG_GetError() << ")" << std::endl;
-    }
-
-    if (animation == nullptr) {
+    if (expected_frames <= 0) {
         return frames;
     }
 
-    int available_frames = animation->count;
-    int frame_count = available_frames;
-    if (expected_frames > 0 && available_frames > expected_frames) {
-        frame_count = expected_frames;
-    }
+    // Try multiple asset directory prefixes
+    static const std::string prefixes[] = {"assets/", "../assets/", "../../assets/"};
 
-    if (expected_frames > 0 && available_frames < expected_frames) {
-        std::cerr << "Warning: Animation '" << label << "' expected "
-                  << expected_frames << " frame(s), got "
-                  << available_frames << " in " << loaded_path << std::endl;
-    }
+    for (int i = 0; i < expected_frames; ++i) {
+        std::string filename = base_path + "-" + std::to_string(i) + ".png";
+        SDL_Surface* surface = nullptr;
 
-    for (int i = 0; i < frame_count; ++i) {
-        SDL_Surface* surface = animation->frames[i];
-        if (surface == nullptr) {
-            continue;
+        for (const auto& prefix : prefixes) {
+            std::string path = prefix + filename;
+            std::ifstream f(path);
+            if (!f.good()) {
+                continue;
+            }
+            surface = IMG_Load(path.c_str());
+            if (surface != nullptr) {
+                break;
+            }
+            std::cerr << "Warning: Failed to load animation frame: " << path
+                      << " (" << IMG_GetError() << ")" << std::endl;
         }
 
+        if (surface == nullptr) {
+            std::cerr << "Warning: Could not find frame " << i
+                      << " for '" << label << "' (tried " << filename << ")" << std::endl;
+            break;
+        }
+
+        int w = surface->w;
+        int h = surface->h;
         SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+        SDL_FreeSurface(surface);
+
         if (texture == nullptr) {
             std::cerr << "Warning: Failed to create animation texture for '" << label
                       << "' frame " << i << ": " << SDL_GetError() << std::endl;
-            continue;
+            break;
         }
 
-        TextureInfo info = {texture, surface->w, surface->h};
-        frames.push_back(info);
+        frames.push_back({texture, w, h});
     }
 
-    IMG_FreeAnimation(animation);
     return frames;
 }
 
@@ -364,19 +353,17 @@ SpriteAnimationData* GraphicsSystem::load_enemy_sprite(const shp_t& sprite_desc)
         return it->second;
     }
 
-    std::string left_filename = sprite_name + "-left.gif";
-    std::string right_filename = sprite_name + "-right.gif";
-
+    // Load per-frame PNGs: {sprite_name}-left-0.png, -1.png, etc.
     auto* animation_data = new SpriteAnimationData();
     animation_data->frames_left = load_animation_frames(
-        get_asset_path(left_filename),
+        sprite_name + "-left",
         sprite_desc.num_distinct_frames,
         sprite_name + ":left"
     );
 
     if (sprite_desc.horizontal == ENEMY_HORIZONTAL_SEPARATE) {
         animation_data->frames_right = load_animation_frames(
-            get_asset_path(right_filename),
+            sprite_name + "-right",
             sprite_desc.num_distinct_frames,
             sprite_name + ":right"
         );
