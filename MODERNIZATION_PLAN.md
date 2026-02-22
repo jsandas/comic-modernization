@@ -341,7 +341,7 @@ A centralized system for managing debug cheats and development tools. Activated 
 
 ### Phase 5: Actor System
 **Status:** In Progress
-**Current Stage:** Phase 5.5 - Fireball & Item Systems
+**Current Stage:** Phase 5.6 - Item System
 **Completion Date:** TBD
 **Goal:** Implement enemies, fireballs, and items
 
@@ -395,13 +395,22 @@ A centralized system for managing debug cheats and development tools. Activated 
 - [x] `actor_system.render_enemies()` called each frame before player rendering
 - [x] Level/stage change detection triggers enemy re-setup on transitions
 
+**Phase 5.5: Fireball System ✅ COMPLETE**
+**Objective:** Port fireball spawning, movement, collision, and rendering from reference C code
+
 **Remaining Tasks:**
-- [ ] Port fireball system from actors.c
-  - [ ] Fireball spawning
-  - [ ] Horizontal movement
-  - [ ] Corkscrew motion (when item collected)
-  - [ ] Fireball-enemy collision
-  - [ ] Fireball meter depletion
+- [x] Port fireball system from actors.c
+  - [x] Fireball data structure (`fireball_t`: y, x, vel, corkscrew_phase, animation)
+  - [x] Fireball constants (MAX_NUM_FIREBALLS=5, FIREBALL_DEAD=0xFF, FIREBALL_VELOCITY=2)
+  - [x] Fireball spawning (`try_to_fire()`: find open slot, set position/velocity/phase)
+  - [x] Horizontal movement (±2 game units per tick)
+  - [x] Corkscrew motion (Y oscillation when `comic_has_corkscrew` is set)
+  - [x] Fireball meter management (2-tick counter cycle: decrements when firing, increments when not)
+  - [x] Fireball-enemy collision (0–1 vertical + ±1 horizontal box → ENEMY_STATE_WHITE_SPARK)
+  - [x] Fireball deactivation (off-screen left/right bounds)
+  - [x] Fireball rendering (16×8 px sprites scaled 2× per game unit)
+  - [x] Sprite loading (`sprite-fireball_0.png`, `sprite-fireball_1.png`)
+  - [x] Fire key input wired to Left/Right Ctrl in game loop
 - [ ] Port item system from actors.c
   - [ ] Item animation
   - [ ] Item collision detection

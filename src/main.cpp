@@ -24,6 +24,7 @@ uint8_t key_state_left = 0;
 uint8_t key_state_right = 0;
 uint8_t key_state_open = 0;  // Open key for doors
 uint8_t previous_key_state_open = 0;  // Track previous state for edge-triggered activation
+uint8_t key_state_fire = 0;  // Fire key (Left Ctrl)
 int camera_x = 0;
 
 // Item collection state
@@ -121,6 +122,7 @@ int main(int argc, char* argv[]) {
 
     ActorSystem actor_system;
     actor_system.initialize();
+    actor_system.comic_firepower = 3;  // Start with 3 fireball slots for testing
 
     // Pre-load player sprites and create animations
     const char* sprite_names[] = {
@@ -139,6 +141,11 @@ int main(int argc, char* argv[]) {
                 return 1;
             }
         }
+    }
+
+    // Load fireball sprites
+    if (!actor_system.load_fireball_sprites(g_graphics)) {
+        std::cerr << "Warning: Could not load fireball sprites. Fireballs will not render." << std::endl;
     }
 
     // Create animations
@@ -221,6 +228,8 @@ int main(int argc, char* argv[]) {
                     case SDLK_LEFT: key_state_left = 1; break;
                     case SDLK_RIGHT: key_state_right = 1; break;
                     case SDLK_SPACE: key_state_jump = 1; break;
+                    case SDLK_LCTRL:
+                    case SDLK_RCTRL: key_state_fire = 1; break;
                 }
                 
                 // Process cheat keys (only active if --debug flag set)
@@ -230,6 +239,8 @@ int main(int argc, char* argv[]) {
                     case SDLK_LEFT: key_state_left = 0; break;
                     case SDLK_RIGHT: key_state_right = 0; break;
                     case SDLK_SPACE: key_state_jump = 0; break;
+                    case SDLK_LCTRL:
+                    case SDLK_RCTRL: key_state_fire = 0; break;
                 }
             }
         }
@@ -266,7 +277,7 @@ int main(int argc, char* argv[]) {
             const uint8_t* tiles = current_level_ptr
                 ? current_level_ptr->stages[current_stage_number].tiles
                 : nullptr;
-            actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x);
+            actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x, key_state_fire);
         }
 
         // Update animation based on state (updates every frame for smooth animation)
@@ -334,6 +345,7 @@ int main(int argc, char* argv[]) {
         }
 
         actor_system.render_enemies(g_graphics, camera_x, RENDER_SCALE);
+        actor_system.render_fireballs(g_graphics, camera_x, RENDER_SCALE);
 
         // Render player sprite
         if (current_animation) {
