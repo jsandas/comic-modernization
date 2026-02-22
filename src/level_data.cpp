@@ -151,8 +151,8 @@ const level_t level_data_forest = {
         /* forest1 */
         {
             .item_type = ITEM_SHIELD,
-            .item_y = 8,
-            .item_x = 114,
+            .item_y = 10,
+            .item_x = 118,
             .exit_l = 0,
             .exit_r = 2,
             .doors = {
@@ -162,16 +162,16 @@ const level_t level_data_forest = {
             },
             .enemies = {
                 {0, ENEMY_BEHAVIOR_BOUNCE},
-                {1, ENEMY_BEHAVIOR_SHY},
+                {0, ENEMY_BEHAVIOR_BOUNCE},
                 {0, ENEMY_BEHAVIOR_UNUSED},
-                {0, ENEMY_BEHAVIOR_UNUSED}
+                {1, ENEMY_BEHAVIOR_SHY}
             }
         },
         /* forest2 */
         {
-            .item_type = ITEM_BLASTOLA_COLA,
+            .item_type = ITEM_DOOR_KEY,
             .item_y = 2,
-            .item_x = 210,
+            .item_x = 160,
             .exit_l = 1,
             .exit_r = EXIT_UNUSED,
             .doors = {
@@ -181,8 +181,8 @@ const level_t level_data_forest = {
             },
             .enemies = {
                 {0, ENEMY_BEHAVIOR_BOUNCE},
-                {1, ENEMY_BEHAVIOR_BOUNCE},
-                {0, ENEMY_BEHAVIOR_UNUSED},
+                {1, ENEMY_BEHAVIOR_SHY},
+                {0, ENEMY_BEHAVIOR_BOUNCE},
                 {1, ENEMY_BEHAVIOR_SHY}
             }
         }
@@ -330,11 +330,11 @@ const level_t level_data_base = {
         },
         /* base1 */
         {
-            .item_type = ITEM_SHIELD,
-            .item_y = 6,
+            .item_type = ITEM_CORKSCREW,
+            .item_y = 16,
             .item_x = 0,
-            .exit_l = 0,
-            .exit_r = 2,
+            .exit_l = EXIT_UNUSED,
+            .exit_r = 0,
             .doors = {
                 {6, 0, 0, 2},
                 {14, 112, 3, 0},
@@ -349,14 +349,14 @@ const level_t level_data_base = {
         },
         /* base2 */
         {
-            .item_type = ITEM_GOLD,
-            .item_y = 8,
-            .item_x = 138,
+            .item_type = ITEM_BOOTS,
+            .item_y = 16,
+            .item_x = 230,
             .exit_l = 0,
             .exit_r = EXIT_UNUSED,
             .doors = {
-                {14, 236, 4, 0},
-                {8, 138, 3, 0},
+                {2, 36, 3, 0},
+                {14, 218, 3, 1},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
@@ -414,15 +414,15 @@ const level_t level_data_cave = {
             .enemies = {
                 {0, ENEMY_BEHAVIOR_LEAP},
                 {0, ENEMY_BEHAVIOR_LEAP},
-                {0, ENEMY_BEHAVIOR_LEAP},
-                {1, ENEMY_BEHAVIOR_LEAP}
+                {0, ENEMY_BEHAVIOR_LEAP | ENEMY_BEHAVIOR_FAST},
+                {1, ENEMY_BEHAVIOR_SEEK}
             }
         },
         /* cave1 */
         {
-            .item_type = ITEM_SHIELD,
-            .item_y = 8,
-            .item_x = 124,
+            .item_type = ITEM_GOLD,
+            .item_y = 4,
+            .item_x = 228,
             .exit_l = 0,
             .exit_r = 2,
             .doors = {
@@ -445,8 +445,8 @@ const level_t level_data_cave = {
             .exit_l = 1,
             .exit_r = EXIT_UNUSED,
             .doors = {
-                {14, 4, 5, 1},
-                {8, 242, 7, 0},
+                {14, 236, 4, 0},
+                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
@@ -523,7 +523,7 @@ const level_t level_data_shed = {
             .enemies = {
                 {0, ENEMY_BEHAVIOR_BOUNCE},
                 {1, ENEMY_BEHAVIOR_SEEK},
-                {1, ENEMY_BEHAVIOR_LEAP},
+                {2, ENEMY_BEHAVIOR_LEAP},
                 {2, ENEMY_BEHAVIOR_LEAP}
             }
         },
@@ -592,9 +592,9 @@ const level_t level_data_castle = {
                 {8, 8, 6, 1}
             },
             .enemies = {
-                {0, ENEMY_BEHAVIOR_BOUNCE},
-                {1, ENEMY_BEHAVIOR_ROLL},
-                {2, ENEMY_BEHAVIOR_LEAP},
+                {0, ENEMY_BEHAVIOR_BOUNCE | ENEMY_BEHAVIOR_FAST},
+                {1, ENEMY_BEHAVIOR_LEAP},
+                {1, ENEMY_BEHAVIOR_LEAP | ENEMY_BEHAVIOR_FAST},
                 {3, ENEMY_BEHAVIOR_SEEK}
             }
         },
@@ -613,7 +613,7 @@ const level_t level_data_castle = {
             .enemies = {
                 {0, ENEMY_BEHAVIOR_BOUNCE | ENEMY_BEHAVIOR_FAST},
                 {1, ENEMY_BEHAVIOR_LEAP},
-                {2, ENEMY_BEHAVIOR_LEAP | ENEMY_BEHAVIOR_FAST},
+                {1, ENEMY_BEHAVIOR_LEAP | ENEMY_BEHAVIOR_FAST},
                 {2, ENEMY_BEHAVIOR_SHY}
             }
         },
@@ -631,7 +631,7 @@ const level_t level_data_castle = {
             },
             .enemies = {
                 {1, ENEMY_BEHAVIOR_LEAP},
-                {3, ENEMY_BEHAVIOR_SEEK},
+                {2, ENEMY_BEHAVIOR_SHY | ENEMY_BEHAVIOR_FAST},
                 {3, ENEMY_BEHAVIOR_SEEK},
                 {3, ENEMY_BEHAVIOR_SEEK | ENEMY_BEHAVIOR_FAST}
             }
@@ -696,15 +696,15 @@ const level_t level_data_comp = {
             .exit_l = 0,
             .exit_r = 2,
             .doors = {
-                {14, 244, 1, 2},
+                {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0},
                 {DOOR_UNUSED, DOOR_UNUSED, 0, 0}
             },
             .enemies = {
-                {0, ENEMY_BEHAVIOR_BOUNCE},
-                {1, ENEMY_BEHAVIOR_BOUNCE},
-                {2, ENEMY_BEHAVIOR_LEAP},
-                {2, ENEMY_BEHAVIOR_LEAP}
+                {0, ENEMY_BEHAVIOR_BOUNCE | ENEMY_BEHAVIOR_FAST},
+                {1, ENEMY_BEHAVIOR_BOUNCE | ENEMY_BEHAVIOR_FAST},
+                {2, ENEMY_BEHAVIOR_BOUNCE | ENEMY_BEHAVIOR_FAST},
+                {0, ENEMY_BEHAVIOR_UNUSED}
             }
         },
         /* comp2 */
