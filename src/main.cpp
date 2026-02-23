@@ -125,7 +125,9 @@ int main(int argc, char* argv[]) {
 
     ActorSystem actor_system;
     actor_system.initialize();
-    actor_system.comic_firepower = 3;  // Start with 3 fireball slots for testing
+    if (debug_mode) {
+        actor_system.comic_firepower = 3;  // Start with 3 fireball slots in debug mode for testing
+    }
     
     // Make actor system accessible to cheat system
     g_actor_system = &actor_system;
