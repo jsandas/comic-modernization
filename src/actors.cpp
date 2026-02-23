@@ -1327,8 +1327,8 @@ int ActorSystem::get_jump_power() const {
  * Load item sprites from assets.
  * Item sprites are 16×16 pixels, and each item has two frames (even/odd) for animation.
  * 
- * Expected file naming: sprite-item_<name>_<frame>.png
- * Example: sprite-item_blastola_cola_0.png, sprite-item_blastola_cola_1.png
+ * Expected file naming: sprite-<name>_<frame>.png
+ * Example: sprite-corkscrew_even.png, sprite-corkscrew_odd.png
  */
 bool ActorSystem::load_item_sprites(GraphicsSystem* graphics_system) {
     if (!graphics_system) {
@@ -1338,22 +1338,24 @@ bool ActorSystem::load_item_sprites(GraphicsSystem* graphics_system) {
 
     // Item sprite names mapping (item_type → base filename)
     const char* item_names[15] = {
-        "corkscrew",       // 0
-        "door_key",        // 1
-        "boots",           // 2
-        "lantern",         // 3
-        "teleport_wand",   // 4
-        "gems",            // 5
-        "crown",           // 6
-        "gold",            // 7
-        "blastola_cola",   // 8
-        nullptr,           // 9 (unused)
-        nullptr,           // 10 (unused)
-        nullptr,           // 11 (unused)
-        nullptr,           // 12 (unused)
-        nullptr,           // 13 (unused)
-        "shield"           // 14
+        "corkscrew",    // 0
+        "doorkey",      // 1
+        "boots",        // 2
+        "lantern",      // 3
+        "teleportwand", // 4
+        "gems",         // 5
+        "crown",        // 6
+        "gold",         // 7
+        "cola",         // 8
+        nullptr,         // 9 (unused)
+        nullptr,         // 10 (unused)
+        nullptr,         // 11 (unused)
+        nullptr,         // 12 (unused)
+        nullptr,         // 13 (unused)
+        "shield"        // 14
     };
+
+    const char* frame_names[2] = {"even", "odd"};
 
     bool all_loaded = true;
 
@@ -1363,19 +1365,21 @@ bool ActorSystem::load_item_sprites(GraphicsSystem* graphics_system) {
         }
 
         for (int frame = 0; frame < 2; frame++) {
-            std::string sprite_name = "item_" + std::string(item_names[item_type]) + "_" + std::to_string(frame);
-            
-            // Load sprite using GraphicsSystem (direction is empty for items)
-            if (!graphics_system->load_sprite(sprite_name, "")) {
-                std::cerr << "Warning: Failed to load item sprite: " << sprite_name << std::endl;
+            std::string sprite_name = item_names[item_type];
+            std::string frame_name = frame_names[frame];
+
+            if (!graphics_system->load_sprite(sprite_name, frame_name)) {
+                std::cerr << "Warning: Failed to load item sprite: "
+                          << sprite_name << "_" << frame_name << std::endl;
                 all_loaded = false;
                 continue;
             }
 
             // Get loaded sprite
-            item_sprites[item_type][frame] = graphics_system->get_sprite(sprite_name, "");
+            item_sprites[item_type][frame] = graphics_system->get_sprite(sprite_name, frame_name);
             if (!item_sprites[item_type][frame]) {
-                std::cerr << "Warning: Failed to retrieve item sprite: " << sprite_name << std::endl;
+                std::cerr << "Warning: Failed to retrieve item sprite: "
+                          << sprite_name << "_" << frame_name << std::endl;
                 all_loaded = false;
             }
         }
