@@ -179,9 +179,15 @@ def decode_ega_planes(data: bytes, rle: bool = True) -> bytes:
                     raise EOFError("unexpected EOF in RLE data")
                 c = c[0]
                 if c < 128:
-                    out += br.read(c)
+                    chunk = br.read(c)
+                    if len(chunk) != c:
+                        raise EOFError("unexpected EOF in RLE data")
+                    out += chunk
                 else:
-                    rep = br.read(1)[0]
+                    rep_byte = br.read(1)
+                    if not rep_byte:
+                        raise EOFError("unexpected EOF in RLE data")
+                    rep = rep_byte[0]
                     out += bytes([rep]) * (c - 128)
             planes[i * plane_size : (i + 1) * plane_size] = out[:plane_size]
         else:
