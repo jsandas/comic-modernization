@@ -95,26 +95,38 @@ std::string GraphicsSystem::get_asset_path(const std::string& filename) {
     // sprite assets
     if (filename.rfind("sprite-", 0) == 0) {
         prefixes.push_back("assets/sprites/");
+        prefixes.push_back("../assets/sprites/");
+        prefixes.push_back("../../assets/sprites/");
     }
     // sound effects
     else if (filename.rfind("sound-", 0) == 0) {
         prefixes.push_back("assets/sounds/");
+        prefixes.push_back("../assets/sounds/");
+        prefixes.push_back("../../assets/sounds/");
     }
     // map files (.pt.png)
     else if (filename.find(".pt.png") != std::string::npos) {
         prefixes.push_back("assets/maps/");
+        prefixes.push_back("../assets/maps/");
+        prefixes.push_back("../../assets/maps/");
     }
     // tilesets (.tt2-XX.png)
     else if (filename.find(".tt2-") != std::string::npos) {
         prefixes.push_back("assets/tiles/");
+        prefixes.push_back("../assets/tiles/");
+        prefixes.push_back("../../assets/tiles/");
     }
     // shp-based enemy frames
     else if (filename.find(".shp") != std::string::npos) {
         prefixes.push_back("assets/shp/");
+        prefixes.push_back("../assets/shp/");
+        prefixes.push_back("../../assets/shp/");
     }
     // raw graphics (sys000.ega etc)
     else if (filename.rfind("sys", 0) == 0) {
         prefixes.push_back("assets/graphics/");
+        prefixes.push_back("../assets/graphics/");
+        prefixes.push_back("../../assets/graphics/");
     }
 
     // always try the generic assets/ location as a fallback
