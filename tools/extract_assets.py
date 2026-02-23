@@ -198,7 +198,6 @@ def planes_to_image(planes: bytes, width: int, height: int) -> Image.Image:
             q = (y * width + x) // 8
             r = (y * width + x) % 8
             idx = 0
-            base = y * (width // 8) + q
             for p in range(4):
                 byte = planes[p * (width * height // 8) + q]
                 bit = (byte >> (7 - r)) & 1
