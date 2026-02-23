@@ -36,6 +36,35 @@ This project ports the game to modern systems while maintaining behavioral fidel
 - CMake 3.16+
 - C++17 compiler (GCC 7+, Clang 5+, MSVC 2017+)
 - SDL2 development libraries (SDL2, SDL2_image, SDL2_ttf)
+- Original game files (https://archive.org/download/TheAdventuresOfCaptainComic/AdventuresOfCaptainComicEpisode1The-PlanetOfDeathR5sw1991michaelA.Denioaction.zip)
+
+### Assets
+
+The build requires the original DOS game data to extract graphics, maps,
+sprites and sounds.  Revision 5 of *Captain Comic* is used by the
+`tools/extract_assets.py` script, which places the converted PNGs into
+`assets/` subfolders.
+
+1. Download the ZIP archive from Archive.org and unpack it into the
+   `original/` directory (the script will look there):
+
+```bash
+curl -L -o comic_r5.zip \
+  https://archive.org/download/TheAdventuresOfCaptainComic/AdventuresOfCaptainComicEpisode1The-PlanetOfDeathR5sw1991michaelA.Denioaction.zip
+unzip comic_r5.zip -d original
+rm comic_r5.zip
+```
+
+2. Install the Python dependencies and run the extractor:
+
+```bash
+pip install -r tools/requirements.txt
+python3 tools/extract_assets.py --orig original
+```
+
+After extraction the `assets/` folder will contain neatly categorized
+subdirectories (`sprites`, `tiles`, `maps`, `shp`, `sounds`, etc.) that
+are referenced by the C++ code.
 
 ### macOS
 
