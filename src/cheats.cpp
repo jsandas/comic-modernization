@@ -372,7 +372,7 @@ void CheatSystem::handle_item_grant_input(SDL_Keycode key) {
     if (key >= SDLK_0 && key <= SDLK_9) {
         int selection = key - SDLK_0;
         
-        if (selection >= 0 && selection <= 8) {
+        if (selection <= 8) {
             target_item = selection;  // Direct mapping for 0-8
         } else if (selection == 9) {
             target_item = ITEM_SHIELD;  // Shield is item type 14
