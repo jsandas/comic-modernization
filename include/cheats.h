@@ -30,6 +30,7 @@ public:
     bool is_awaiting_level_input() const { return awaiting_level_input; }
     bool is_awaiting_stage_input() const { return awaiting_stage_input; }
     bool is_awaiting_position_input() const { return awaiting_x_input || awaiting_y_input; }
+    bool is_awaiting_item_input() const { return awaiting_item_input; }
     
     // Get current position input buffer for display
     std::string get_position_input_buffer() const;
@@ -44,14 +45,17 @@ private:
     void toggle_door_key();
     void activate_level_warp();
     void activate_position_warp();
+    void activate_item_grant();
     
     // Input handling for multi-step cheats
     void handle_level_warp_input(SDL_Keycode key);
     void handle_position_warp_input(SDL_Keycode key);
+    void handle_item_grant_input(SDL_Keycode key);
     
     // Execute warps
     void execute_level_warp();
     void execute_position_warp();
+    void execute_item_grant();
     
     // State
     bool initialized;
@@ -73,6 +77,10 @@ private:
     std::string position_input_buffer;
     int16_t target_x;
     int16_t target_y;
+    
+    // Item grant state
+    bool awaiting_item_input;
+    int8_t target_item;
 };
 
 // Global cheat system instance

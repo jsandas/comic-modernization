@@ -30,11 +30,35 @@ constexpr uint8_t RESPAWN_TIMER_MIN = 20;
 constexpr uint8_t RESPAWN_TIMER_MAX = 100;
 constexpr uint8_t RESPAWN_TIMER_STEP = 20;
 
+/* Fireball constants */
+constexpr uint8_t MAX_NUM_FIREBALLS = 5;       /* Maximum firepower (Blastola Cola upgrades) */
+constexpr uint8_t FIREBALL_DEAD = 0xFF;        /* Inactive marker in x/y fields */
+constexpr int8_t  FIREBALL_VELOCITY = 2;       /* Horizontal speed (±2 game units per tick) */
+constexpr uint8_t MAX_FIREBALL_METER = 12;     /* Full fireball meter value */
+constexpr uint8_t FIREBALL_METER_COUNTER_INIT = 2; /* Counter cycles 2→1→2→1 */
+constexpr uint8_t FIREBALL_NUM_FRAMES = 2;     /* Two animation frames per fireball */
+
 /* Enemy facing directions - frame offsets for sprite animation
  * Left-facing frames: 0-4, Right-facing frames: 5-9
  * These values are added to the current animation frame index */
 constexpr uint8_t ENEMY_FACING_LEFT = 0;   /* Left-facing animation starts at frame 0 */
 constexpr uint8_t ENEMY_FACING_RIGHT = 5;  /* Right-facing animation starts at frame 5 */
+
+/**
+ * fireball_t - A single fireball projectile
+ *
+ * Fires horizontally at ±FIREBALL_VELOCITY per tick.
+ * Corkscrew item adds vertical oscillation.
+ * x==FIREBALL_DEAD && y==FIREBALL_DEAD means the slot is inactive.
+ */
+struct fireball_t {
+    uint8_t y;                    /* Y position (FIREBALL_DEAD = inactive) */
+    uint8_t x;                    /* X position (FIREBALL_DEAD = inactive) */
+    int8_t  vel;                  /* Horizontal velocity (+2 or -2) */
+    uint8_t corkscrew_phase;      /* Vertical oscillation phase (1 or 2) */
+    uint8_t animation;            /* Current animation frame (0 or 1) */
+    uint8_t num_animation_frames; /* Always FIREBALL_NUM_FRAMES (2) */
+};
 
 /**
  * enemy_t - Enemy state
@@ -80,11 +104,51 @@ public:
         uint8_t comic_x, uint8_t comic_y,
         uint8_t comic_facing,
         const uint8_t* tiles,
-        int camera_x
+        int camera_x,
+        uint8_t fire_key = 0
     );
 
     /* Get array of enemies */
     const std::vector<enemy_t>& get_enemies() const { return enemies; }
+
+    /* Get array of fireballs (read-only) */
+    const std::vector<fireball_t>& get_fireballs() const { return fireballs; }
+
+    /* Load fireball sprites from assets (call once after GraphicsSystem is ready) */
+    bool load_fireball_sprites(GraphicsSystem* graphics_system);
+
+    /* Render all active fireballs */
+    void render_fireballs(GraphicsSystem* graphics_system, int camera_x, int render_scale) const;
+
+    /* Reset fireballs (called on stage load) */
+    void reset_fireballs();
+
+    /* Player firepower and powerup flags (set by item system) */
+    uint8_t comic_firepower;      /* 0-5: number of fireball slots available */
+    uint8_t comic_has_corkscrew;  /* 1 if Comic has the Corkscrew item */
+    uint8_t fireball_meter;       /* Current fireball meter (0–MAX_FIREBALL_METER) */
+    
+    /* Additional item-related player flags */
+    uint8_t comic_has_boots;          /* 1 if Comic has Boots (increased jump power) */
+    uint8_t comic_has_lantern;        /* 1 if Comic has Lantern (castle lighting) */
+    uint8_t comic_has_door_key;       /* 1 if Comic has Door Key */
+    uint8_t comic_has_teleport_wand;  /* 1 if Comic has Teleport Wand */
+    uint8_t comic_has_gems;           /* 1 if Comic collected Gems */
+    uint8_t comic_has_crown;          /* 1 if Comic collected Crown */
+    uint8_t comic_has_gold;           /* 1 if Comic collected Gold */
+    uint8_t comic_num_treasures;      /* Count of treasures collected (0-3) */
+
+    /* Get current jump power based on boots status */
+    int get_jump_power() const;
+
+    /* Load item sprites from assets (call once after GraphicsSystem is ready) */
+    bool load_item_sprites(GraphicsSystem* graphics_system);
+
+    /* Render the current stage's item if not yet collected */
+    void render_item(GraphicsSystem* graphics_system, int camera_x, int render_scale) const;
+
+    /* Apply item effect (public for testing) */
+    void apply_item_effect(uint8_t item_type);
 
     /* Reset all enemies (called when loading a new stage) */
     void reset_for_stage();
@@ -92,6 +156,7 @@ public:
     /* Setup enemies for a stage from level data */
     void setup_enemies_for_stage(
         const class level_t* level,
+        int level_index,
         int stage_number,
         GraphicsSystem* graphics_system
     );
@@ -109,11 +174,32 @@ protected:
     /* Enemy array (max 4 enemies per stage) */
     std::vector<enemy_t> enemies;
 
+    /* Fireball array (max MAX_NUM_FIREBALLS active projectiles) */
+    std::vector<fireball_t> fireballs;
+
+    /* Loaded fireball sprite frames (indexed 0/1, set by load_fireball_sprites) */
+    Sprite* fireball_sprite[FIREBALL_NUM_FRAMES];
+
+    /* Fireball meter timing counter (cycles 2→1→2→1 each tick) */
+    uint8_t fireball_meter_counter;
+
+    /* Item system state */
+    uint8_t item_animation_counter;        /* Toggles 0→1→0→1 each tick for item sprite animation */
+    uint8_t items_collected[8][3];         /* [level_index][stage_index] collection status */
+    uint8_t current_item_type;             /* Item type for current stage (from stage data) */
+    uint8_t current_item_x;                /* Item X position in game units */
+    uint8_t current_item_y;                /* Item Y position in game units */
+    
+    /* Item sprite storage (all item types, even/odd frames) */
+    Sprite* item_sprites[15][2];           /* [item_type][0=even, 1=odd] */
+
     /* Level and stage context */
     const uint8_t* current_tiles;
     int current_map_width_tiles;
     int current_map_height_tiles;
     uint8_t tileset_last_passable;
+    uint8_t current_level_index;           /* Current level number (0=LAKE, 1=FOREST, etc.) */
+    uint8_t current_stage_index;           /* Current stage number (0-2) */
 
     /* Spawning control */
     uint8_t spawned_this_tick;
@@ -132,6 +218,14 @@ protected:
     void update_enemy_animation(enemy_t* enemy);
     void check_enemy_despawn(enemy_t* enemy);
     void check_enemy_player_collision(enemy_t* enemy);
+
+    /* Fireball helpers */
+    void try_to_fire();
+    void handle_fireballs();
+    
+    /* Item helpers */
+    void handle_item();
+    void collect_item();
 
     /* AI behavior functions */
     void enemy_behavior_bounce(enemy_t* enemy);

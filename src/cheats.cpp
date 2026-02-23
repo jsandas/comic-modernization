@@ -1,5 +1,7 @@
 #include "../include/cheats.h"
 #include "../include/level_loader.h"
+#include "../include/level.h"
+#include "../include/actors.h"
 #include <iostream>
 #include <cstdlib>
 
@@ -16,6 +18,7 @@ extern uint8_t comic_has_door_key;  // Door key inventory item
 extern int camera_x;
 extern uint8_t current_level_number;
 extern uint8_t current_stage_number;
+extern ActorSystem* g_actor_system;  // Actor system for item granting
 
 // External reference to physics cheat flags
 extern bool cheat_noclip;
@@ -32,7 +35,9 @@ CheatSystem::CheatSystem()
     , awaiting_x_input(false)
     , awaiting_y_input(false)
     , target_x(0)
-    , target_y(0) {
+    , target_y(0)
+    , awaiting_item_input(false)
+    , target_item(-1) {
 }
 
 CheatSystem::~CheatSystem() {
@@ -47,12 +52,13 @@ bool CheatSystem::initialize(bool debug_mode) {
     debug_enabled = debug_mode;
     
     if (debug_enabled) {
-        std::cout << "[CHEAT] Debug mode enabled. Press F1-F5 for cheats:" << std::endl;
+        std::cout << "[CHEAT] Debug mode enabled. Press F1-F6 for cheats:" << std::endl;
         std::cout << "  F1 - Toggle noclip (walk through walls)" << std::endl;
         std::cout << "  F2 - Level warp (choose level/stage)" << std::endl;
         std::cout << "  F3 - Toggle debug overlay" << std::endl;
         std::cout << "  F4 - Position warp (teleport to coordinates)" << std::endl;
         std::cout << "  F5 - Toggle door key" << std::endl;
+        std::cout << "  F6 - Grant item (testing item effects)" << std::endl;
     }
     
     initialized = true;
@@ -71,6 +77,7 @@ void CheatSystem::cleanup() {
     awaiting_stage_input = false;
     awaiting_x_input = false;
     awaiting_y_input = false;
+    awaiting_item_input = false;
     cheat_noclip = false;
     
     initialized = false;
@@ -90,6 +97,11 @@ void CheatSystem::process_input(SDL_Keycode key) {
     
     if (awaiting_x_input || awaiting_y_input) {
         handle_position_warp_input(key);
+        return;
+    }
+    
+    if (awaiting_item_input) {
+        handle_item_grant_input(key);
         return;
     }
     
@@ -113,6 +125,10 @@ void CheatSystem::process_input(SDL_Keycode key) {
             
         case SDLK_F5:
             toggle_door_key();
+            break;
+            
+        case SDLK_F6:
+            activate_item_grant();
             break;
             
         default:
@@ -322,4 +338,86 @@ std::string CheatSystem::get_level_warp_prompt() const {
         return "Enter stage (0-2):";
     }
     return "";
+}
+
+void CheatSystem::activate_item_grant() {
+    awaiting_item_input = true;
+    target_item = -1;
+    
+    std::cout << "[CHEAT] Item grant activated. Select item to grant:" << std::endl;
+    std::cout << "  0 = Corkscrew (fireball vertical oscillation)" << std::endl;
+    std::cout << "  1 = Door Key (unlock doors)" << std::endl;
+    std::cout << "  2 = Boots (increased jump power)" << std::endl;
+    std::cout << "  3 = Lantern (castle lighting)" << std::endl;
+    std::cout << "  4 = Teleport Wand (special teleport)" << std::endl;
+    std::cout << "  5 = Gems (treasure 1/3)" << std::endl;
+    std::cout << "  6 = Crown (treasure 2/3)" << std::endl;
+    std::cout << "  7 = Gold (treasure 3/3)" << std::endl;
+    std::cout << "  8 = Blastola Cola (increase firepower)" << std::endl;
+    std::cout << "  9 = Shield (HP refill)" << std::endl;
+    std::cout << "  ESC to cancel" << std::endl;
+}
+
+void CheatSystem::handle_item_grant_input(SDL_Keycode key) {
+    // Cancel on ESC
+    if (key == SDLK_ESCAPE) {
+        awaiting_item_input = false;
+        std::cout << "[CHEAT] Item grant cancelled" << std::endl;
+        return;
+    }
+    
+    // Map numeric keys to item types
+    // 0-8 map directly to ITEM constants
+    // 9 maps to Shield (item type 14)
+    if (key >= SDLK_0 && key <= SDLK_9) {
+        int selection = key - SDLK_0;
+        
+        if (selection <= 8) {
+            target_item = selection;  // Direct mapping for 0-8
+        } else if (selection == 9) {
+            target_item = ITEM_SHIELD;  // Shield is item type 14
+        } else {
+            std::cout << "[CHEAT] Invalid item selection" << std::endl;
+            awaiting_item_input = false;
+            return;
+        }
+        
+        awaiting_item_input = false;
+        execute_item_grant();
+    }
+}
+
+void CheatSystem::execute_item_grant() {
+    if (!g_actor_system) {
+        std::cout << "[CHEAT] Error: Actor system not available" << std::endl;
+        return;
+    }
+    
+    // Item names for display
+    static const char* item_names[] = {
+        "Corkscrew",       // 0
+        "Door Key",        // 1
+        "Boots",           // 2
+        "Lantern",         // 3
+        "Teleport Wand",   // 4
+        "Gems",            // 5
+        "Crown",           // 6
+        "Gold",            // 7
+        "Blastola Cola",   // 8
+        nullptr, nullptr, nullptr, nullptr, nullptr,  // 9-13 unused
+        "Shield"           // 14
+    };
+    
+    const char* item_name = "Unknown";
+    if (target_item >= 0 && target_item < 15 && item_names[target_item]) {
+        item_name = item_names[target_item];
+    }
+    
+    std::cout << "[CHEAT] Granting item: " << item_name << " (type " 
+              << static_cast<int>(target_item) << ")" << std::endl;
+    
+    // Apply the item effect
+    g_actor_system->apply_item_effect(static_cast<uint8_t>(target_item));
+    
+    std::cout << "[CHEAT] Item granted successfully" << std::endl;
 }

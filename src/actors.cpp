@@ -3,27 +3,66 @@
 #include "physics.h"
 #include <iostream>
 
+// Global door key flag defined in main.cpp (used by doors.cpp)
+extern uint8_t comic_has_door_key;
+
 /**
  * ActorSystem constructor
  */
 ActorSystem::ActorSystem()
     : enemies(MAX_NUM_ENEMIES),
+      fireballs(MAX_NUM_FIREBALLS),
+      fireball_meter_counter(FIREBALL_METER_COUNTER_INIT),
+      item_animation_counter(0),
+      current_item_type(ITEM_UNUSED),
+      current_item_x(0),
+      current_item_y(0),
       current_tiles(nullptr),
       current_map_width_tiles(128),
       current_map_height_tiles(10),
       tileset_last_passable(0x3E),
+      current_level_index(0),
+      current_stage_index(0),
       spawned_this_tick(0),
       spawn_offset_cycle(PLAYFIELD_WIDTH),
       enemy_respawn_counter_cycle(RESPAWN_TIMER_MIN),
       g_comic_x(0),
       g_comic_y(0),
       g_comic_facing(COMIC_FACING_LEFT),
-      g_camera_x(0) {
+      g_camera_x(0),
+      comic_firepower(0),
+      comic_has_corkscrew(0),
+      fireball_meter(MAX_FIREBALL_METER),
+      comic_has_boots(0),
+      comic_has_lantern(0),
+      comic_has_door_key(0),
+      comic_has_teleport_wand(0),
+      comic_has_gems(0),
+      comic_has_crown(0),
+      comic_has_gold(0),
+      comic_num_treasures(0) {
     for (auto& enemy : enemies) {
         enemy.state = ENEMY_STATE_DESPAWNED;
         enemy.spawn_timer_and_animation = 100;
         enemy.sprite_descriptor = nullptr;
         enemy.animation_data = nullptr;
+    }
+    fireball_sprite[0] = nullptr;
+    fireball_sprite[1] = nullptr;
+    for (auto& fb : fireballs) {
+        fb.x = FIREBALL_DEAD;
+        fb.y = FIREBALL_DEAD;
+    }
+    // Initialize item sprites to nullptr
+    for (int i = 0; i < 15; i++) {
+        item_sprites[i][0] = nullptr;
+        item_sprites[i][1] = nullptr;
+    }
+    // Initialize items_collected array to 0 (not collected)
+    for (int level = 0; level < 8; level++) {
+        for (int stage = 0; stage < 3; stage++) {
+            items_collected[level][stage] = 0;
+        }
     }
 }
 
@@ -64,6 +103,7 @@ void ActorSystem::reset_for_stage() {
  */
 void ActorSystem::setup_enemies_for_stage(
     const level_t* level,
+    int level_index,
     int stage_number,
     GraphicsSystem* graphics_system) {
     if (!level || stage_number < 0 || stage_number >= 3) {
@@ -72,6 +112,14 @@ void ActorSystem::setup_enemies_for_stage(
 
     const stage_t& stage = level->stages[stage_number];
     tileset_last_passable = level->tileset_last_passable;
+    current_level_index = static_cast<uint8_t>(level_index);
+    current_stage_index = static_cast<uint8_t>(stage_number);
+
+    // Setup item for this stage
+    current_item_type = stage.item_type;
+    // Convert tile coordinates to game units (×2 because tiles are 2 game units wide/tall)
+    current_item_x = stage.item_x * 2;
+    current_item_y = stage.item_y * 2;
 
     // Initialize each enemy slot from stage data
     for (int i = 0; i < MAX_NUM_ENEMIES; i++) {
@@ -139,6 +187,7 @@ void ActorSystem::setup_enemies_for_stage(
     }
 
     reset_for_stage();
+    reset_fireballs();
 }
 
 void ActorSystem::render_enemies(GraphicsSystem* graphics_system, int camera_x, int render_scale) const {
@@ -222,7 +271,8 @@ void ActorSystem::update(
     uint8_t comic_x, uint8_t comic_y,
     uint8_t comic_facing,
     const uint8_t* tiles,
-    int camera_x) {
+    int camera_x,
+    uint8_t fire_key) {
     // Store global state for use by behavior functions
     g_comic_x = comic_x;
     g_comic_y = comic_y;
@@ -275,6 +325,43 @@ void ActorSystem::update(
             check_enemy_player_collision(&enemy);
         }
     }
+
+    // ---- Fireball system ----
+    // Fire input: try to spawn a fireball when fire key pressed and meter available
+    if (fire_key && fireball_meter > 0 && comic_firepower > 0) {
+        try_to_fire();
+
+        // Decrement meter every 2 ticks when firing (on the tick where counter==2)
+        if (fireball_meter_counter == FIREBALL_METER_COUNTER_INIT) {
+            if (fireball_meter > 0) {
+                fireball_meter--;
+            }
+        }
+    } else if (!fire_key) {
+        // Recharge meter every 2 ticks when not firing (on counter wrap 1→0)
+        if (fireball_meter_counter == 1) {
+            if (fireball_meter < MAX_FIREBALL_METER) {
+                fireball_meter++;
+            }
+        }
+    }
+
+    // Advance meter counter: 2→1→2→1...
+    if (fireball_meter_counter > 1) {
+        fireball_meter_counter--;
+    } else {
+        fireball_meter_counter = FIREBALL_METER_COUNTER_INIT;
+    }
+
+    // Move fireballs and check enemy collisions
+    handle_fireballs();
+
+    // ---- Item system ----
+    // Toggle animation counter each tick
+    item_animation_counter = (item_animation_counter == 0) ? 1 : 0;
+
+    // Handle item collection and rendering
+    handle_item();
 }
 
 /**
@@ -1027,4 +1114,448 @@ void ActorSystem::enemy_behavior_shy(enemy_t* enemy) {
             }
         }
     }
+}
+
+// ============================================================================
+// FIREBALL SYSTEM
+// ============================================================================
+
+/**
+ * Reset all fireballs to inactive state (called on stage load)
+ */
+void ActorSystem::reset_fireballs() {
+    for (auto& fb : fireballs) {
+        fb.x = FIREBALL_DEAD;
+        fb.y = FIREBALL_DEAD;
+    }
+}
+
+/**
+ * Load fireball sprite frames from the graphics system.
+ * Looks for sprite-fireball_0.png and sprite-fireball_1.png.
+ * Returns true if both frames loaded successfully.
+ */
+bool ActorSystem::load_fireball_sprites(GraphicsSystem* graphics_system) {
+    if (!graphics_system) {
+        return false;
+    }
+
+    bool ok = true;
+    for (uint8_t i = 0; i < FIREBALL_NUM_FRAMES; i++) {
+        std::string dir = std::to_string(i);
+        if (!graphics_system->load_sprite("fireball", dir)) {
+            std::cerr << "Failed to load fireball sprite frame " << static_cast<int>(i) << std::endl;
+            ok = false;
+        } else {
+            fireball_sprite[i] = graphics_system->get_sprite("fireball", dir);
+        }
+    }
+    return ok;
+}
+
+/**
+ * Try to fire a fireball into an open slot (private, called from update()).
+ * Spawn position: (comic_x, comic_y + 1).
+ * Velocity: +FIREBALL_VELOCITY if facing right, -FIREBALL_VELOCITY if facing left.
+ * Initialises corkscrew_phase=2 so the next tick applies the first corkscrew step.
+ */
+void ActorSystem::try_to_fire() {
+    if (comic_firepower == 0) {
+        return;
+    }
+
+    // Find the first open slot within the unlocked fireball count
+    for (int i = 0; i < comic_firepower && i < static_cast<int>(fireballs.size()); i++) {
+        fireball_t& fb = fireballs[i];
+        if (fb.x == FIREBALL_DEAD && fb.y == FIREBALL_DEAD) {
+            // Spawn fireball at Comic's chest height
+            fb.y = static_cast<uint8_t>(g_comic_y + 1);
+            fb.x = g_comic_x;
+            fb.vel = (g_comic_facing == COMIC_FACING_RIGHT) ? FIREBALL_VELOCITY : -FIREBALL_VELOCITY;
+            fb.corkscrew_phase = 2;
+            fb.animation = 0;
+            fb.num_animation_frames = FIREBALL_NUM_FRAMES;
+            return; // Only one fireball per fire-input tick
+        }
+    }
+}
+
+/**
+ * Move all active fireballs and check collisions with enemies.
+ * Matches handle_fireballs() from jsandas/comic-c src/actors.c and R5sw1991.asm:5653.
+ *
+ * Movement loop (first comic_firepower slots):
+ *   - Apply horizontal velocity (±FIREBALL_VELOCITY)
+ *   - Deactivate if outside camera viewport
+ *   - Apply corkscrew Y oscillation when comic_has_corkscrew is set
+ *   - Advance animation frame
+ *
+ * Collision loop (all MAX_NUM_FIREBALLS slots):
+ *   - For each active fireball × each SPAWNED enemy:
+ *     - Vertical overlap: 0 ≤ (fb.y − enemy.y) ≤ 1
+ *     - Horizontal overlap: |fb.x − enemy.x| ≤ 1
+ *     - Hit: enemy → ENEMY_STATE_WHITE_SPARK, fireball → FIREBALL_DEAD
+ */
+void ActorSystem::handle_fireballs() {
+    if (comic_firepower == 0) {
+        return;
+    }
+
+    // --- Movement pass ---
+    for (int i = 0; i < comic_firepower && i < static_cast<int>(fireballs.size()); i++) {
+        fireball_t& fb = fireballs[i];
+
+        if (fb.x == FIREBALL_DEAD && fb.y == FIREBALL_DEAD) {
+            continue;
+        }
+
+        // Apply horizontal velocity
+        int new_x = static_cast<int>(fb.x) + fb.vel;
+
+        // Compute camera-relative x for bounds check
+        int rel_x = new_x - g_camera_x;
+        if (rel_x < 0 || rel_x > PLAYFIELD_WIDTH - 2) {
+            fb.x = FIREBALL_DEAD;
+            fb.y = FIREBALL_DEAD;
+            continue;
+        }
+        fb.x = static_cast<uint8_t>(new_x);
+
+        // Corkscrew vertical oscillation (when Comic has the Corkscrew item)
+        if (comic_has_corkscrew) {
+            // Phase 2: move down, transition to 1
+            // Phase 1: move up, transition back to 2
+            if (fb.corkscrew_phase == 2) {
+                fb.y++;
+                fb.corkscrew_phase = 1;
+            } else if (fb.corkscrew_phase == 1) {
+                fb.y--;
+                fb.corkscrew_phase = 2;
+            }
+        }
+
+        // Advance animation frame (wraps at num_animation_frames)
+        fb.animation++;
+        if (fb.animation >= fb.num_animation_frames) {
+            fb.animation = 0;
+        }
+    }
+
+    // --- Collision pass (checks all MAX_NUM_FIREBALLS slots vs all enemies) ---
+    for (int i = 0; i < static_cast<int>(fireballs.size()); i++) {
+        fireball_t& fb = fireballs[i];
+
+        if (fb.x == FIREBALL_DEAD && fb.y == FIREBALL_DEAD) {
+            continue;
+        }
+
+        for (int j = 0; j < MAX_NUM_ENEMIES; j++) {
+            enemy_t& enemy = enemies[j];
+
+            if (enemy.state != ENEMY_STATE_SPAWNED) {
+                continue;
+            }
+
+            // Vertical: 0 ≤ (fb.y − enemy.y) ≤ 1
+            int8_t y_diff = static_cast<int8_t>(static_cast<int>(fb.y) - static_cast<int>(enemy.y));
+            if (y_diff < 0 || y_diff > 1) {
+                continue;
+            }
+
+            // Horizontal: |fb.x − enemy.x| ≤ 1
+            int8_t x_diff = static_cast<int8_t>(static_cast<int>(fb.x) - static_cast<int>(enemy.x));
+            if (x_diff < -1 || x_diff > 1) {
+                continue;
+            }
+
+            // Collision!
+            enemy.state = ENEMY_STATE_WHITE_SPARK;
+            fb.x = FIREBALL_DEAD;
+            fb.y = FIREBALL_DEAD;
+            break; // Fireball consumed; check next fireball
+        }
+    }
+}
+
+/**
+ * Render all active fireballs.
+ * Fireball sprites are 16x8 px originals; rendered at 2× scale → 32x16 screen pixels.
+ */
+void ActorSystem::render_fireballs(GraphicsSystem* graphics_system, int camera_x, int render_scale) const {
+    if (!graphics_system || comic_firepower == 0) {
+        return;
+    }
+
+    // Scale factor: original sprites are 8 px per game unit; we use render_scale px per unit.
+    // Sprites are 16x8 = 2 game units wide × 1 game unit tall at original resolution.
+    const int scale = render_scale / 8; // 16/8 = 2
+    const int sprite_w = 16 * scale;
+    const int sprite_h = 8 * scale;
+
+    for (const auto& fb : fireballs) {
+        if (fb.x == FIREBALL_DEAD && fb.y == FIREBALL_DEAD) {
+            continue;
+        }
+
+        int rel_x = static_cast<int>(fb.x) - camera_x;
+        if (rel_x < 0 || rel_x >= PLAYFIELD_WIDTH) {
+            continue;
+        }
+
+        uint8_t frame_index = fb.animation % FIREBALL_NUM_FRAMES;
+        const Sprite* sprite = fireball_sprite[frame_index];
+        if (!sprite || !sprite->texture.texture) {
+            continue;
+        }
+
+        // Screen position: same mapping as enemies (game unit × render_scale + render_scale offset)
+        int screen_x = rel_x * render_scale + render_scale;
+        int screen_y = static_cast<int>(fb.y) * render_scale + render_scale;
+
+        graphics_system->render_sprite_centered_scaled(screen_x, screen_y, *sprite, sprite_w, sprite_h);
+    }
+}
+/* ============================================================================
+ * ITEM SYSTEM
+ * ============================================================================ */
+
+/**
+ * Get current jump power based on boots status
+ */
+int ActorSystem::get_jump_power() const {
+    return comic_has_boots ? JUMP_POWER_WITH_BOOTS : JUMP_POWER_DEFAULT;
+}
+
+/**
+ * Load item sprites from assets.
+ * Item sprites are 16×16 pixels, and each item has two frames (even/odd) for animation.
+ * 
+ * Expected file naming: sprite-<name>_<frame>.png
+ * Example: sprite-corkscrew_even.png, sprite-corkscrew_odd.png
+ */
+bool ActorSystem::load_item_sprites(GraphicsSystem* graphics_system) {
+    if (!graphics_system) {
+        std::cerr << "Error: GraphicsSystem is null in load_item_sprites" << std::endl;
+        return false;
+    }
+
+    // Item sprite names mapping (item_type → base filename)
+    const char* item_names[15] = {
+        "corkscrew",    // 0
+        "doorkey",      // 1
+        "boots",        // 2
+        "lantern",      // 3
+        "teleportwand", // 4
+        "gems",         // 5
+        "crown",        // 6
+        "gold",         // 7
+        "cola",         // 8
+        nullptr,         // 9 (unused)
+        nullptr,         // 10 (unused)
+        nullptr,         // 11 (unused)
+        nullptr,         // 12 (unused)
+        nullptr,         // 13 (unused)
+        "shield"        // 14
+    };
+
+    const char* frame_names[2] = {"even", "odd"};
+
+    bool all_loaded = true;
+
+    for (int item_type = 0; item_type < 15; item_type++) {
+        if (item_names[item_type] == nullptr) {
+            continue; // Skip unused slots
+        }
+
+        for (int frame = 0; frame < 2; frame++) {
+            std::string sprite_name = item_names[item_type];
+            std::string frame_name = frame_names[frame];
+
+            if (!graphics_system->load_sprite(sprite_name, frame_name)) {
+                std::cerr << "Warning: Failed to load item sprite: "
+                          << sprite_name << "_" << frame_name << std::endl;
+                all_loaded = false;
+                continue;
+            }
+
+            // Get loaded sprite
+            item_sprites[item_type][frame] = graphics_system->get_sprite(sprite_name, frame_name);
+            if (!item_sprites[item_type][frame]) {
+                std::cerr << "Warning: Failed to retrieve item sprite: "
+                          << sprite_name << "_" << frame_name << std::endl;
+                all_loaded = false;
+            }
+        }
+    }
+
+    return all_loaded;
+}
+
+/**
+ * Handle item for the current stage: collision detection and rendering.
+ * Called each tick from update().
+ */
+void ActorSystem::handle_item() {
+    // Check if stage has an item
+    if (current_item_type == ITEM_UNUSED) {
+        return;
+    }
+
+    // Check if already collected
+    if (current_level_index >= 8 || current_stage_index >= 3) {
+        return; // Out of bounds
+    }
+    if (items_collected[current_level_index][current_stage_index] != 0) {
+        return; // Already collected
+    }
+
+    // Check if item is visible in playfield (camera bounds check)
+    int rel_x = static_cast<int>(current_item_x) - g_camera_x;
+    if (rel_x < 0 || rel_x > PLAYFIELD_WIDTH) {
+        return; // Off-screen, don't check collision (but don't render either)
+    }
+
+    // Check collision with Comic
+    // Horizontal: abs(item.x - comic_x) <= 1
+    int16_t x_diff = static_cast<int16_t>(static_cast<int>(current_item_x) - static_cast<int>(g_comic_x));
+    if (x_diff >= -1 && x_diff <= 1) {
+        // Vertical: 0 <= (item.y - comic_y) < 4
+        int16_t y_diff = static_cast<int16_t>(static_cast<int>(current_item_y) - static_cast<int>(g_comic_y));
+        if (y_diff >= 0 && y_diff < 4) {
+            // Collision detected!
+            collect_item();
+        }
+    }
+}
+
+/**
+ * Collect the current item: mark as collected and apply effects.
+ */
+void ActorSystem::collect_item() {
+    // Mark as collected
+    items_collected[current_level_index][current_stage_index] = 1;
+
+    // TODO: Award points (2000 = 20 × 100)
+    // TODO: Play collection sound
+
+    // Apply item effect
+    apply_item_effect(current_item_type);
+}
+
+/**
+ * Apply the effect of collecting a specific item type.
+ */
+void ActorSystem::apply_item_effect(uint8_t item_type) {
+    switch (item_type) {
+        case ITEM_BLASTOLA_COLA:
+            if (comic_firepower < MAX_NUM_FIREBALLS) {
+                comic_firepower++;
+            }
+            break;
+
+        case ITEM_CORKSCREW:
+            comic_has_corkscrew = 1;
+            break;
+
+        case ITEM_BOOTS:
+            comic_has_boots = 1;
+            break;
+
+        case ITEM_LANTERN:
+            comic_has_lantern = 1;
+            break;
+
+        case ITEM_DOOR_KEY:
+            comic_has_door_key = 1;
+            // keep global state in sync so door system (which still reads the
+            // global variable) sees the change. some code paths reference the
+            // global directly rather than querying the ActorSystem.
+            ::comic_has_door_key = 1;
+            break;
+
+        case ITEM_TELEPORT_WAND:
+            comic_has_teleport_wand = 1;
+            break;
+
+        case ITEM_SHIELD:
+            // Shield refills HP (handled by main game loop)
+            // TODO: Implement HP refill logic
+            break;
+
+        case ITEM_GEMS:
+            if (!comic_has_gems) {
+                comic_has_gems = 1;
+                comic_num_treasures++;
+            }
+            break;
+
+        case ITEM_CROWN:
+            if (!comic_has_crown) {
+                comic_has_crown = 1;
+                comic_num_treasures++;
+            }
+            break;
+
+        case ITEM_GOLD:
+            if (!comic_has_gold) {
+                comic_has_gold = 1;
+                comic_num_treasures++;
+            }
+            break;
+
+        default:
+            // Unknown item type
+            break;
+    }
+}
+
+/**
+ * Render the current stage's item if not yet collected.
+ * Item sprites are 16×16 pixels (2 game units × 2 game units).
+ */
+void ActorSystem::render_item(GraphicsSystem* graphics_system, int camera_x, int render_scale) const {
+    if (!graphics_system) {
+        return;
+    }
+
+    // Check if stage has an item
+    if (current_item_type == ITEM_UNUSED) {
+        return;
+    }
+
+    // Check if already collected
+    if (current_level_index >= 8 || current_stage_index >= 3) {
+        return; // Out of bounds
+    }
+    if (items_collected[current_level_index][current_stage_index] != 0) {
+        return; // Already collected, don't render
+    }
+
+    // Check if item is visible in playfield
+    int rel_x = static_cast<int>(current_item_x) - camera_x;
+    if (rel_x < 0 || rel_x > PLAYFIELD_WIDTH) {
+        return; // Off-screen
+    }
+
+    // Get sprite based on animation counter
+    if (current_item_type >= 15) {
+        return; // Invalid item type
+    }
+
+    const Sprite* sprite = item_sprites[current_item_type][item_animation_counter];
+    if (!sprite || !sprite->texture.texture) {
+        return; // Sprite not loaded
+    }
+
+    // Item sprites are 16×16 pixels = 2×2 game units
+    // Scale to render_scale per game unit
+    const int scale = render_scale / 8; // 16/8 = 2
+    const int sprite_w = 16 * scale;
+    const int sprite_h = 16 * scale;
+
+    // Screen position: game unit × render_scale + render_scale offset
+    int screen_x = rel_x * render_scale + render_scale;
+    int screen_y = static_cast<int>(current_item_y) * render_scale + render_scale;
+
+    graphics_system->render_sprite_centered_scaled(screen_x, screen_y, *sprite, sprite_w, sprite_h);
 }

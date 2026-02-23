@@ -4,14 +4,16 @@ A modern recreation of the classic 1988 DOS game *The Adventures of Captain Comi
 
 ## Project Status
 
-**Current Phase:** Core Physics Implementation (Phase 2 - 85% complete)
+**Current Phase:** Actor System (Phase 5 - In Progress, through Phase 5.6 complete)
 
 ✅ Foundation complete (SDL2 setup, build system, basic game loop)  
-✅ Physics system nearly complete (gravity, jumping, tile collision, camera)  
-🔄 Final physics polish (stage transitions deferred to Phase 4)  
-⏸️ Remaining phases pending
-
-See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for complete roadmap and status.
+✅ Core physics complete (gravity, jumping, collision, stage transitions)  
+✅ Rendering system complete (tiles, sprites, animations, camera)  
+✅ Level system complete (all 8 levels, doors, stage transitions)  
+✅ Enemy system complete (all 5 AI behaviors, spawning, collision, animation)  
+✅ Fireball system complete (spawning, movement, corkscrew, enemy collision)  
+✅ Item system complete (Phase 5.6)  
+⏸️ Audio, UI/Menus, and remaining phases pending
 
 ## About
 
@@ -86,39 +88,68 @@ cmake --build .
 ## Current Features
 
 - ✅ SDL2 window and event loop
-- ✅ Keyboard input handling (arrow keys, space)
+- ✅ Keyboard input handling (arrow keys, space, Ctrl to fire)
 - ✅ Complete physics system:
   - ✅ Gravity and terminal velocity
   - ✅ Jumping with original constants (GRAVITY=5, ACCELERATION=7)
-  - ✅ Ceiling collision detection
-  - ✅ Floor/ground collision with tiles
-  - ✅ Wall collision detection
+  - ✅ Ceiling, floor, and wall collision detection
   - ✅ Mid-air momentum and drag
+  - ✅ Stage boundary transitions (left/right edge)
   - ✅ Camera following with viewport scrolling
-- ✅ Tile-based collision system
-- ✅ Test level with platforms and walls
-- ✅ Player rendering (yellow rectangle, 2x4 game units)
-- ✅ Tile rendering (gray blocks for solid tiles)
-- ✅ Modular architecture (separate physics module)
-- ✅ **Debug/Cheat System** (development tool):
-  - ✅ Noclip mode (walk through walls)
-  - ✅ Level/stage warping (teleport to any level)
-  - ✅ Position warping (teleport to coordinates)
-  - ✅ Debug overlay (display coordinates, velocity, active cheats)
-  - Toggled via `--debug` flag; all cheats disabled without it
+- ✅ Full rendering system:
+  - ✅ Tile rendering from converted PNG tilesets (all 8 levels)
+  - ✅ Player sprite with idle, run (3-frame), and jump animations
+  - ✅ Direction-aware sprite rendering (left/right facing)
+  - ✅ Enemy sprite rendering with GIF-based animation (loop and ping-pong)
+  - ✅ Fireball rendering (2-frame animated sprites)
+  - ✅ Hardware-accelerated (SDL2 renderer)
+- ✅ Level system:
+  - ✅ All 8 levels (LAKE, FOREST, SPACE, BASE, CAVE, SHED, CASTLE, COMP)
+  - ✅ 3 stages per level with complete tile, door, and enemy data
+  - ✅ Door system with key requirement and level/stage transitions
+  - ✅ Stage transitions at left/right boundaries
+- ✅ Enemy system (Actor System):
+  - ✅ All 5 AI behaviors: Bounce, Leap, Roll, Seek, Shy
+  - ✅ Enemy spawning, despawning, and respawn cycling
+  - ✅ Enemy-player collision (damage trigger)
+  - ✅ Death animations: white spark (killed by fireball), red spark (hit player)
+- ✅ Fireball system:
+  - ✅ Up to 5 simultaneous fireballs (based on Blastola Cola count)
+  - ✅ Horizontal movement (±2 units/tick) in facing direction
+  - ✅ Corkscrew motion when Corkscrew item is held
+  - ✅ Fireball-enemy collision detection and kill
+  - ✅ Fireball meter with 2-tick charge/discharge rate
+- ✅ Item system:
+  - ✅ Item placement and rendering (16×16 px, 2-frame animation)
+  - ✅ Collision detection and collection
+  - ✅ Blastola Cola: increase firepower (max 5)
+  - ✅ Corkscrew: fireball vertical oscillation
+  - ✅ Boots: increased jump power (4→5)
+  - ✅ Lantern: castle lighting flag
+  - ✅ Shield: HP refill (placeholder)
+  - ✅ Door Key: unlock doors
+  - ✅ Teleport Wand: special teleport ability
+  - ✅ Treasures (Gems, Crown, Gold): victory tracking
+- ✅ **Debug/Cheat System** (development tool, `--debug` flag required):
+  - ✅ Noclip mode (F1)
+  - ✅ Level/stage warp (F2)
+  - ✅ Debug overlay — coordinates, velocity, level/stage (F3)
+  - ✅ Position warp (F4)
+  - ✅ Door key toggle (F5)
+  - ✅ Item granting (F6) — grant any item for testing effects
 
 ## Roadmap
 
 See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for the complete 10-phase implementation plan:
 
 1. ✅ **Foundation** - SDL2 setup, build system
-2. 🔄 **Core Physics** - Movement, collision, camera
-3. ⏸️ **Rendering** - Tiles, sprites, animations
-4. ⏸️ **Level System** - 8 levels, stages, doors
-5. ⏸️ **Actors** - Enemies, fireballs, items
+2. ✅ **Core Physics** - Gravity, jumping, collision, stage transitions
+3. ✅ **Rendering** - Tiles, sprites, animations, hardware acceleration
+4. ✅ **Level System** - All 8 levels, doors, stage transitions
+5. ✅ **Actors** - Enemies ✅, Fireballs ✅, Items ✅
 6. ⏸️ **Audio** - Sound effects, music
-7. ⏸️ **UI/Menus** - HUD, title, high scores
-8. ⏸️ **Game Loop** - Complete flow, states
+7. ⏸️ **UI/Menus** - HUD, title screen, high scores
+8. ⏸️ **Game Loop** - Complete game flow, states
 9. ⏸️ **Polish** - Testing, optimization
 10. ⏸️ **Release** - Packaging, distribution
 ## Project Structure
@@ -137,12 +168,12 @@ comic-modernization/
 └── build/                      # Build output (generated)
 ```
 
-## Controls (Current)
+## Controls
 
 - **Arrow Keys** - Move left/right
 - **Space** - Jump
+- **Left/Right Ctrl** - Fire fireball
 - **Alt** - Open doors
-- **ESC** - (Not yet implemented)
 
 ### Debug Mode (with `--debug` flag)
 
@@ -151,6 +182,7 @@ comic-modernization/
 - **F3** - Toggle debug overlay (shows X/Y coordinates, velocity, level/stage)
 - **F4** - Position warp (teleport to specific coordinates)
 - **F5** - Toggle door key (grant/remove ability to open doors)
+- **F6** - Grant item (select any item to test effects: Blastola Cola, Boots, Corkscrew, etc.)
 
 ## Development
 
@@ -213,5 +245,5 @@ Assets: Original game assets © Michael Denio - consult original licensing
 
 ---
 
-**Last Updated:** 2026-02-15  
-**Status:** Active Development (Phase 4 of 10)
+**Last Updated:** 2026-02-22  
+**Status:** Active Development (Phase 5 of 10)
