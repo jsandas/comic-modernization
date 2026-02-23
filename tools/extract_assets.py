@@ -441,7 +441,28 @@ def read_exe_file(raw: bytes) -> ExeFile:
 
     # read relocations
     relocs = []
-    for i in range(num_relocs):
+    # Ensure relocation table lies within the raw buffer; truncate if malformed
+    if relocOffset > len(raw):
+        # relocation table starts beyond end of file; treat as no relocations
+        effective_num_relocs = 0
+        print(
+            f"Warning: relocation offset {relocOffset} beyond file size {len(raw)}; "
+            "skipping relocations",
+            file=sys.stderr,
+        )
+    else:
+        max_relocs = (len(raw) - relocOffset) // 4
+        if num_relocs > max_relocs:
+            effective_num_relocs = max_relocs
+            print(
+                f"Warning: relocation count {num_relocs} truncated to {effective_num_relocs} "
+                f"due to file size {len(raw)}",
+                file=sys.stderr,
+            )
+        else:
+            effective_num_relocs = num_relocs
+
+    for i in range(effective_num_relocs):
         offset, segment = struct.unpack_from("<HH", raw, relocOffset + 4 * i)
         relocs.append((offset, segment))
 
