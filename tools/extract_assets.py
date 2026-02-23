@@ -20,7 +20,7 @@ The output layout mirrors the existing `deriv/R5sw1991` tree:
     assets/
         graphics/       (sys000..sys005.png)
         sprites/        (sprite-*.png)
-        shp/            (*.gif)
+        shp/            ({base}.shp-{label}-{idx}.png)
         maps/           (base0.pt.png, ...)
         sounds/         (sound-*.wav)
         tiles/          (tt2 tiles as PNGs)
