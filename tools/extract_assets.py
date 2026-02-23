@@ -7,15 +7,17 @@ R5sw1991 executable plus the companion files in `orig/R5sw1991` and writes
 PNG/GIF/WAV outputs into a user-specified directory tree.
 
 Requirements:
-    pip install -r scripts/requirements.txt
+    pip install -r tools/requirements.txt
 
 Usage:
-    ./scripts/extract_assets.py --exe deriv/R5sw1991/unpacked.exe \
-        --orig orig/R5sw1991 --out extracted_R5
+    ./tools/extract_assets.py --exe original/COMIC.EXE \
+        --orig original --out assets
+
+    ./tools/extract_assets.py --orig original
 
 The output layout mirrors the existing `deriv/R5sw1991` tree:
 
-    extracted_R5/
+    assets/
         graphics/       (sys000..sys005.png)
         sprites/        (sprite-*.png)
         shp/            (*.gif)
