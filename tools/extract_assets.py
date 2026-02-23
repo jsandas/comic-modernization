@@ -806,6 +806,10 @@ def extract_maps(exe_data, orig_dir, out_dir):
             for i, tidx in enumerate(tiles):
                 x = i % w
                 y = i // w
+                # Skip tiles whose indices are out of range for this tileset.
+                # Malformed or corrupted PT files may contain invalid indices.
+                if not isinstance(tidx, int) or tidx < 0 or tidx >= len(tileset):
+                    continue
                 _, planes = tileset[tidx]
                 tileim = planes_to_image(planes, 16, 16).convert("RGBA")
                 im.paste(tileim, (x * 16, y * 16))
