@@ -938,6 +938,137 @@ static void test_actor_restraint_throttling() {
     delete[] tiles;
 }
 
+// ============================================================================
+// FIREBALL SYSTEM TESTS
+// ============================================================================
+
+static void test_fireball_meter_depletion_timing() {
+    ActorSystem actor_system;
+    actor_system.initialize();
+
+    std::vector<uint8_t> tiles(128 * 10, 0);
+    actor_system.comic_firepower = 1;
+    actor_system.fireball_meter = 3;
+
+    comic_x = 10;
+    comic_y = 10;
+    comic_facing = COMIC_FACING_RIGHT;
+    camera_x = 0;
+
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x, 1);
+    check(actor_system.fireball_meter == 2, "fireball_meter: should decrement on first firing tick");
+
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x, 1);
+    check(actor_system.fireball_meter == 2, "fireball_meter: should not decrement on second firing tick");
+
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x, 1);
+    check(actor_system.fireball_meter == 1, "fireball_meter: should decrement on third firing tick");
+}
+
+static void test_fireball_meter_recharge_timing() {
+    ActorSystem actor_system;
+    actor_system.initialize();
+
+    std::vector<uint8_t> tiles(128 * 10, 0);
+    comic_x = 10;
+    comic_y = 10;
+    comic_facing = COMIC_FACING_RIGHT;
+    camera_x = 0;
+
+    // Advance once so the counter reaches the recharge phase.
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x, 0);
+    actor_system.fireball_meter = 10;
+
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x, 0);
+    check(actor_system.fireball_meter == 11, "fireball_meter: should recharge every other tick when idle");
+}
+
+static void test_fireball_offscreen_deactivates() {
+    ActorSystem actor_system;
+    actor_system.initialize();
+
+    std::vector<uint8_t> tiles(128 * 10, 0);
+    actor_system.comic_firepower = 1;
+    comic_x = 10;
+    comic_y = 10;
+    comic_facing = COMIC_FACING_LEFT;
+    camera_x = 0;
+
+    auto& fireballs = const_cast<std::vector<fireball_t>&>(actor_system.get_fireballs());
+    fireballs[0].x = 1;
+    fireballs[0].y = 5;
+    fireballs[0].vel = -2;
+    fireballs[0].corkscrew_phase = 2;
+    fireballs[0].animation = 0;
+    fireballs[0].num_animation_frames = FIREBALL_NUM_FRAMES;
+
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x, 0);
+    check(fireballs[0].x == FIREBALL_DEAD && fireballs[0].y == FIREBALL_DEAD,
+          "fireball_offscreen: should deactivate when leaving camera bounds");
+}
+
+static void test_fireball_collision_sets_white_spark() {
+    ActorSystem actor_system;
+    actor_system.initialize();
+
+    std::vector<uint8_t> tiles(128 * 10, 0);
+    actor_system.comic_firepower = 1;
+    comic_x = 10;
+    comic_y = 0;
+    comic_facing = COMIC_FACING_RIGHT;
+    camera_x = 0;
+
+    auto& fireballs = const_cast<std::vector<fireball_t>&>(actor_system.get_fireballs());
+    fireballs[0].x = 10;
+    fireballs[0].y = 5;
+    fireballs[0].vel = 0;
+    fireballs[0].corkscrew_phase = 2;
+    fireballs[0].animation = 0;
+    fireballs[0].num_animation_frames = FIREBALL_NUM_FRAMES;
+
+    auto& enemies = const_cast<std::vector<enemy_t>&>(actor_system.get_enemies());
+    enemies[0].state = ENEMY_STATE_SPAWNED;
+    enemies[0].x = 10;
+    enemies[0].y = 5;
+    enemies[0].behavior = 0;
+    enemies[0].num_animation_frames = 0;
+
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x, 0);
+    check(enemies[0].state == ENEMY_STATE_WHITE_SPARK,
+          "fireball_collision: enemy should enter WHITE_SPARK on hit");
+    check(fireballs[0].x == FIREBALL_DEAD && fireballs[0].y == FIREBALL_DEAD,
+          "fireball_collision: fireball should deactivate on hit");
+}
+
+static void test_fireball_corkscrew_motion() {
+    ActorSystem actor_system;
+    actor_system.initialize();
+
+    std::vector<uint8_t> tiles(128 * 10, 0);
+    actor_system.comic_firepower = 1;
+    actor_system.comic_has_corkscrew = 1;
+    comic_x = 10;
+    comic_y = 10;
+    comic_facing = COMIC_FACING_RIGHT;
+    camera_x = 0;
+
+    auto& fireballs = const_cast<std::vector<fireball_t>&>(actor_system.get_fireballs());
+    fireballs[0].x = 10;
+    fireballs[0].y = 5;
+    fireballs[0].vel = 0;
+    fireballs[0].corkscrew_phase = 2;
+    fireballs[0].animation = 0;
+    fireballs[0].num_animation_frames = FIREBALL_NUM_FRAMES;
+
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x, 0);
+    check(fireballs[0].y == 6 && fireballs[0].corkscrew_phase == 1,
+          "fireball_corkscrew: should move down and flip to phase 1");
+
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x, 0);
+    check(fireballs[0].y == 5 && fireballs[0].corkscrew_phase == 2,
+          "fireball_corkscrew: should move up and flip to phase 2");
+}
+
 /* ============================================================================
  * ITEM SYSTEM TESTS
  * ============================================================================ */
@@ -1141,6 +1272,11 @@ static const std::vector<TestCase>& test_registry() {
         {"actor_animation_frames", test_actor_animation_frames},
         {"actor_behavior_bounce_movement", test_actor_behavior_bounce_movement},
         {"actor_restraint_throttling", test_actor_restraint_throttling},
+        {"fireball_meter_depletion_timing", test_fireball_meter_depletion_timing},
+        {"fireball_meter_recharge_timing", test_fireball_meter_recharge_timing},
+        {"fireball_offscreen_deactivates", test_fireball_offscreen_deactivates},
+        {"fireball_collision_sets_white_spark", test_fireball_collision_sets_white_spark},
+        {"fireball_corkscrew_motion", test_fireball_corkscrew_motion},
         {"item_collection_tracking", test_item_collection_tracking},
         {"item_blastola_cola_firepower", test_item_blastola_cola_firepower},
         {"item_boots_jump_power", test_item_boots_jump_power},
