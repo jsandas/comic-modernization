@@ -764,7 +764,7 @@ def extract_tiles(orig_dir, out_dir):
             basename = os.path.splitext(fname.lower())[0]
             for idx, (passable, planes) in enumerate(tiles):
                 im = planes_to_image(planes, 16, 16)
-                dest = os.path.join(out_dir, f"{basename}-{idx:02x}.png")
+                dest = os.path.join(out_dir, f"{basename}.tt2-{idx:02x}.png")
                 if os.path.exists(dest) and not FORCE:
                     continue
                 im.save(dest)
