@@ -843,7 +843,8 @@ def main():
             exe_path = os.path.join(orig_dir, candidates[0])
         print(f"auto-detected executable '{exe_path}'")
 
-    exe_data = open(exe_path, "rb").read()
+    with open(exe_path, "rb") as f:
+        exe_data = f.read()
 
     # automatically decompress if the executable is EXEPACK-compressed.  this
     # relieves the user from installing a separate `exepack` binary or the
