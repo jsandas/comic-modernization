@@ -515,16 +515,23 @@ def read_level_metadata(exe_data: bytes, orig_dir: str):
     buf = exe_data[start:]
     levels = []
     off = 0
+    def require(n):
+        if off + n > len(buf):
+            raise ValueError("level metadata truncated or malformed")
     for _ in range(8):
+        require(14)
         tt2 = buf[off : off + 14].rstrip(b" \x00").decode("ascii")
         off += 14
         stages = []
         for _ in range(3):
+            require(14)
             stages.append(buf[off : off + 14].rstrip(b" \x00").decode("ascii"))
             off += 14
+        require(4)
         off += 4  # door tiles
         shps = []
         for _ in range(4):
+            require(17)
             numdist = buf[off]
             horiz = buf[off + 1]
             anim = buf[off + 2]
@@ -536,7 +543,9 @@ def read_level_metadata(exe_data: bytes, orig_dir: str):
                 "filename": fname,
             })
             off += 17
+        require(25 * 3)
         off += 25 * 3
+        require(5)
         off += 5
         levels.append({"tt2": tt2, "stage": stages, "shps": shps})
     return levels
