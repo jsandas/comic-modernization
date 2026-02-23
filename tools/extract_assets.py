@@ -664,33 +664,33 @@ def _read_freq_table(exe_data, offset):
 
 
 def _save_sound(freq_table, filename):
-    w = wave.open(filename, "wb")
-    w.setnchannels(1)
-    w.setsampwidth(2)
-    w.setframerate(48000)
     BASE_FREQ = 1193182.0
     DIV_FREQ = BASE_FREQ / 65536.0
     FRAME_RATE = 48000
     c = 0
     p = 0.0
-    while True:
-        s = c / FRAME_RATE
-        i = int(s * DIV_FREQ)
-        if i >= len(freq_table):
-            break
-        if freq_table[i] <= 0x28:
-            x = 0
-        else:
-            # simple square wave
-            x = int((1 if p % 1.0 >= 0.5 else 0 - 0.5) * 32767)
-        w.writeframesraw(bytes([x & 0xff, (x >> 8) & 0xff]))
-        if freq_table[i] <= 0x28:
-            cur_freq = 0
-        else:
-            cur_freq = BASE_FREQ / freq_table[i]
-        p = (p + cur_freq / FRAME_RATE) % 1.0
-        c += 1
-    w.close()
+    # use context manager to ensure file is closed on exception
+    with wave.open(filename, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(48000)
+        while True:
+            s = c / FRAME_RATE
+            i = int(s * DIV_FREQ)
+            if i >= len(freq_table):
+                break
+            if freq_table[i] <= 0x28:
+                x = 0
+            else:
+                # simple square wave
+                x = int((1 if p % 1.0 >= 0.5 else 0 - 0.5) * 32767)
+            w.writeframesraw(bytes([x & 0xff, (x >> 8) & 0xff]))
+            if freq_table[i] <= 0x28:
+                cur_freq = 0
+            else:
+                cur_freq = BASE_FREQ / freq_table[i]
+            p = (p + cur_freq / FRAME_RATE) % 1.0
+            c += 1
 
 # -----------------------------------------------------------------------------
 # high-level operations
