@@ -1102,6 +1102,19 @@ static void test_item_collection_tracking() {
           "item_collection: should have boots after collection");
 }
 
+// New test to ensure door key state syncs globally
+static void test_actor_door_key_sync() {
+    ActorSystem actor_system;
+    actor_system.initialize();
+
+    // Reset global state
+    comic_has_door_key = 0;
+
+    actor_system.apply_item_effect(ITEM_DOOR_KEY);
+    check(actor_system.comic_has_door_key == 1, "actor system should have door key flag set");
+    check(comic_has_door_key == 1, "global door key variable should be synced by ActorSystem");
+}
+
 /**
  * Test Blastola Cola firepower increase
  */
@@ -1272,6 +1285,7 @@ static const std::vector<TestCase>& test_registry() {
         {"actor_animation_frames", test_actor_animation_frames},
         {"actor_behavior_bounce_movement", test_actor_behavior_bounce_movement},
         {"actor_restraint_throttling", test_actor_restraint_throttling},
+        {"actor_door_key_sync", test_actor_door_key_sync},
         {"fireball_meter_depletion_timing", test_fireball_meter_depletion_timing},
         {"fireball_meter_recharge_timing", test_fireball_meter_recharge_timing},
         {"fireball_offscreen_deactivates", test_fireball_offscreen_deactivates},

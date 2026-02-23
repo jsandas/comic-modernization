@@ -3,6 +3,9 @@
 #include "physics.h"
 #include <iostream>
 
+// Global door key flag defined in main.cpp (used by doors.cpp)
+extern uint8_t comic_has_door_key;
+
 /**
  * ActorSystem constructor
  */
@@ -1464,6 +1467,10 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
 
         case ITEM_DOOR_KEY:
             comic_has_door_key = 1;
+            // keep global state in sync so door system (which still reads the
+            // global variable) sees the change. some code paths reference the
+            // global directly rather than querying the ActorSystem.
+            ::comic_has_door_key = 1;
             break;
 
         case ITEM_TELEPORT_WAND:
