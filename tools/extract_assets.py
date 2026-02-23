@@ -434,7 +434,14 @@ def maybe_unpack_exe_bytes(raw: bytes) -> bytes:
 
 def read_exe_file(raw: bytes) -> ExeFile:
     # port of programs/exe/exe.go:Read
-    hdr = struct.unpack_from("<2sHHHHHHHHHHHHH", raw, 0)
+    header_fmt = "<2sHHHHHHHHHHHHH"
+    header_size = struct.calcsize(header_fmt)
+    if len(raw) < header_size:
+        raise ValueError(
+            f"EXE header too short: expected at least {header_size} bytes, "
+            f"got {len(raw)}"
+        )
+    hdr = struct.unpack_from(header_fmt, raw, 0)
     (magic, num_last, num_blocks, num_relocs, num_paras, minalloc,
      maxalloc, initSS, initSP, checksum, initIP, initCS,
      relocOffset, overlay) = hdr
