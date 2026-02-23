@@ -4,7 +4,7 @@ A modern recreation of the classic 1988 DOS game *The Adventures of Captain Comi
 
 ## Project Status
 
-**Current Phase:** Actor System (Phase 5 - In Progress, through Phase 5.5 complete)
+**Current Phase:** Actor System (Phase 5 - In Progress, through Phase 5.6 complete)
 
 ✅ Foundation complete (SDL2 setup, build system, basic game loop)  
 ✅ Core physics complete (gravity, jumping, collision, stage transitions)  
@@ -12,7 +12,7 @@ A modern recreation of the classic 1988 DOS game *The Adventures of Captain Comi
 ✅ Level system complete (all 8 levels, doors, stage transitions)  
 ✅ Enemy system complete (all 5 AI behaviors, spawning, collision, animation)  
 ✅ Fireball system complete (spawning, movement, corkscrew, enemy collision)  
-🔄 Item system in progress (Phase 5.6)  
+✅ Item system complete (Phase 5.6)  
 ⏸️ Audio, UI/Menus, and remaining phases pending
 
 ## About
