@@ -436,9 +436,26 @@ def maybe_unpack_exe_bytes(raw: bytes) -> bytes:
     buf = bytearray(prefix[:compressed_len])
     buf = _decompress_exepack(buf, uncompressed_len)
     data_offset = exe.header[4] * 16
-    return raw[:data_offset] + bytes(buf)
 
+    # Rebuild the EXE buffer and update the MZ header size fields
+    # (num_last, num_blocks) to match the new file size. This ensures that
+    # any later call to read_exe_file() on the returned buffer will see the
+    # correct data region size.
+    header_bytes = bytearray(raw[:data_offset])
+    new_size = len(header_bytes) + len(buf)
+    full_pages, remainder = divmod(new_size, 512)
+    if remainder == 0:
+        num_blocks = full_pages
+        num_last = 0
+    else:
+        num_blocks = full_pages + 1
+        num_last = remainder
+    # MZ header layout: "<2sHHHHHHHHHHHHH"
+    # Offsets: magic (0-1), num_last (2-3), num_blocks (4-5), ...
+    struct.pack_into("<H", header_bytes, 2, num_last)
+    struct.pack_into("<H", header_bytes, 4, num_blocks)
 
+    return bytes(header_bytes) + bytes(buf)
 def read_exe_file(raw: bytes) -> ExeFile:
     # port of programs/exe/exe.go:Read
     header_fmt = "<2sHHHHHHHHHHHHH"
