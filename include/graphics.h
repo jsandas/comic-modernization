@@ -125,7 +125,14 @@ private:
         int expected_frames,
         const std::string& label
     );
+
+public: // made public for testing convenience
+    // Determine where an asset file lives on disk by prefixing with the
+    // appropriate subdirectory.  This is used internally and also verified by
+    // unit tests to prevent regressions when reorganizing the asset tree.
     std::string get_asset_path(const std::string& filename);
+
+private:
 };
 
 // Global graphics system
