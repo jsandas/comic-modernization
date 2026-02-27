@@ -407,7 +407,14 @@ def maybe_unpack_exe_bytes(raw: bytes) -> bytes:
     suffix = data[cs * 16 :]
     exepack_header = suffix[:ip]
     decompression_stub = suffix[ip:]
-    header = _parse_exepack_header(exepack_header)
+    # the EXEPACK header parser throws ExepackError when the signature is
+    # missing or the header length is wrong.  that simply means the executable
+    # isn't packed; treat it as a no-op rather than bubbling the exception up
+    # and causing a misleading warning later.
+    try:
+        header = _parse_exepack_header(exepack_header)
+    except ExepackError:
+        return raw
     if header["exepack_len"] < len(exepack_header):
         raise ExepackError("TooShort")
     decompression_stub = decompression_stub[: header["exepack_len"] - len(exepack_header)]
