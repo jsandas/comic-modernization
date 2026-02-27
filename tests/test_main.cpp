@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include <cstring>
+#include <fstream>
+#include <filesystem>
 #include "../include/physics.h"
 #include "../include/graphics.h"
 #include "../include/level.h"
@@ -133,6 +135,56 @@ static void test_enemy_animation_sequence() {
 
     std::vector<uint8_t> empty_sequence = build_enemy_animation_sequence(0, ENEMY_ANIMATION_LOOP);
     check(empty_sequence.empty(), "enemy sequence should be empty for 0 frames");
+}
+
+static void test_asset_path_resolution() {
+    namespace fs = std::filesystem;
+    // create a temporary directory tree mimicking the asset layout
+    fs::path base = fs::temp_directory_path() / "comic_assets_test";
+    fs::remove_all(base);
+    fs::create_directories(base / "assets" / "sprites");
+    fs::create_directories(base / "assets" / "sounds");
+    fs::create_directories(base / "assets" / "maps");
+    fs::create_directories(base / "assets" / "tiles");
+    fs::create_directories(base / "assets" / "shp");
+    fs::create_directories(base / "assets" / "graphics");
+
+    // touch one file of each type
+    std::ofstream((base / "assets" / "sprites" / "sprite-test.png").string()).close();
+    std::ofstream((base / "assets" / "sounds" / "sound-test.wav").string()).close();
+    std::ofstream((base / "assets" / "maps" / "foo.pt.png").string()).close();
+    std::ofstream((base / "assets" / "tiles" / "foo.tt2-00.png").string()).close();
+    std::ofstream((base / "assets" / "shp" / "foo.shp").string()).close();
+    std::ofstream((base / "assets" / "graphics" / "sys000.ega").string()).close();
+
+    // remember cwd so we can restore later
+    fs::path orig_cwd = fs::current_path();
+    fs::current_path(base);
+
+    GraphicsSystem g(nullptr);
+    std::string p;
+    p = g.get_asset_path("sprite-test.png");
+    check(p.find("assets/sprites/sprite-test.png") != std::string::npos,
+          "get_asset_path should find sprite in sprites subdir");
+    p = g.get_asset_path("sound-test.wav");
+    check(p.find("assets/sounds/sound-test.wav") != std::string::npos,
+          "get_asset_path should find sound in sounds subdir");
+    p = g.get_asset_path("foo.pt.png");
+    check(p.find("assets/maps/foo.pt.png") != std::string::npos,
+          "get_asset_path should find map in maps subdir");
+    p = g.get_asset_path("foo.tt2-00.png");
+    check(p.find("assets/tiles/foo.tt2-00.png") != std::string::npos,
+          "get_asset_path should find tileset in tiles subdir");
+    p = g.get_asset_path("foo.shp");
+    check(p.find("assets/shp/foo.shp") != std::string::npos,
+          "get_asset_path should find shp in shp subdir");
+    p = g.get_asset_path("sys000.ega");
+    check(p.find("assets/graphics/sys000.ega") != std::string::npos,
+          "get_asset_path should find raw graphics in graphics subdir");
+
+    // cleanup
+    fs::current_path(orig_cwd);
+    fs::remove_all(base);
 }
 
 static void reset_physics_state() {

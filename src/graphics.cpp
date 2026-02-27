@@ -87,25 +87,63 @@ bool GraphicsSystem::initialize() {
 }
 
 std::string GraphicsSystem::get_asset_path(const std::string& filename) {
-    // Try multiple possible locations for assets:
-    // 1. ./assets/ (from current working directory)
-    // 2. ../assets/ (from build directory)
-    // 3. ../../assets/ (from nested build directory)
+    // Depending on the asset type, files are now organized into subdirectories
+    // (graphics, maps, shp, sounds, sprites, tiles).  We attempt to guess the
+    // appropriate folder based on naming conventions and file extensions.
+    std::vector<std::string> prefixes;
 
-    std::string paths[] = {
-        "assets/" + filename,
-        "../assets/" + filename,
-        "../../assets/" + filename
-    };
+    // sprite assets
+    if (filename.rfind("sprite-", 0) == 0) {
+        prefixes.push_back("assets/sprites/");
+        prefixes.push_back("../assets/sprites/");
+        prefixes.push_back("../../assets/sprites/");
+    }
+    // sound effects
+    else if (filename.rfind("sound-", 0) == 0) {
+        prefixes.push_back("assets/sounds/");
+        prefixes.push_back("../assets/sounds/");
+        prefixes.push_back("../../assets/sounds/");
+    }
+    // map files (.pt.png)
+    else if (filename.find(".pt.png") != std::string::npos) {
+        prefixes.push_back("assets/maps/");
+        prefixes.push_back("../assets/maps/");
+        prefixes.push_back("../../assets/maps/");
+    }
+    // tilesets (.tt2-XX.png)
+    else if (filename.find(".tt2-") != std::string::npos) {
+        prefixes.push_back("assets/tiles/");
+        prefixes.push_back("../assets/tiles/");
+        prefixes.push_back("../../assets/tiles/");
+    }
+    // shp-based enemy frames
+    else if (filename.find(".shp") != std::string::npos) {
+        prefixes.push_back("assets/shp/");
+        prefixes.push_back("../assets/shp/");
+        prefixes.push_back("../../assets/shp/");
+    }
+    // raw graphics (sys000.ega etc)
+    else if (filename.rfind("sys", 0) == 0) {
+        prefixes.push_back("assets/graphics/");
+        prefixes.push_back("../assets/graphics/");
+        prefixes.push_back("../../assets/graphics/");
+    }
 
-    for (const auto& path : paths) {
+    // always try the generic assets/ location as a fallback
+    prefixes.push_back("assets/");
+    prefixes.push_back("../assets/");
+    prefixes.push_back("../../assets/");
+
+    for (const auto& prefix : prefixes) {
+        std::string path = prefix + filename;
         std::ifstream f(path);
         if (f.good()) {
             return path;
         }
     }
 
-    return paths[0];
+    // last resort return base location (may be wrong)
+    return std::string("assets/") + filename;
 }
 
 TextureInfo GraphicsSystem::load_png(const std::string& filepath) {
@@ -191,8 +229,12 @@ std::vector<TextureInfo> GraphicsSystem::load_animation_frames(
         return frames;
     }
 
-    // Try multiple asset directory prefixes
-    static const std::string prefixes[] = {"assets/", "../assets/", "../../assets/"};
+    // Try multiple asset directory prefixes.  enemy frames live under assets/shp, so
+    // include that directory first.  We keep the generic locations as fallback.
+    static const std::string prefixes[] = {
+        "assets/shp/", "../assets/shp/", "../../assets/shp/",
+        "assets/", "../assets/", "../../assets/"
+    };
 
     auto cleanup_frames = [](std::vector<TextureInfo>& f) {
         for (auto& info : f) {
