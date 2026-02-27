@@ -12,10 +12,14 @@ class ExtractAssetsTest(unittest.TestCase):
     def setUp(self):
         # paths relative to repo root
         self.repo = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-        self.exe = os.path.join(self.repo, "deriv/R5sw1991/unpacked.exe")
-        self.orig = os.path.join(self.repo, "orig/R5sw1991")
-        self.script = os.path.join(self.repo, "scripts/extract_assets.py")
+        # extraction script lives in tools/
+        self.script = os.path.join(self.repo, "tools", "extract_assets.py")
+        # original game files must be placed in the `original/` directory
+        # (see README.md for instructions); tests will be skipped if absent.
+        self.orig = os.path.join(self.repo, "original")
         self.outdir = tempfile.mkdtemp()
+        if not os.path.isdir(self.orig):
+            self.skipTest("original game files not available; download as documented in README.md")
 
         # import helper routines from the script for internal testing
         import importlib.util
