@@ -17,9 +17,9 @@ class ExtractAssetsTest(unittest.TestCase):
         # original game files must be placed in the `original/` directory
         # (see README.md for instructions); tests will be skipped if absent.
         self.orig = os.path.join(self.repo, "original")
-        self.outdir = tempfile.mkdtemp()
         if not os.path.isdir(self.orig):
             self.skipTest("original game files not available; download as documented in README.md")
+        self.outdir = tempfile.mkdtemp()
 
         # import helper routines from the script for internal testing
         import importlib.util
