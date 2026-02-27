@@ -705,8 +705,8 @@ def _save_sound(freq_table, filename):
             if freq_table[i] <= 0x28:
                 x = 0
             else:
-                # simple square wave
-                x = int((1 if p % 1.0 >= 0.5 else 0 - 0.5) * 32767)
+                # simple square wave with symmetric amplitude
+                x = 32767 if p % 1.0 >= 0.5 else -32767
             w.writeframesraw(bytes([x & 0xff, (x >> 8) & 0xff]))
             if freq_table[i] <= 0x28:
                 cur_freq = 0
