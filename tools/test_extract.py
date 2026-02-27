@@ -43,7 +43,7 @@ class ExtractAssetsTest(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.outdir, "maps", "base0.pt.png")))
         # expect at least one frame extracted for the ball sprite
         self.assertTrue(os.path.exists(os.path.join(self.outdir, "shp", "ball.shp-left-0.png")))
-        self.assertTrue(os.path.exists(os.path.join(self.outdir, "tiles", "base-00.png")))
+        self.assertTrue(os.path.exists(os.path.join(self.outdir, "tiles", "base.tt2-00.png")))
 
         # also exercise the decompressor directly on a tiny synthetic payload
         # single fill command for 16 bytes
