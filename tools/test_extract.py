@@ -198,9 +198,14 @@ class ExtractAssetsTest(unittest.TestCase):
             "comic_standing_right", "comic_jumping_right",
             "comic_death_0", "teleport_0", "materialize_0",
         ]
+        found = set()
         for entry in self.extract_mod.SPRITE_ENTRIES:
-            if entry["name"] in names:
-                self.assertTrue(entry["mask"], f"{entry['name']} should have mask")
+            name = entry["name"]
+            if name in names:
+                self.assertTrue(entry["mask"], f"{name} should have mask")
+                found.add(name)
+        missing = set(names) - found
+        self.assertFalse(missing, f"Expected sprite entries missing: {sorted(missing)}")
 
 if __name__ == "__main__":
     unittest.main()
