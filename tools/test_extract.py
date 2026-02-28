@@ -17,12 +17,13 @@ class ExtractAssetsTest(unittest.TestCase):
         # (see README.md for instructions); some tests require those files.
         self.orig = os.path.join(self.repo, "original")
         self.orig_exists = os.path.isdir(self.orig)
-        if not self.orig_exists:
+        if not self.orig_exists and not getattr(self.__class__, "_orig_warning_emitted", False):
             # don't abort outright; only the tests that actually need the
             # executable will check this flag and skip themselves.  this lets
             # us still run pure-Python unit tests in CI without shipping the
             # game data.
-            print("warning: original game files not available; some tests will be skipped")
+            print("warning: original game files not available; some tests will be skipped", file=sys.stderr)
+            self.__class__._orig_warning_emitted = True
         self.outdir = tempfile.mkdtemp()
 
         # import helper routines from the script for internal testing
