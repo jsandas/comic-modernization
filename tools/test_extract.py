@@ -159,7 +159,7 @@ class ExtractAssetsTest(unittest.TestCase):
             0, 1, 0, 1, 0,  # row1
             0, 0, 1, 0, 1,  # row2
         ]
-        assert len(bits) == w * h
+        self.assertEqual(len(bits), w * h)
         # pack into bytes MSB-first
         packed = bytearray()
         cur = 0
