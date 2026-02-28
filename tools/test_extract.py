@@ -12,13 +12,18 @@ class ExtractAssetsTest(unittest.TestCase):
     def setUp(self):
         # paths relative to repo root
         self.repo = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-        # extraction script lives in tools/
         self.script = os.path.join(self.repo, "tools", "extract_assets.py")
         # original game files must be placed in the `original/` directory
-        # (see README.md for instructions); tests will be skipped if absent.
+        # (see README.md for instructions); some tests require those files.
         self.orig = os.path.join(self.repo, "original")
-        if not os.path.isdir(self.orig):
-            self.skipTest("original game files not available; download as documented in README.md")
+        self.orig_exists = os.path.isdir(self.orig)
+        if not self.orig_exists and not getattr(self.__class__, "_orig_warning_emitted", False):
+            # don't abort outright; only the tests that actually need the
+            # executable will check this flag and skip themselves.  this lets
+            # us still run pure-Python unit tests in CI without shipping the
+            # game data.
+            print("warning: original game files not available; some tests will be skipped", file=sys.stderr)
+            self.__class__._orig_warning_emitted = True
         self.outdir = tempfile.mkdtemp()
 
         # import helper routines from the script for internal testing
@@ -31,6 +36,8 @@ class ExtractAssetsTest(unittest.TestCase):
         shutil.rmtree(self.outdir)
 
     def test_extract_r5(self):
+        if not self.orig_exists:
+            self.skipTest("needs original game files")
         # run the extraction script (will auto-detect COMIC.EXE in orig)
         subprocess.check_call([sys.executable, self.script,
                                "--orig", self.orig,
@@ -52,6 +59,8 @@ class ExtractAssetsTest(unittest.TestCase):
         self.assertEqual(decompressed, b"A" * 16)
 
     def test_exepack_helpers(self):
+        if not self.orig_exists:
+            self.skipTest("needs original game files")
         # uncompressed data should return itself
         raw = b"garbage"
         self.assertEqual(self.extract_mod.maybe_unpack_exe_bytes(raw), raw)
@@ -118,6 +127,85 @@ class ExtractAssetsTest(unittest.TestCase):
         # paragraph)
         exe_file = self.extract_mod.read_exe_file(new_raw)
         self.assertEqual(exe_file.data, b"A" * 16)
+
+    def test_mask_to_alpha(self):
+        # _mask_to_alpha should mirror the Go Mask.At logic: bit 1 ->
+        # transparent, bit 0 -> opaque; bits are packed MSB first, left-to-right
+        # top-to-bottom.
+        w, h = 4, 2
+        # construct a tiny mask
+        # row0: 1 0 1 0  -> bits 1010
+        # row1: 0 1 0 1  -> bits 0101
+        # packed into a single byte 0b10100101 = 0xa5
+        maskdata = bytes([0xa5])
+        alpha = self.extract_mod._mask_to_alpha(maskdata, w, h)
+        expected = [
+            [0, 255, 0, 255],
+            [255, 0, 255, 0],
+        ]
+        for y in range(h):
+            for x in range(w):
+                self.assertEqual(alpha.getpixel((x, y)), expected[y][x])
+
+    def test_mask_to_alpha_nonstandard(self):
+        # exercise a non-16×16 mask and truncated data padding.  we build a
+        # specific bit pattern then deliberately cut off the trailing byte, so
+        # the helper has to pad zeros and still produce the correct alpha
+        # values for the first bits.
+        w, h = 5, 3
+        # define bits row-major (1=transparent, 0=opaque)
+        bits = [
+            1, 0, 1, 0, 0,  # row0
+            0, 1, 0, 1, 0,  # row1
+            0, 0, 1, 0, 1,  # row2
+        ]
+        self.assertEqual(len(bits), w * h)
+        # pack into bytes MSB-first
+        packed = bytearray()
+        cur = 0
+        for i, b in enumerate(bits):
+            cur = (cur << 1) | (b & 1)
+            if (i % 8) == 7:
+                packed.append(cur)
+                cur = 0
+        # leftover bits
+        if len(bits) % 8:
+            cur <<= (8 - (len(bits) % 8))
+            packed.append(cur)
+        # truncate to simulate missing data
+        maskdata = bytes(packed[:1])
+        alpha = self.extract_mod._mask_to_alpha(maskdata, w, h)
+        # spot-check some coordinates against the original bit list
+        # choose some coordinates in the first byte, plus a couple that
+        # fall into the (missing) second byte to verify padding behaviour.
+        coords = [ (0,0), (1,0), (4,0), (2,1), (0,2), (4,2) ]
+        for x, y in coords:
+            idx = y * w + x
+            if idx < 8:
+                # bit provided in the first (and only) byte
+                expected = 0 if bits[idx] else 255
+            else:
+                # bits beyond the first byte should be treated as zero due to
+                # padding of a missing second byte
+                expected = 255
+            self.assertEqual(alpha.getpixel((x, y)), expected,
+                             f"pixel {(x,y)}")
+
+    def test_sprite_entry_masks(self):
+        # make sure that animation sprites are marked as having masks; this is
+        # what was causing the "solid mask" issue described in the bug report.
+        names = [
+            "comic_standing_right", "comic_jumping_right",
+            "comic_death_0", "teleport_0", "materialize_0",
+        ]
+        found = set()
+        for entry in self.extract_mod.SPRITE_ENTRIES:
+            name = entry["name"]
+            if name in names:
+                self.assertTrue(entry["mask"], f"{name} should have mask")
+                found.add(name)
+        missing = set(names) - found
+        self.assertFalse(missing, f"Expected sprite entries missing: {sorted(missing)}")
 
 if __name__ == "__main__":
     unittest.main()
