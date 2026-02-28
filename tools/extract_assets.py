@@ -105,11 +105,17 @@ for i, nm in enumerate([
     # colour and look like a solid rectangle.
     _add_sprite(nm, 0x0000 + 320 * i, (16, 32), True)
 
-# pause / game over (mask bytes are present but all zero, so this is mostly
-# harmless; setting the flag keeps the behaviour consistent when the data
-# comes from other versions of the game).
-_add_sprite("pause", 0x4504, (128, 48), True)
-_add_sprite("game_over", 0x5104, (128, 48), True)
+# pause / game over
+# In the R5sw1991 executable these two graphics are stored back-to-back with
+# no intervening mask data.  the nominal mask area would start exactly where
+# the next sprite's plane data begins, so enabling ``mask=True`` causes the
+# extractor to treat the following graphic as a mask.  the result is spurious
+# transparency.  (earlier we observed nonzero bytes in that region because they
+# belong to the *next* image.)
+# Other versions of the game may include explicit masks, which is why the Go
+# helper had ``mask=True``; here we override that assumption.
+_add_sprite("pause", 0x4504, (128, 48), False)
+_add_sprite("game_over", 0x5104, (128, 48), False)
 
 # animation sequences with simple loops
 
