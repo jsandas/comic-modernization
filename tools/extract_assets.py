@@ -100,17 +100,25 @@ for i, nm in enumerate([
     "comic_running_1_left", "comic_running_2_left",
     "comic_running_3_left", "comic_jumping_left",
 ]):
-    _add_sprite(nm, 0x0000 + 320 * i, (16, 32), False)
+    # these character animations all include a 32‑byte mask after the four
+    # EGA planes; without it the extracted PNGs are filled with the background
+    # colour and look like a solid rectangle.
+    _add_sprite(nm, 0x0000 + 320 * i, (16, 32), True)
 
-# pause / game over
-_add_sprite("pause", 0x4504, (128, 48), False)
-_add_sprite("game_over", 0x5104, (128, 48), False)
+# pause / game over (mask bytes are present but all zero, so this is mostly
+# harmless; setting the flag keeps the behaviour consistent when the data
+# comes from other versions of the game).
+_add_sprite("pause", 0x4504, (128, 48), True)
+_add_sprite("game_over", 0x5104, (128, 48), True)
 
 # animation sequences with simple loops
 
-def _range(name, start, count, step=320, size=(16, 32)):
+def _range(name, start, count, step=320, size=(16, 32), mask=True):
+    # previously this helper defaulted to False; almost every range used in
+    # the R5 data actually contains a mask.  change the default so callers do
+    # not have to think about it and accidental omissions are harder to make.
     for i in range(count):
-        _add_sprite(f"{name}_{i}", start + i * step, size, False)
+        _add_sprite(f"{name}_{i}", start + i * step, size, mask)
 
 _range("comic_death", 0x10e0, 8)
 _range("teleport", 0x1ae0, 3)
@@ -637,6 +645,33 @@ def _load_shp_frames(shp_path: str, levels_meta):
     return left_frames, right_frames, extra
 
 
+def _mask_to_alpha(maskdata: bytes, w: int, h: int) -> Image.Image:
+    """Convert a mask buffer to a grayscale alpha image.
+
+    The mask format is the same one used by the Go program
+    `unpack-game-graphic` – there is one bit per pixel, packed left‑to‑right,
+    top‑to‑bottom.  A bit value of **1** means the corresponding pixel should be
+    **transparent**.  The original implementation in this script inverted the
+    value in the same way, but it only ever worked for 16×16 frames and made no
+    attempt to round the mask size.  The code below mirrors the Go logic exactly
+    and calculates the proper byte count so that non‑standard widths/heights
+    (e.g. 128×48) are handled correctly.
+    """
+    mask_size = (w * h + 7) // 8
+    if len(maskdata) < mask_size:
+        # protect against truncated data; fill remainder opaque
+        maskdata = maskdata.ljust(mask_size, b"\x00")
+    alpha = Image.new("L", (w, h))
+    for y in range(h):
+        for x in range(w):
+            q = (y * w + x) // 8
+            r = (y * w + x) % 8
+            bit = (maskdata[q] >> (7 - r)) & 1
+            # bit==1 => transparent (alpha=0); bit==0 => opaque (alpha=255)
+            alpha.putpixel((x, y), 0 if bit else 255)
+    return alpha
+
+
 def _frames_to_png(frames, out_dir, base, label):
     """Save each frame as a separate PNG file.
 
@@ -647,17 +682,15 @@ def _frames_to_png(frames, out_dir, base, label):
         return
     os.makedirs(out_dir, exist_ok=True)
     for idx, frame in enumerate(frames):
+        # SHP frames are 16×16; the first 128 bytes are the four EGA planes and
+        # the following bytes (usually 32) are the mask.  If additional trailing
+        # data is ever present we ignore it.
         planes = frame[:128]
-        mask = frame[128:]
+        maskdata = frame[128:]
         im = planes_to_image(planes, 16, 16).convert("RGBA")
-        alpha = Image.new("L", (16, 16))
-        for y in range(16):
-            for x in range(16):
-                q = (y * 16 + x) // 8
-                r = (y * 16 + x) % 8
-                a = (mask[q] >> (7 - r)) & 1
-                alpha.putpixel((x, y), 0 if a else 255)
-        im.putalpha(alpha)
+        if maskdata:
+            alpha = _mask_to_alpha(maskdata, 16, 16)
+            im.putalpha(alpha)
         filename = os.path.join(out_dir, f"{base}.shp-{label}-{idx}.png")
         if os.path.exists(filename) and not FORCE:
             continue
@@ -765,21 +798,20 @@ def extract_sprites(exe_data, out_dir):
         w = entry["width"]
         h = entry["height"]
         use_mask = entry["mask"]
-        length = w * h // 2 + (w * h // 8 if use_mask else 0)
+        # mask size must round *up* to the next whole byte; Go code does
+        # integer division which truncates, but the stored data is always
+        # padded, so compute the same value for consistency.
+        planes_len = w * h // 2
+        mask_size = (w * h + 7) // 8 if use_mask else 0
+        length = planes_len + mask_size
         chunk = exe_data[offset : offset + length]
-        if len(chunk) < w * h // 2:
+        if len(chunk) < planes_len:
             continue
-        planes = chunk[: w * h // 2]
-        maskdata = chunk[w * h // 2 :] if use_mask else None
+        planes = chunk[:planes_len]
+        maskdata = chunk[planes_len : planes_len + mask_size] if use_mask else None
         im = planes_to_image(planes, w, h).convert("RGBA")
         if use_mask and maskdata:
-            alpha = Image.new("L", (w, h))
-            for y in range(h):
-                for x in range(w):
-                    q = (y * w + x) // 8
-                    r = (y * w + x) % 8
-                    a = (maskdata[q] >> (7 - r)) & 1
-                    alpha.putpixel((x, y), 0 if a else 255)
+            alpha = _mask_to_alpha(maskdata, w, h)
             im.putalpha(alpha)
         dest = os.path.join(out_dir, f"sprite-{entry['name']}.png")
         if os.path.exists(dest) and not FORCE:
