@@ -489,12 +489,22 @@ A centralized system for managing debug cheats and development tools. Activated 
 ---
 
 ### Phase 6: Audio System
-**Status:** Not Started
+**Status:** In Progress
+**Current Stage:** Phase 6.1 - Audio Foundation
 **Completion Date:** TBD
 **Goal:** Implement sound effects and music
 
 **Tasks:**
-- [ ] Set up SDL_mixer for audio
+- [x] Set up SDL_mixer for audio
+- [x] Implement foundational `AudioSystem` module (`include/audio.h`, `src/audio.cpp`)
+- [x] Add synthesized PC-speaker-style square-wave SFX generation (SDL_mixer `Mix_Chunk`)
+- [x] Implement single-channel SFX priority system (higher priority interrupts lower)
+- [x] Integrate core gameplay SFX triggers
+  - [x] Jump
+  - [x] Fire
+  - [x] Item collect
+  - [x] Door open
+  - [x] Stage edge transition
 - [ ] Port PC speaker sound effects from sound.c
   - [ ] Convert frequency/duration to SDL format
   - [ ] 13 game sounds (jump, fire, collect, etc.)

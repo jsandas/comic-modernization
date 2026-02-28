@@ -1,5 +1,6 @@
 #include "../include/doors.h"
 #include "../include/physics.h"
+#include "../include/audio.h"
 #include <cstdint>
 
 /**
@@ -124,6 +125,8 @@ void activate_door(const door_t *door) {
     
     /* Save the source level and stage so the destination can find the
      * reciprocal door and position Comic at the matching door */
+    play_game_sound(GameSound::DOOR_OPEN);
+
     source_door_level_number = current_level_number;
     source_door_stage_number = current_stage_number;
     

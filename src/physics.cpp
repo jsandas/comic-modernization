@@ -1,5 +1,6 @@
 #include "../include/physics.h"
 #include "../include/level_loader.h"
+#include "../include/audio.h"
 #include <algorithm>
 #include <cstring>
 #include <iostream>
@@ -125,6 +126,7 @@ void process_jump_input() {
         key_state_jump && !previous_key_state_jump &&
         comic_jump_counter == comic_jump_power) {
         comic_is_falling_or_jumping = 1;
+        play_game_sound(GameSound::JUMP);
     }
 
     previous_key_state_jump = key_state_jump;
@@ -289,7 +291,7 @@ void move_left() {
         }
         
         // Stage transition to the left
-        // TODO: play_sound(SOUND_STAGE_EDGE_TRANSITION, 4) when audio is implemented
+        play_game_sound(GameSound::STAGE_TRANSITION);
         
         current_stage_number = stage->exit_l;
         comic_y_vel = 0;
@@ -355,7 +357,7 @@ void move_right() {
         }
         
         // Stage transition to the right
-        // TODO: play_sound(SOUND_STAGE_EDGE_TRANSITION, 4) when audio is implemented
+        play_game_sound(GameSound::STAGE_TRANSITION);
         
         current_stage_number = stage->exit_r;
         comic_y_vel = 0;

@@ -7,6 +7,7 @@
 #include "../include/doors.h"
 #include "../include/cheats.h"
 #include "../include/actors.h"
+#include "../include/audio.h"
 
 // Game state
 int comic_x = 20;
@@ -117,6 +118,10 @@ int main(int argc, char* argv[]) {
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
+    }
+
+    if (!initialize_audio_system()) {
+        std::cerr << "Warning: Audio system initialization failed. Continuing without sound." << std::endl;
     }
     
     // Initialize cheat system
@@ -398,6 +403,7 @@ int main(int argc, char* argv[]) {
     g_actor_system = nullptr;  // Clear pointer before actor_system goes out of scope
     delete g_cheats;
     delete g_graphics;
+    shutdown_audio_system();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
