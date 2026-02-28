@@ -70,7 +70,7 @@ are referenced by the C++ code.
 
 ```bash
 # Install SDL2
-brew install sdl2 sdl2_image sdl2_ttf
+brew install sdl2 sdl2_image sdl2_mixer sdl2_ttf
 
 # Build
 mkdir build && cd build
@@ -85,10 +85,10 @@ make
 
 ```bash
 # Install SDL2 (Ubuntu/Debian)
-sudo apt-get install cmake g++ libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
+sudo apt-get install cmake g++ libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev
 
 # Or Fedora
-sudo dnf install cmake gcc-c++ sdl2-compat-devel SDL2_image-devel SDL2_ttf-devel
+sudo dnf install cmake gcc-c++ sdl2-compat-devel SDL2_image-devel SDL2_mixer-devel SDL2_ttf-devel
 
 # Build
 mkdir build && cd build
