@@ -1482,8 +1482,8 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
 
         case ITEM_SHIELD:
             // Shield refills HP (handled by main game loop)
-            // Play special shield sound
-            play_game_sound(GameSound::SHIELD);
+            // Play item collection sound (same as other items)
+            play_game_sound(GameSound::ITEM_COLLECT);
             break;
 
         case ITEM_GEMS:

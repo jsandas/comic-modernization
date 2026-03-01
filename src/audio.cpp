@@ -71,15 +71,7 @@ constexpr int FREQ_DEATH_4 = 582;   // 0x0800
 constexpr int FREQ_DEATH_5 = 291;   // 0x1000
 constexpr int FREQ_DEATH_6 = 194;   // 0x1800
 
-// Shield sound
-constexpr int FREQ_SHIELD_1 = 500;
-constexpr int FREQ_SHIELD_2 = 600;
-constexpr int FREQ_SHIELD_3 = 700;
 
-// Victory sound
-constexpr int FREQ_VICTORY_1 = 400;
-constexpr int FREQ_VICTORY_2 = 500;
-constexpr int FREQ_VICTORY_3 = 600;
 
 // ===== Sound Definition Structure =====
 struct FrequencyNote {
@@ -127,7 +119,7 @@ static const std::vector<FrequencyNote> SOUND_GAME_OVER_SEQUENCE = {
 };
 
 static const std::vector<FrequencyNote> SOUND_POWERUP_SEQUENCE = {
-    {FREQ_SHIELD_1, 2}, {FREQ_SHIELD_2, 2}, {FREQ_SHIELD_3, 2}
+    {NOTE_C5, 3}, {NOTE_E5, 3}, {NOTE_G5, 4}
 };
 
 static const std::vector<FrequencyNote> SOUND_TREASURE_SEQUENCE = {
@@ -137,14 +129,6 @@ static const std::vector<FrequencyNote> SOUND_TREASURE_SEQUENCE = {
 static const std::vector<FrequencyNote> SOUND_TELEPORT_SEQUENCE = {
     {FREQ_TELEPORT_1, 2}, {FREQ_TELEPORT_2, 2}, {FREQ_TELEPORT_3, 2}, {FREQ_TELEPORT_4, 2},
     {FREQ_TELEPORT_3, 2}, {FREQ_TELEPORT_2, 2}, {FREQ_TELEPORT_1, 2}
-};
-
-static const std::vector<FrequencyNote> SOUND_SHIELD_SEQUENCE = {
-    {FREQ_SHIELD_1, 3}, {FREQ_SHIELD_2, 3}, {FREQ_SHIELD_3, 3}
-};
-
-static const std::vector<FrequencyNote> SOUND_VICTORY_SEQUENCE = {
-    {FREQ_VICTORY_1, 4}, {FREQ_VICTORY_2, 4}, {FREQ_VICTORY_3, 6}
 };
 
 // ===== Loaded Sound Structure =====
@@ -173,8 +157,6 @@ constexpr std::array<uint8_t, static_cast<size_t>(GameSound::COUNT)> SOUND_PRIOR
     5,   // POWERUP
     7,   // TREASURE
     7,   // TELEPORT
-    5,   // SHIELD
-    10,  // VICTORY
 }};
 
 
@@ -292,10 +274,6 @@ static const std::vector<FrequencyNote>* get_sound_sequence(GameSound sound) {
             return &SOUND_TREASURE_SEQUENCE;
         case GameSound::TELEPORT:
             return &SOUND_TELEPORT_SEQUENCE;
-        case GameSound::SHIELD:
-            return &SOUND_SHIELD_SEQUENCE;
-        case GameSound::VICTORY:
-            return &SOUND_VICTORY_SEQUENCE;
         default:
             return nullptr;
     }

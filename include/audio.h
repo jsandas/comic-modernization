@@ -13,11 +13,9 @@ enum class GameSound : uint8_t {
     PLAYER_HIT,         // Player takes damage
     PLAYER_DIE,         // Player death
     GAME_OVER,          // Game over jingle
-    POWERUP,            // Not yet assigned (was POWERUP in original)
+    POWERUP,            // Shield/power-up collection (shares ITEM_COLLECT sound)
     TREASURE,           // Treasure collection sound
     TELEPORT,           // Teleport action
-    SHIELD,             // Shield/HP restoration
-    VICTORY,            // Game victory jingle
     COUNT
 };
 

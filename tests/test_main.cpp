@@ -1441,11 +1441,6 @@ static void test_audio_all_sounds_playable() {
     play_game_sound(GameSound::TELEPORT);
     SDL_Delay(50);
     
-    play_game_sound(GameSound::SHIELD);
-    SDL_Delay(50);
-    
-    play_game_sound(GameSound::VICTORY);
-    
     // If we got here without crashing, all sounds are playable
     check(true, "audio_all_sounds: all sounds played without crashing");
     
