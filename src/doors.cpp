@@ -3,6 +3,9 @@
 #include "../include/audio.h"
 #include <cstdint>
 
+// Testing hook defined in header; see comment there.
+bool g_skip_load_on_door = false;
+
 /**
  * doors.cpp - Door system implementation
  * 
@@ -129,6 +132,15 @@ void activate_door(const door_t *door) {
 
     source_door_level_number = current_level_number;
     source_door_stage_number = current_stage_number;
+
+    /* Shortcut for unit tests: avoid loading anything (which would clear
+     * source_door_* and may print warnings if reciprocal door data is
+     * missing). The tests still need to see the level/stage numbers update. */
+    if (g_skip_load_on_door) {
+        current_stage_number = door->target_stage;
+        current_level_number = door->target_level;
+        return;
+    }
     
     /* Set the current level/stage to wherever the door leads */
     current_stage_number = door->target_stage;

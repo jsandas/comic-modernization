@@ -223,6 +223,9 @@ From jsandas/comic-c, key modules to port:
 - Door Key requirement implemented
 - Door transitions call load_new_level() or load_new_stage() as appropriate
 - Source door tracking for reciprocal positioning (entering target stage via door)
+- **Unit-test helper:** `g_skip_load_on_door` flag allows activate_door() to update
+  state without actually loading levels/stages, keeping tests deterministic
+  and avoiding reciprocal-door warnings when using minimal test levels.
 - Alt key (SDL KMOD_ALT modifier) opens doors; 'K' key grants door key (debug)
 - Level/stage loading system integrated:
   - load_new_level() sets current_level_ptr and loads tileset graphics

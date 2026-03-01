@@ -70,6 +70,9 @@ const level_t* current_level_ptr = nullptr;
 int8_t source_door_level_number = -1;
 int8_t source_door_stage_number = -1;
 
+// Testing hook from doors.cpp
+extern bool g_skip_load_on_door;
+
 // Checkpoint position
 uint8_t comic_y_checkpoint = 12;
 uint8_t comic_x_checkpoint = 14;
@@ -249,6 +252,8 @@ static void reset_door_state() {
     current_level_ptr = nullptr;
     source_door_level_number = -1;
     source_door_stage_number = -1;
+    // default testing behaviour: avoid loading when a door is activated
+    g_skip_load_on_door = true;
 }
 
 /**

@@ -260,6 +260,10 @@ Run tests matching a pattern:
 - Open key not pressed
 - Forest zone, stage 0
 - Source door cleared (-1)
+- **Testing behavior:** sets `g_skip_load_on_door = true` so that `activate_door()`
+  does not actually load new levels or stages. This keeps unit tests
+  deterministic and avoids warnings when the test levels lack reciprocal
+  doors.
 
 **`create_test_level_with_door(x, y, target_level, target_stage)`** - Constructs a minimal test level with a single door at specified coordinates and target.
 
