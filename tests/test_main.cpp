@@ -1500,6 +1500,30 @@ static void test_audio_all_sounds_playable() {
     quit_sdl_audio();
 }
 
+static void test_audio_music_playback() {
+    check(init_sdl_audio(), "audio_music: SDL audio init should succeed");
+    check(initialize_audio_system(), "audio_music: initialization should succeed");
+
+    bool ok = play_game_music(GameMusic::TITLE);
+    check(ok, "audio_music: title music should start");
+    check(is_game_music_playing(), "audio_music: music should report playing");
+
+    // Ensure SFX can play concurrently
+    ok = play_game_sound(GameSound::FIRE);
+    check(ok, "audio_music: SFX should play while music active");
+    check(Mix_Playing(0) != 0, "audio_music: sfx channel should be active");
+
+    stop_game_music();
+    check(!is_game_music_playing(), "audio_music: music should stop");
+
+    wait_for_sfx_channel_idle(500);
+    ok = play_game_sound(GameSound::ITEM_COLLECT);
+    check(ok, "audio_music: sfx should still play after music stopped");
+
+    shutdown_audio_system();
+    quit_sdl_audio();
+}
+
 #else
 
 // Stub tests when SDL2_mixer is not available
@@ -1582,7 +1606,8 @@ static const std::vector<TestCase>& test_registry() {
         {"audio_graceful_failure_when_not_initialized", test_audio_graceful_failure_when_not_initialized},
         {"audio_priority_interrupt", test_audio_priority_interrupt},
         {"audio_priority_blocking", test_audio_priority_blocking},
-        {"audio_all_sounds_playable", test_audio_all_sounds_playable}
+        {"audio_all_sounds_playable", test_audio_all_sounds_playable},
+        {"audio_music_playback", test_audio_music_playback}
     };
     return tests;
 }

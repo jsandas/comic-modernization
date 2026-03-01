@@ -20,17 +20,26 @@ constexpr int SFX_CHANNEL = 0;
 // ===== Shared Musical Notes (Hz) =====
 // Use these for melodic sequences where exact note names are intended.
 // Keep PIT-derived effect tones as dedicated FREQ_* constants for original fidelity.
+constexpr int NOTE_C3 = 131;
 constexpr int NOTE_C4 = 261;
+constexpr int NOTE_C5 = 523;
+constexpr int NOTE_D3 = 147;
 constexpr int NOTE_D4 = 293;
+constexpr int NOTE_D5 = 587;
+constexpr int NOTE_E3 = 165;
 constexpr int NOTE_E4 = 330;
 constexpr int NOTE_E5 = 659;
+constexpr int NOTE_F3 = 175;
 constexpr int NOTE_F4 = 349;
+constexpr int NOTE_FS3 = 185;
 constexpr int NOTE_FS4 = 370;
+constexpr int NOTE_G3 = 196;
 constexpr int NOTE_G4 = 392;
+constexpr int NOTE_G5 = 784;
+constexpr int NOTE_A3 = 220;
 constexpr int NOTE_A4 = 440;
 constexpr int NOTE_B3 = 247;
-constexpr int NOTE_C5 = 523;
-constexpr int NOTE_G5 = 784;
+constexpr int NOTE_B4 = 494;
 
 // ===== Frequency Definitions (PIT divisors converted to Hz) =====
 // Conversion formula: Frequency = 1193182 Hz / divisor
@@ -123,6 +132,33 @@ static const std::vector<FrequencyNote> SOUND_TELEPORT_SEQUENCE = {
     {FREQ_TELEPORT_3, 2}, {FREQ_TELEPORT_2, 2}, {FREQ_TELEPORT_1, 2}
 };
 
+// ===== Music Sequences (Looping) =====
+// Title music - played during title sequence and victory sequence
+// Ported from jsandas/comic-c SOUND_TITLE
+static const std::vector<FrequencyNote> MUSIC_TITLE_SEQUENCE = {
+    {NOTE_D4, 3}, {NOTE_E4, 3}, {NOTE_F4, 6}, {NOTE_A4, 3}, {NOTE_A4, 6}, 
+    {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_G4, 6}, {NOTE_F4, 6}, 
+    {NOTE_E4, 6}, {NOTE_D4, 3}, {NOTE_E4, 3}, {NOTE_F4, 6}, {NOTE_G4, 3}, 
+    {NOTE_G4, 5}, {NOTE_G4, 3}, {NOTE_G4, 3}, {NOTE_G4, 3}, {NOTE_A4, 6}, 
+    {NOTE_A4, 6}, {NOTE_A4, 4}, {NOTE_A4, 2}, {NOTE_A4, 6}, {NOTE_G4, 6}, 
+    {NOTE_F4, 2}, {NOTE_E4, 4}, {NOTE_F4, 3}, {NOTE_D4, 3}, {NOTE_D4, 3}, 
+    {NOTE_D4, 3}, {NOTE_E4, 6}, {NOTE_F4, 3}, {NOTE_F4, 6}, {NOTE_F4, 3}, 
+    {NOTE_F4, 3}, {NOTE_F4, 3}, {NOTE_G4, 6}, {NOTE_A4, 3}, {NOTE_A4, 5}, 
+    {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_G4, 6}, {NOTE_F4, 7}, 
+    {NOTE_E4, 12}, {NOTE_A4, 6}, {NOTE_G4, 3}, {NOTE_F4, 6}, {NOTE_E4, 3}, 
+    {NOTE_D4, 9}, {NOTE_F4, 3}, {NOTE_E4, 6}, {NOTE_D4, 12}, {NOTE_A4, 14}, 
+    {NOTE_G4, 3}, {NOTE_F4, 3}, {NOTE_E4, 3}, {NOTE_F4, 13}, {NOTE_D4, 13}, 
+    {NOTE_G4, 15}, {NOTE_D4, 6}, {NOTE_E4, 6}, {NOTE_F4, 6}, {NOTE_A4, 3}, 
+    {NOTE_A4, 5}, {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_G4, 6}, 
+    {NOTE_F4, 6}, {NOTE_E4, 3}, {NOTE_F4, 6}, {NOTE_F4, 3}, {NOTE_F4, 3}, 
+    {NOTE_F4, 3}, {NOTE_E4, 6}, {NOTE_F4, 3}, {NOTE_E4, 3}, {NOTE_D4, 3}, 
+    {NOTE_E4, 3}, {NOTE_C4, 3}, {NOTE_A3, 6}, {NOTE_G4, 3}, {NOTE_F4, 6}, 
+    {NOTE_E4, 3}, {NOTE_D4, 10}, {NOTE_F4, 3}, {NOTE_E4, 6}, {NOTE_D4, 10},
+    {NOTE_C4, 9}, {NOTE_D4, 3}, {NOTE_E4, 3}, {NOTE_F4, 6}, {NOTE_A4, 3},
+    {NOTE_A4, 6}, {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_G4, 6},
+    {NOTE_F4, 7}, {NOTE_E4, 12},
+};
+
 // ===== Loaded Sound Structure =====
 struct LoadedSound {
     Mix_Chunk* chunk;
@@ -130,13 +166,22 @@ struct LoadedSound {
     uint8_t priority;
 };
 
+// ===== Loaded Music Structure =====
+struct LoadedMusic {
+    Mix_Chunk* chunk;
+    uint16_t total_duration_ms;
+};
+
 std::array<LoadedSound, static_cast<size_t>(GameSound::COUNT)> g_sounds{};
+std::array<LoadedMusic, static_cast<size_t>(GameMusic::COUNT)> g_music{};
 bool g_audio_initialized = false;
 // Track whether we called SDL_InitSubSystem(SDL_INIT_AUDIO)
 // so shutdown can undo it. SDL may have been initialized by caller.
 bool g_sdl_audio_initialized = false;
 uint8_t g_current_priority = 0;
 uint32_t g_current_sound_end_tick = 0;
+GameMusic g_current_music = GameMusic::NONE;
+int g_music_channel = -1;  // Channel dedicated to music playback
 
 // ===== Sound Priorities =====
 constexpr std::array<uint8_t, static_cast<size_t>(GameSound::COUNT)> SOUND_PRIORITIES = {{
@@ -238,6 +283,16 @@ void free_loaded_sounds() {
     }
 }
 
+void free_loaded_music() {
+    for (auto& loaded_music : g_music) {
+        if (loaded_music.chunk) {
+            Mix_FreeChunk(loaded_music.chunk);
+            loaded_music.chunk = nullptr;
+        }
+        loaded_music.total_duration_ms = 0;
+    }
+}
+
 /**
  * Get the appropriate sound sequence for a game sound
  */
@@ -263,6 +318,18 @@ static const std::vector<FrequencyNote>* get_sound_sequence(GameSound sound) {
             return &SOUND_GAME_OVER_SEQUENCE;
         case GameSound::TELEPORT:
             return &SOUND_TELEPORT_SEQUENCE;
+        default:
+            return nullptr;
+    }
+}
+
+/**
+ * Get the appropriate music sequence for a game music track
+ */
+static const std::vector<FrequencyNote>* get_music_sequence(GameMusic music) {
+    switch (music) {
+        case GameMusic::TITLE:
+            return &MUSIC_TITLE_SEQUENCE;
         default:
             return nullptr;
     }
@@ -345,9 +412,50 @@ bool initialize_audio_system() {
         g_sounds[index].total_duration_ms = calculate_sequence_duration_ms(*sequence);
         g_sounds[index].priority = SOUND_PRIORITIES[index];
     }
+    
+    // Load all music tracks
+    for (size_t index = 0; index < static_cast<size_t>(GameMusic::COUNT); ++index) {
+        GameMusic music = static_cast<GameMusic>(index);
+        const std::vector<FrequencyNote>* sequence = get_music_sequence(music);
+        
+        // Skip unused music slots
+        if (!sequence) {
+            continue;
+        }
+        
+        if (sequence->empty()) {
+            std::cerr << "Error: Music #" << index << " has empty sequence" << std::endl;
+            free_loaded_sounds();
+            free_loaded_music();
+            Mix_CloseAudio();
+            if (g_sdl_audio_initialized) {
+                SDL_QuitSubSystem(SDL_INIT_AUDIO);
+                g_sdl_audio_initialized = false;
+            }
+            return false;
+        }
+
+        Mix_Chunk* chunk = create_sound_sequence_chunk(*sequence);
+        if (!chunk) {
+            std::cerr << "Failed to synthesize music #" << index << std::endl;
+            free_loaded_sounds();
+            free_loaded_music();
+            Mix_CloseAudio();
+            if (g_sdl_audio_initialized) {
+                SDL_QuitSubSystem(SDL_INIT_AUDIO);
+                g_sdl_audio_initialized = false;
+            }
+            return false;
+        }
+
+        g_music[index].chunk = chunk;
+        g_music[index].total_duration_ms = calculate_sequence_duration_ms(*sequence);
+    }
 
     g_current_priority = 0;
     g_current_sound_end_tick = 0;
+    g_current_music = GameMusic::NONE;
+    g_music_channel = -1;
     g_audio_initialized = true;
     return true;
 }
@@ -358,12 +466,18 @@ void shutdown_audio_system() {
     }
 
     Mix_HaltChannel(SFX_CHANNEL);
+    if (g_music_channel >= 0) {
+        Mix_HaltChannel(g_music_channel);
+    }
     free_loaded_sounds();
+    free_loaded_music();
     Mix_CloseAudio();
 
     g_audio_initialized = false;
     g_current_priority = 0;
     g_current_sound_end_tick = 0;
+    g_current_music = GameMusic::NONE;
+    g_music_channel = -1;
 
     if (g_sdl_audio_initialized) {
         SDL_QuitSubSystem(SDL_INIT_AUDIO);
@@ -409,6 +523,64 @@ bool play_game_sound(GameSound sound) {
     return true;
 }
 
+bool play_game_music(GameMusic music) {
+    if (!g_audio_initialized) {
+        return false;
+    }
+
+    // Handle stopping music (NONE)
+    if (music == GameMusic::NONE) {
+        stop_game_music();
+        return true;
+    }
+
+    size_t music_index = static_cast<size_t>(music);
+    if (music_index >= g_music.size()) {
+        return false;
+    }
+
+    const LoadedMusic& requested_music = g_music[music_index];
+    if (!requested_music.chunk) {
+        return false;
+    }
+
+    // Stop current music if any
+    if (g_music_channel >= 0 && Mix_Playing(g_music_channel)) {
+        Mix_HaltChannel(g_music_channel);
+    }
+
+    // Allocate a music channel if we haven't already
+    if (g_music_channel < 0) {
+        g_music_channel = 1;  // Use channel 1 for music (channel 0 is SFX)
+    }
+
+    // Play music with looping (-1 means infinite loop)
+    if (Mix_PlayChannel(g_music_channel, requested_music.chunk, -1) < 0) {
+        return false;
+    }
+
+    g_current_music = music;
+    return true;
+}
+
+void stop_game_music() {
+    if (g_music_channel >= 0 && Mix_Playing(g_music_channel)) {
+        Mix_HaltChannel(g_music_channel);
+    }
+    g_current_music = GameMusic::NONE;
+}
+
+bool is_game_music_playing() {
+    if (!g_audio_initialized || g_music_channel < 0) {
+        return false;
+    }
+    return g_current_music != GameMusic::NONE && Mix_Playing(g_music_channel) != 0;
+}
+
+GameMusic get_current_music() {
+    return g_current_music;
+}
+
 #else
 
 bool initialize_audio_system() {
@@ -427,4 +599,19 @@ bool play_game_sound(GameSound sound) {
     return false;
 }
 
+bool play_game_music(GameMusic music) {
+    (void)music;
+    return false;
+}
+
+void stop_game_music() {
+}
+
+bool is_game_music_playing() {
+    return false;
+}
+
+GameMusic get_current_music() {
+    return GameMusic::NONE;
+}
 #endif
