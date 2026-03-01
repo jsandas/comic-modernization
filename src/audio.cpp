@@ -113,7 +113,7 @@ static const std::vector<FrequencyNote> SOUND_ENEMY_HIT_SEQUENCE = {
 };
 
 static const std::vector<FrequencyNote> SOUND_PLAYER_HIT_SEQUENCE = {
-    {350, 2}, {250, 2}, {200, 4}
+    {FREQ_DEATH_1, 2}, {FREQ_DEATH_2, 2}, {FREQ_DEATH_3, 2}
 };
 
 static const std::vector<FrequencyNote> SOUND_PLAYER_DIE_SEQUENCE = {
