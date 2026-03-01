@@ -520,7 +520,7 @@ A centralized system for managing debug cheats and development tools. Activated 
   - [x] FIRE: Two-note fireball launch (145→155 Hz)
   - [x] ITEM_COLLECT: All item pickups including treasures, powerups, shield (294→371→441→582 Hz)
   - [x] DOOR_OPEN: Nine-note door sequence (310↔466 Hz palindrome)
-  - [x] STAGE_TRANSITION: Five-note stage crossing (C4→D4→F4→F4→G4→A4)
+  - [x] STAGE_TRANSITION: Stage crossing motif (see `src/audio.cpp` for exact note sequence)
   - [x] ENEMY_HIT: Two-note enemy collision (582→1165 Hz)
   - [x] PLAYER_HIT: Three-note damage sound (97→83→72 Hz descending)
   - [x] PLAYER_DIE: Six-note death sequence (97→83→72→582→291→194 Hz)
