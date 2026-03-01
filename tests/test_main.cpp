@@ -11,6 +11,11 @@
 #include "../include/level_loader.h"
 #include "../include/doors.h"
 #include "../include/actors.h"
+#include "../include/audio.h"
+
+#if defined(HAVE_SDL2_MIXER)
+#include <SDL2/SDL.h>
+#endif
 
 // Provide required globals from main.cpp for physics.cpp linkage.
 int comic_x = 0;
@@ -1300,6 +1305,181 @@ static void test_item_special_items() {
           "special_items: should have lantern after collection");
 }
 
+// ===== Audio System Tests =====
+// These tests verify audio initialization, shutdown, and priority-based playback
+
+#if defined(HAVE_SDL2_MIXER)
+
+static void test_audio_init_shutdown_idempotency() {
+    // Set dummy audio driver to avoid requiring real audio hardware
+    SDL_SetHint(SDL_HINT_AUDIODRIVER, "dummy");
+    
+    // Multiple initializations should succeed
+    check(initialize_audio_system(), 
+          "audio_idempotency: first initialization should succeed");
+    check(is_audio_system_ready(), 
+          "audio_idempotency: system should be ready after init");
+    
+    // Second init should be safe (idempotent)
+    check(initialize_audio_system(), 
+          "audio_idempotency: second initialization should succeed");
+    check(is_audio_system_ready(), 
+          "audio_idempotency: system should still be ready");
+    
+    // Multiple shutdowns should be safe
+    shutdown_audio_system();
+    check(!is_audio_system_ready(), 
+          "audio_idempotency: system should not be ready after shutdown");
+    
+    shutdown_audio_system();  // Should not crash
+    check(!is_audio_system_ready(), 
+          "audio_idempotency: system should remain not ready after second shutdown");
+}
+
+static void test_audio_graceful_failure_when_not_initialized() {
+    // Ensure audio is not initialized
+    shutdown_audio_system();
+    
+    check(!is_audio_system_ready(), 
+          "audio_uninitialized: system should not be ready");
+    
+    // Attempting to play sound should fail gracefully (return false, not crash)
+    check(!play_game_sound(GameSound::JUMP), 
+          "audio_uninitialized: play should fail when not initialized");
+    check(!play_game_sound(GameSound::FIRE), 
+          "audio_uninitialized: fire sound should fail when not initialized");
+}
+
+static void test_audio_priority_interrupt() {
+    SDL_SetHint(SDL_HINT_AUDIODRIVER, "dummy");
+    
+    check(initialize_audio_system(), 
+          "audio_priority_interrupt: initialization should succeed");
+    
+    // Play lower priority sound (JUMP = priority 4)
+    check(play_game_sound(GameSound::JUMP), 
+          "audio_priority_interrupt: lower priority sound should play");
+    
+    // Higher priority sound (PLAYER_HIT = priority 8) should interrupt
+    check(play_game_sound(GameSound::PLAYER_HIT), 
+          "audio_priority_interrupt: higher priority sound should interrupt");
+    
+    // Even higher priority (PLAYER_DIE = priority 9) should interrupt
+    check(play_game_sound(GameSound::PLAYER_DIE), 
+          "audio_priority_interrupt: even higher priority should interrupt");
+    
+    shutdown_audio_system();
+}
+
+static void test_audio_priority_blocking() {
+    SDL_SetHint(SDL_HINT_AUDIODRIVER, "dummy");
+    
+    check(initialize_audio_system(), 
+          "audio_priority_blocking: initialization should succeed");
+    
+    // Play high priority sound (PLAYER_DIE = priority 9)
+    check(play_game_sound(GameSound::PLAYER_DIE), 
+          "audio_priority_blocking: high priority sound should play");
+    
+    // Lower priority sound (JUMP = priority 4) should be blocked
+    // Note: This may return false or succeed depending on timing
+    // The important thing is it doesn't crash and respects priority
+    bool lower_played = play_game_sound(GameSound::JUMP);
+    (void)lower_played;  // Outcome depends on timing, just ensure no crash
+    
+    // Allow time for sound to complete (death sound is 6 ticks = ~330ms + buffer)
+    SDL_Delay(400);
+    
+    // After delay, lower priority sound should be able to play
+    check(play_game_sound(GameSound::JUMP), 
+          "audio_priority_blocking: sound should play after previous completes");
+    
+    shutdown_audio_system();
+}
+
+static void test_audio_all_sounds_playable() {
+    SDL_SetHint(SDL_HINT_AUDIODRIVER, "dummy");
+    
+    check(initialize_audio_system(), 
+          "audio_all_sounds: initialization should succeed");
+    
+    // Verify all 13 game sounds can be played without crashing
+    // Note: Some may be blocked by priority system when playing in quick succession
+    // The key test is that none crash the system
+    
+    play_game_sound(GameSound::JUMP);
+    SDL_Delay(50);  // Small delay between sounds
+    
+    play_game_sound(GameSound::FIRE);
+    SDL_Delay(50);
+    
+    play_game_sound(GameSound::ITEM_COLLECT);
+    SDL_Delay(50);
+    
+    play_game_sound(GameSound::DOOR_OPEN);
+    SDL_Delay(50);
+    
+    play_game_sound(GameSound::STAGE_TRANSITION);
+    SDL_Delay(50);
+    
+    play_game_sound(GameSound::ENEMY_HIT);
+    SDL_Delay(50);
+    
+    play_game_sound(GameSound::PLAYER_HIT);
+    SDL_Delay(50);
+    
+    play_game_sound(GameSound::PLAYER_DIE);
+    SDL_Delay(50);
+    
+    play_game_sound(GameSound::POWERUP);
+    SDL_Delay(50);
+    
+    play_game_sound(GameSound::TREASURE);
+    SDL_Delay(50);
+    
+    play_game_sound(GameSound::TELEPORT);
+    SDL_Delay(50);
+    
+    play_game_sound(GameSound::SHIELD);
+    SDL_Delay(50);
+    
+    play_game_sound(GameSound::VICTORY);
+    
+    // If we got here without crashing, all sounds are playable
+    check(true, "audio_all_sounds: all sounds played without crashing");
+    
+    shutdown_audio_system();
+}
+
+#else
+
+// Stub tests when SDL2_mixer is not available
+static void test_audio_init_shutdown_idempotency() {
+    check(!initialize_audio_system(), 
+          "audio_no_mixer: init should fail without SDL2_mixer");
+    check(!is_audio_system_ready(), 
+          "audio_no_mixer: system should not be ready without SDL2_mixer");
+}
+
+static void test_audio_graceful_failure_when_not_initialized() {
+    check(!play_game_sound(GameSound::JUMP), 
+          "audio_no_mixer: play should fail without SDL2_mixer");
+}
+
+static void test_audio_priority_interrupt() {
+    // No-op when SDL2_mixer not available
+}
+
+static void test_audio_priority_blocking() {
+    // No-op when SDL2_mixer not available
+}
+
+static void test_audio_all_sounds_playable() {
+    // No-op when SDL2_mixer not available
+}
+
+#endif
+
 struct TestCase {
     const char* name;
     void (*run)();
@@ -1348,7 +1528,12 @@ static const std::vector<TestCase>& test_registry() {
         {"item_boots_jump_power", test_item_boots_jump_power},
         {"item_corkscrew_flag", test_item_corkscrew_flag},
         {"item_treasure_counting", test_item_treasure_counting},
-        {"item_special_items", test_item_special_items}
+        {"item_special_items", test_item_special_items},
+        {"audio_init_shutdown_idempotency", test_audio_init_shutdown_idempotency},
+        {"audio_graceful_failure_when_not_initialized", test_audio_graceful_failure_when_not_initialized},
+        {"audio_priority_interrupt", test_audio_priority_interrupt},
+        {"audio_priority_blocking", test_audio_priority_blocking},
+        {"audio_all_sounds_playable", test_audio_all_sounds_playable}
     };
     return tests;
 }

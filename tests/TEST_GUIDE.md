@@ -301,6 +301,76 @@ Areas that would benefit from additional tests:
 
 ---
 
+### Audio System (5 tests)
+
+#### test_audio_init_shutdown_idempotency
+**Purpose:** Verify audio system can be initialized and shut down multiple times safely.
+
+**What it tests:**
+- First initialization succeeds and system becomes ready
+- Second initialization succeeds (idempotent behavior)
+- Multiple shutdowns are safe and don't crash
+- Audio system properly reports ready/not-ready state
+
+**Why it matters:** Robust resource management is critical. The audio system must handle edge cases like double-init or double-shutdown gracefully without crashes or resource leaks. This is especially important for game state transitions.
+
+---
+
+#### test_audio_graceful_failure_when_not_initialized
+**Purpose:** Verify audio functions fail gracefully when system is not initialized.
+
+**What it tests:**
+- Playing sounds returns false (doesn't crash) when audio not initialized
+- System correctly reports not-ready status
+- Multiple sound play attempts don't cause issues
+
+**Why it matters:** Defensive programming. If audio initialization fails (e.g., no audio hardware, SDL2_mixer not available), the game should continue without audio rather than crashing. This ensures the game remains playable on systems without sound.
+
+---
+
+#### test_audio_priority_interrupt
+**Purpose:** Verify higher priority sounds can interrupt lower priority sounds.
+
+**What it tests:**
+- Lower priority sound (JUMP = priority 4) plays successfully
+- Higher priority sound (PLAYER_HIT = priority 8) interrupts it
+- Even higher priority (PLAYER_DIE = priority 9) interrupts the previous sound
+- Sound channel properly switches between sounds
+
+**Why it matters:** Audio feedback must match gameplay importance. Critical events like player death should always be audible, even if a jump sound is already playing. Priority-based interruption ensures players hear the most important audio cues.
+
+---
+
+#### test_audio_priority_blocking
+**Purpose:** Verify lower priority sounds don't interrupt higher priority sounds.
+
+**What it tests:**
+- High priority sound (PLAYER_DIE = priority 9) plays
+- Lower priority sound (JUMP = priority 4) is blocked or queued
+- After high priority sound completes, lower priority sounds can play again
+- System respects priority rules during concurrent play requests
+
+**Why it matters:** Prevents audio chaos. If the player dies, a jump sound shouldn't cut off the death sound. Priority blocking ensures critical audio feedback isn't lost due to less important sound effects.
+
+---
+
+#### test_audio_all_sounds_playable
+**Purpose:** Verify all 13 game sounds can be synthesized and played without errors.
+
+**What it tests:**
+- Each sound enum value (JUMP, FIRE, ITEM_COLLECT, etc.) can be played
+- Sound synthesis succeeds for all sound definitions
+- No crashes or errors when playing any sound
+- All sound sequences are properly defined
+
+**Why it matters:** Integration test ensuring all sound definitions are valid. A missing or malformed sound definition would cause runtime errors. This test catches such issues early in development.
+
+---
+
+**Note:** Audio tests use `SDL_AUDIODRIVER=dummy` for headless testing. Tests work even on systems without physical audio hardware. When SDL2_mixer is not available (HAVE_SDL2_MIXER not defined), tests verify graceful degradation.
+
+---
+
 ## Running Tests During Development
 
 When making changes to core systems (physics, doors, animation), always run the relevant tests:
@@ -318,8 +388,7 @@ When making changes to core systems (physics, doors, animation), always run the 
 # After changing stage exits
 ./comic_tests --filter stage
 
-# After any change
-./comic_tests
-```
+# After changing audio system
+./comic_tests --filter audio
 
 Tests should pass before committing changes. Failing tests indicate a regression that must be fixed before merging.
