@@ -1482,16 +1482,12 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
 
         case ITEM_SHIELD:
             // Shield refills HP (handled by main game loop)
-            // Play item collection sound (same as other items)
-            play_game_sound(GameSound::ITEM_COLLECT);
             break;
 
         case ITEM_GEMS:
             if (!comic_has_gems) {
                 comic_has_gems = 1;
                 comic_num_treasures++;
-                // Play item collection sound
-                play_game_sound(GameSound::ITEM_COLLECT);
             }
             break;
 
@@ -1499,8 +1495,6 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
             if (!comic_has_crown) {
                 comic_has_crown = 1;
                 comic_num_treasures++;
-                // Play item collection sound
-                play_game_sound(GameSound::ITEM_COLLECT);
             }
             break;
 
@@ -1508,8 +1502,6 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
             if (!comic_has_gold) {
                 comic_has_gold = 1;
                 comic_num_treasures++;
-                // Play item collection sound
-                play_game_sound(GameSound::ITEM_COLLECT);
             }
             break;
 
