@@ -303,14 +303,8 @@ int main(int argc, char* argv[]) {
                 : nullptr;
             actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x, key_state_fire);
             
-            // Check for game-over condition: player falls off bottom of stage
-            // Stage height is 20 game units (0-19), falling below triggers game-over
-            if (!game_over_triggered && comic_y > 25) {
-                game_over_triggered = true;
-                play_game_sound(GameSound::GAME_OVER);
-                // Note: In a complete implementation, this would show the game-over screen
-                // and wait for user input before returning to menu
-            }
+            // Game-over is handled by physics when Comic hits the bottom of playfield
+            // (sound triggered there).  No additional check needed here.
         }
 
         // Update animation based on state (updates every frame for smooth animation)

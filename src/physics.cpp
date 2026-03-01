@@ -30,6 +30,9 @@ extern const level_t* current_level_ptr;
 extern int8_t source_door_level_number;
 extern int8_t source_door_stage_number;
 
+// Game-over flag from main.cpp
+extern bool game_over_triggered;
+
 // Checkpoint position (defined in main.cpp)
 extern uint8_t comic_y_checkpoint;
 extern uint8_t comic_x_checkpoint;
@@ -163,7 +166,12 @@ void handle_fall_or_jump() {
         
         // Bounds check: death if too far down
         if (comic_y >= PLAYFIELD_HEIGHT - 3) {
-            // Reset position for now (would be death in full game)
+            // Trigger game-over sound once when player hits bottom
+            if (!game_over_triggered) {
+                play_game_sound(GameSound::GAME_OVER);
+                game_over_triggered = true;
+            }
+            // Reset position for now (simulates death respawn)
             comic_y = 1;
             comic_y_vel = 0;
             comic_is_falling_or_jumping = 0;
