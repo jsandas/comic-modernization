@@ -531,8 +531,8 @@ A centralized system for managing debug cheats and development tools. Activated 
   - [x] FIRE trigger: `actors.cpp` - `try_to_fire()` on fireball spawn
   - [x] ITEM_COLLECT trigger: `actors.cpp` - `collect_item()` on collision (all item types including treasures and shield)
   - [x] ENEMY_HIT trigger: `actors.cpp` - `handle_fireballs()` on fireball-enemy impact
-  - [x] DOOR_OPEN trigger: `doors.cpp` (implementation pending)
-  - [x] STAGE_TRANSITION trigger: (implementation pending)
+  - [x] DOOR_OPEN trigger: `doors.cpp` - play door sound when door successfully opens
+  - [x] STAGE_TRANSITION trigger: `physics.cpp` - play stage transition sound on stage edge crossing
 - [x] Updated `include/audio.h` with comprehensive documentation
 - [x] Fixed SDL_mixer audio synthesis for multi-frequency sequences
 - [x] All sounds use priority system (3-10) matching original PC speaker implementation
