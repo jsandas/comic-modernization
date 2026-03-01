@@ -346,24 +346,24 @@ Areas that would benefit from additional tests:
 
 **What it tests:**
 - High priority sound (PLAYER_DIE = priority 9) plays
-- Lower priority sound (JUMP = priority 4) is blocked or queued
+- Lower priority sound (ENEMY_HIT = priority 4) is blocked or queued
 - After high priority sound completes, lower priority sounds can play again
 - System respects priority rules during concurrent play requests
 
-**Why it matters:** Prevents audio chaos. If the player dies, a jump sound shouldn't cut off the death sound. Priority blocking ensures critical audio feedback isn't lost due to less important sound effects.
+**Why it matters:** Prevents audio chaos. If the player dies, a less important effect shouldn't cut off the death sound. Priority blocking ensures critical audio feedback isn't lost due to lower-priority effects.
 
 ---
 
 #### test_audio_all_sounds_playable
-**Purpose:** Verify all 13 game sounds can be synthesized and played without errors.
+**Purpose:** Verify all defined game sounds can be synthesized and played without errors (including the reserved UNUSED_0 entry).
 
 **What it tests:**
-- Each sound enum value (JUMP, FIRE, ITEM_COLLECT, etc.) can be played
+- Each sound enum value (UNUSED_0, FIRE, ITEM_COLLECT, DOOR_OPEN, STAGE_TRANSITION, ENEMY_HIT, PLAYER_HIT, PLAYER_DIE, GAME_OVER, TELEPORT) can be played
 - Sound synthesis succeeds for all sound definitions
 - No crashes or errors when playing any sound
 - All sound sequences are properly defined
 
-**Why it matters:** Integration test ensuring all sound definitions are valid. A missing or malformed sound definition would cause runtime errors. This test catches such issues early in development.
+**Why it matters:** Integration test ensuring the current set of sound definitions is valid. A missing or malformed sound definition would cause runtime errors. This test catches such issues early in development.
 
 ---
 
