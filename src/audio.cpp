@@ -181,7 +181,6 @@ bool g_sdl_audio_initialized = false;
 uint8_t g_current_priority = 0;
 uint32_t g_current_sound_end_tick = 0;
 GameMusic g_current_music = GameMusic::NONE;
-uint32_t g_current_music_start_time = 0;  // For looping detection
 int g_music_channel = -1;  // Channel dedicated to music playback
 
 // ===== Sound Priorities =====
@@ -561,7 +560,6 @@ bool play_game_music(GameMusic music) {
     }
 
     g_current_music = music;
-    g_current_music_start_time = SDL_GetTicks();
     return true;
 }
 
@@ -570,7 +568,6 @@ void stop_game_music() {
         Mix_HaltChannel(g_music_channel);
     }
     g_current_music = GameMusic::NONE;
-    g_current_music_start_time = 0;
 }
 
 bool is_game_music_playing() {
