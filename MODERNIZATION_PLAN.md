@@ -578,7 +578,7 @@ A centralized system for managing debug cheats and development tools. Activated 
   - [x] Proper channel management and halt on shutdown
 
 **Implementation Details:**
-- Title music: 100 notes, ~15.2 seconds per loop (priority 4, same as original)
+- Title music: 100 notes, ~15.2 seconds per loop (no priority; plays on independent music channel)
 - Game over music: 9 notes, ~1.5 seconds (reference for future enhancement)
 - Music data structure: `LoadedMusic` with chunk pointer and duration
 - Looping: Uses SDL_mixer's -1 loop count (infinite loop) vs SFX's 0 (one-shot)
