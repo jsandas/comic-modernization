@@ -18,6 +18,18 @@ enum class GameSound : uint8_t {
 };
 
 /**
+ * Game music tracks
+ * 
+ * These are looping background music tracks, separate from sound effects.
+ * Only one music track plays at a time; playing a new track stops the previous one.
+ */
+enum class GameMusic : uint8_t {
+    NONE = 0xFF,        // No music playing
+    TITLE = 0,          // Title sequence and end-game victory music
+    COUNT
+};
+
+/**
  * Initialize the audio subsystem
  * 
  * Sets up SDL_mixer and synthesizes all game sound effects.
@@ -53,5 +65,38 @@ bool is_audio_system_ready();
  * @return true if sound was played, false if rejected or error
  */
 bool play_game_sound(GameSound sound);
+
+/**
+ * Play a music track
+ * 
+ * Starts looping playback of the specified music track. If music is already
+ * playing, the current track is stopped and the new track begins.
+ * Music plays on a separate channel from sound effects.
+ * 
+ * @param music The game music track to play
+ * @return true if music started playing, false on error
+ */
+bool play_game_music(GameMusic music);
+
+/**
+ * Stop music playback
+ * 
+ * Stops the currently playing music track (if any).
+ */
+void stop_game_music();
+
+/**
+ * Check if music is currently playing
+ * 
+ * @return true if music is actively playing, false otherwise
+ */
+bool is_game_music_playing();
+
+/**
+ * Get the currently playing music track
+ * 
+ * @return The currently playing music track, or GameMusic::NONE if no music is playing
+ */
+GameMusic get_current_music();
 
 #endif // AUDIO_H

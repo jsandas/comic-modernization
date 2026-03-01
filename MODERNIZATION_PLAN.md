@@ -550,20 +550,88 @@ A centralized system for managing debug cheats and development tools. Activated 
 - Maintains original frequency sequences and timing relationships
 - PC speaker square-wave synthesis recreated in SDL2 audio
 
-**Pending (Phase 6.3):**
-- [ ] Implement additional 4 sound definitions
-  - [ ] POWERUP: Three-note powerup (500→600→700 Hz ascending) - for powerup items
-  - [ ] SHIELD: Distinct shield/HP refill sound (separate from ITEM_COLLECT) - for shield pickup
-  - [ ] VICTORY: Three-note victory jingle (400→500→600 Hz) - for level completion
-  - [ ] TREASURE: Distinct treasure sound (separate from ITEM_COLLECT) - for gems/crown/gold
-- [ ] Create separate GameSound enum entries for POWERUP, SHIELD, TREASURE, VICTORY
-- [ ] Update item collection triggers to use appropriate sounds based on item type
-- [ ] Port music system
-  - [ ] Title screen music
-  - [ ] Game play music
-  - [ ] Victory music
-  - [ ] Game over music
-- [ ] Music playback and looping (separate from SFX)
+**Phase 6.3: Music System ✅ COMPLETE**
+**Objective:** Port music playback from reference C code with full looping support
+
+**Completed:**
+- [x] Ported title music melody (100+ notes, ~15 second loop)
+  - [x] Full note sequence from jsandas/comic-c SOUND_TITLE
+  - [x] Perfect fidelity to original PC speaker implementation
+- [x] Ported game over music (reference-only, currently uses GAME_OVER SFX)
+  - [x] Short 9-note jingle sequence
+  - [x] Available for future use if game over becomes a music track
+- [x] Music playback system separate from SFX
+  - [x] Dedicated music channel (channel 1) independent from SFX channel (channel 0)
+  - [x] Infinite loop support: `Mix_PlayChannel(..., chunk, -1)`
+  - [x] Priority handling: music plays on separate channel, no priority conflicts
+- [x] Music control functions API
+  - [x] `play_game_music(GameMusic music)` - Start playing a music track
+  - [x] `stop_game_music()` - Stop current music
+  - [x] `is_game_music_playing()` - Query playback status
+  - [x] `get_current_music()` - Return currently playing track
+- [x] Full note frequency coverage
+  - [x] Added missing note constants (NOTE_C3-NOTE_B4, NOTE_C5, etc.)
+  - [x] Covers full range from C3 (131 Hz) to G5 (784 Hz)
+- [x] Music initialization and cleanup
+  - [x] Music loaded during `initialize_audio_system()`
+  - [x] Music cleanup in `shutdown_audio_system()`
+  - [x] Proper channel management and halt on shutdown
+
+**Implementation Details:**
+- Title music: 100 notes, ~15.2 seconds per loop (priority 4, same as original)
+- Game over music: 9 notes, ~1.5 seconds (reference for future enhancement)
+- Music data structure: `LoadedMusic` with chunk pointer and duration
+- Looping: Uses SDL_mixer's -1 loop count (infinite loop) vs SFX's 0 (one-shot)
+- Channel allocation: Music automatically allocated to channel 1 on first play
+- Synthesis: Same square-wave synthesis as SFX (see `create_sound_sequence_chunk()`)
+
+**Technical Specs:**
+- Dependencies: SDL2_mixer (same as SFX)
+- Code Coverage:
+  - Modified: `include/audio.h` (added GameMusic enum, 5 new functions)
+  - Modified: `src/audio.cpp` (music sequences, LoadedMusic struct, playback functions)
+  - Plus existing SFX infrastructure for synthesis and timing
+- No terminal calls needed - pure API-based integration
+
+**Usage Example (for future Title Sequence):**
+```cpp
+// Play title music during title screen
+play_game_music(GameMusic::TITLE);  // Starts infinite loop
+
+// Wait for user input...
+
+// Stop music when transitioning to gameplay
+stop_game_music();
+```
+
+**Usage Example (for future Victory/End-Game Sequence):**
+```cpp
+// When player collects 3rd treasure
+if (comic_num_treasures == 3) {
+    // Play beam-out animation
+    // ...
+    
+    // Play title music during victory sequence
+    play_game_music(GameMusic::TITLE);  // Reuses title music as per original
+    
+    // Award points while music plays
+    // ...
+    
+    // Stop music before returning to main menu
+    stop_game_music();
+}
+```
+
+**Pending (Phase 7+):**
+- [ ] Title sequence screen and menus (Phase 7)
+- [ ] Victory/end-game sequence (Phase 7-8)
+- [ ] Integration of title music into these sequences
+- [ ] Optional: Additional music tracks for different game states
+
+**Post-completion enhancements (non-original behavior):**
+- [ ] Add distinct item-category SFX (POWERUP, SHIELD, TREASURE) as optional enhancements
+- [ ] Add separate GameSound enum entries for enhancement-only item SFX
+- [ ] Map item collection triggers to enhancement-only item SFX when enabled
 
 **Todos:**
 - [ ] Test all 10 implemented sounds with actual gameplay
