@@ -15,6 +15,16 @@
 
 #if defined(HAVE_SDL2_MIXER)
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
+
+// Wait until the SFX channel is no longer playing or a timeout elapses.
+// This avoids relying on fixed delays which can slow tests and flake on CI.
+static void wait_for_sfx_channel_idle(uint32_t timeout_ms = 1000) {
+    uint32_t start = SDL_GetTicks();
+    while (Mix_Playing(SFX_CHANNEL) && (SDL_GetTicks() - start) < timeout_ms) {
+        SDL_Delay(5);
+    }
+}
 #endif
 
 // Provide required globals from main.cpp for physics.cpp linkage.
@@ -1387,10 +1397,10 @@ static void test_audio_priority_blocking() {
     bool lower_played = play_game_sound(GameSound::ENEMY_HIT);
     (void)lower_played;  // Outcome depends on timing, just ensure no crash
     
-    // Allow time for sound to complete (death sound is 7 ticks = ~385ms + buffer)
-    SDL_Delay(600);
+    // Wait for the high-priority sound to finish before trying again
+    wait_for_sfx_channel_idle(1000);
     
-    // After delay, lower priority sound should be able to play
+    // After the channel is idle, lower priority sound should be able to play
     check(play_game_sound(GameSound::ENEMY_HIT), 
           "audio_priority_blocking: sound should play after previous completes");
     
@@ -1411,39 +1421,39 @@ static void test_audio_all_sounds_playable() {
 
     ok = play_game_sound(GameSound::GAME_OVER);
     check(ok, "audio_all_sounds: GAME_OVER should play");
-    SDL_Delay(60);
+    wait_for_sfx_channel_idle(200);
 
     ok = play_game_sound(GameSound::STAGE_TRANSITION);
     check(ok, "audio_all_sounds: STAGE_TRANSITION should play");
-    SDL_Delay(60);
+    wait_for_sfx_channel_idle(200);
 
     ok = play_game_sound(GameSound::ENEMY_HIT);
     check(ok, "audio_all_sounds: ENEMY_HIT should play");
-    SDL_Delay(60);
+    wait_for_sfx_channel_idle(200);
 
     ok = play_game_sound(GameSound::FIRE);
     check(ok, "audio_all_sounds: FIRE should play");
-    SDL_Delay(60);
+    wait_for_sfx_channel_idle(200);
 
     ok = play_game_sound(GameSound::DOOR_OPEN);
     check(ok, "audio_all_sounds: DOOR_OPEN should play");
-    SDL_Delay(60);
+    wait_for_sfx_channel_idle(200);
 
     ok = play_game_sound(GameSound::ITEM_COLLECT);
     check(ok, "audio_all_sounds: ITEM_COLLECT should play");
-    SDL_Delay(60);
+    wait_for_sfx_channel_idle(200);
 
     ok = play_game_sound(GameSound::TELEPORT);
     check(ok, "audio_all_sounds: TELEPORT should play");
-    SDL_Delay(60);
+    wait_for_sfx_channel_idle(200);
 
     ok = play_game_sound(GameSound::PLAYER_HIT);
     check(ok, "audio_all_sounds: PLAYER_HIT should play");
-    SDL_Delay(60);
+    wait_for_sfx_channel_idle(200);
 
     ok = play_game_sound(GameSound::PLAYER_DIE);
     check(ok, "audio_all_sounds: PLAYER_DIE should play");
-    SDL_Delay(60);
+    wait_for_sfx_channel_idle(200);
 
     // UNUSED_0 has no sequence and is intentionally skipped here.
 
