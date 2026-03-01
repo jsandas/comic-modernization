@@ -1,5 +1,6 @@
 #include "../include/physics.h"
 #include "../include/level_loader.h"
+#include "../include/audio.h"
 #include <algorithm>
 #include <cstring>
 #include <iostream>
@@ -28,6 +29,9 @@ extern uint8_t current_stage_number;
 extern const level_t* current_level_ptr;
 extern int8_t source_door_level_number;
 extern int8_t source_door_stage_number;
+
+// Game-over flag from main.cpp
+extern bool game_over_triggered;
 
 // Checkpoint position (defined in main.cpp)
 extern uint8_t comic_y_checkpoint;
@@ -125,6 +129,7 @@ void process_jump_input() {
         key_state_jump && !previous_key_state_jump &&
         comic_jump_counter == comic_jump_power) {
         comic_is_falling_or_jumping = 1;
+        // Note: Original game had no jump sound
     }
 
     previous_key_state_jump = key_state_jump;
@@ -161,10 +166,17 @@ void handle_fall_or_jump() {
         
         // Bounds check: death if too far down
         if (comic_y >= PLAYFIELD_HEIGHT - 3) {
-            // Reset position for now (would be death in full game)
+            // Trigger game-over sound once when player hits bottom
+            if (!game_over_triggered) {
+                play_game_sound(GameSound::GAME_OVER);
+                game_over_triggered = true;
+            }
+            // Reset position for now (simulates death respawn)
             comic_y = 1;
             comic_y_vel = 0;
             comic_is_falling_or_jumping = 0;
+            // Allow future deaths to trigger GAME_OVER sound again
+            game_over_triggered = false;
         }
         
         // STEP 5: Apply gravity
@@ -289,7 +301,7 @@ void move_left() {
         }
         
         // Stage transition to the left
-        // TODO: play_sound(SOUND_STAGE_EDGE_TRANSITION, 4) when audio is implemented
+        play_game_sound(GameSound::STAGE_TRANSITION);
         
         current_stage_number = stage->exit_l;
         comic_y_vel = 0;
@@ -355,7 +367,7 @@ void move_right() {
         }
         
         // Stage transition to the right
-        // TODO: play_sound(SOUND_STAGE_EDGE_TRANSITION, 4) when audio is implemented
+        play_game_sound(GameSound::STAGE_TRANSITION);
         
         current_stage_number = stage->exit_r;
         comic_y_vel = 0;

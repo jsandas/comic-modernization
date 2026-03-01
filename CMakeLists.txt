@@ -9,6 +9,7 @@ find_package(SDL2 REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2_IMAGE REQUIRED IMPORTED_TARGET SDL2_image)
 pkg_check_modules(SDL2_TTF REQUIRED IMPORTED_TARGET SDL2_ttf)
+pkg_check_modules(SDL2_MIXER IMPORTED_TARGET SDL2_mixer)
 
 include_directories(${SDL2_INCLUDE_DIRS})
 include_directories(${CMAKE_SOURCE_DIR}/include)
@@ -23,6 +24,7 @@ add_executable(captain_comic
     src/doors.cpp
     src/cheats.cpp
     src/actors.cpp
+    src/audio.cpp
 )
 
 # Link libraries
@@ -31,6 +33,13 @@ target_link_libraries(captain_comic
     PkgConfig::SDL2_IMAGE
     PkgConfig::SDL2_TTF
 )
+
+if (SDL2_MIXER_FOUND)
+    target_link_libraries(captain_comic PkgConfig::SDL2_MIXER)
+    target_compile_definitions(captain_comic PRIVATE HAVE_SDL2_MIXER=1)
+else()
+    message(WARNING "SDL2_mixer not found. Building without audio output support.")
+endif()
 
 enable_testing()
 
@@ -44,6 +53,7 @@ add_executable(comic_tests
     src/doors.cpp
     src/cheats.cpp
     src/actors.cpp
+    src/audio.cpp
 )
 
 target_link_libraries(comic_tests
@@ -51,6 +61,11 @@ target_link_libraries(comic_tests
     PkgConfig::SDL2_IMAGE
     PkgConfig::SDL2_TTF
 )
+
+if (SDL2_MIXER_FOUND)
+    target_link_libraries(comic_tests PkgConfig::SDL2_MIXER)
+    target_compile_definitions(comic_tests PRIVATE HAVE_SDL2_MIXER=1)
+endif()
 
 add_test(NAME comic_tests_all COMMAND comic_tests)
 add_test(NAME comic_tests_physics_tiles COMMAND comic_tests --filter physics_tiles)

@@ -1,6 +1,7 @@
 #include "actors.h"
 #include "level.h"
 #include "physics.h"
+#include "audio.h"
 #include <iostream>
 
 // Global door key flag defined in main.cpp (used by doors.cpp)
@@ -1175,6 +1176,7 @@ void ActorSystem::try_to_fire() {
             fb.corkscrew_phase = 2;
             fb.animation = 0;
             fb.num_animation_frames = FIREBALL_NUM_FRAMES;
+            play_game_sound(GameSound::FIRE);
             return; // Only one fireball per fire-input tick
         }
     }
@@ -1272,6 +1274,7 @@ void ActorSystem::handle_fireballs() {
             enemy.state = ENEMY_STATE_WHITE_SPARK;
             fb.x = FIREBALL_DEAD;
             fb.y = FIREBALL_DEAD;
+            play_game_sound(GameSound::ENEMY_HIT);
             break; // Fireball consumed; check next fireball
         }
     }
@@ -1436,7 +1439,7 @@ void ActorSystem::collect_item() {
     items_collected[current_level_index][current_stage_index] = 1;
 
     // TODO: Award points (2000 = 20 × 100)
-    // TODO: Play collection sound
+    play_game_sound(GameSound::ITEM_COLLECT);
 
     // Apply item effect
     apply_item_effect(current_item_type);
@@ -1479,7 +1482,6 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
 
         case ITEM_SHIELD:
             // Shield refills HP (handled by main game loop)
-            // TODO: Implement HP refill logic
             break;
 
         case ITEM_GEMS:

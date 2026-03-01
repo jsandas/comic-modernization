@@ -11,6 +11,42 @@
 #include "../include/level_loader.h"
 #include "../include/doors.h"
 #include "../include/actors.h"
+#include "../include/audio.h"
+
+#if defined(HAVE_SDL2_MIXER)
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
+
+// Simple helper for tests: initialize SDL audio subsystem and set dummy driver.
+static bool init_sdl_audio() {
+    // Must be set before SDL audio init so CI/headless environments
+    // reliably select the dummy backend.
+    SDL_SetHint(SDL_HINT_AUDIODRIVER, "dummy");
+
+    if ((SDL_WasInit(SDL_INIT_AUDIO) & SDL_INIT_AUDIO) == 0) {
+        if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+            std::cerr << "SDL_Init AUDIO failed: " << SDL_GetError() << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+static void quit_sdl_audio() {
+    if (SDL_WasInit(SDL_INIT_AUDIO)) {
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
+    }
+}
+
+// Wait until the SFX channel (channel 0) is no longer playing or a timeout elapses.
+// This avoids relying on fixed delays which can slow tests and flake on CI.
+static void wait_for_sfx_channel_idle(uint32_t timeout_ms = 1000) {
+    uint32_t start = SDL_GetTicks();
+    while (Mix_Playing(0) && (SDL_GetTicks() - start) < timeout_ms) {
+        SDL_Delay(5);
+    }
+}
+#endif
 
 // Provide required globals from main.cpp for physics.cpp linkage.
 int comic_x = 0;
@@ -37,12 +73,18 @@ const level_t* current_level_ptr = nullptr;
 int8_t source_door_level_number = -1;
 int8_t source_door_stage_number = -1;
 
+// Testing hook from doors.cpp
+extern bool g_skip_load_on_door;
+
 // Checkpoint position
 uint8_t comic_y_checkpoint = 12;
 uint8_t comic_x_checkpoint = 14;
 
 // Global system pointers (for cheat system compatibility)
 ActorSystem* g_actor_system = nullptr;
+
+// Game-over flag used by physics module (shared with main.cpp)
+bool game_over_triggered = false;
 
 static int failures = 0;
 
@@ -213,6 +255,8 @@ static void reset_door_state() {
     current_level_ptr = nullptr;
     source_door_level_number = -1;
     source_door_stage_number = -1;
+    // default testing behaviour: avoid loading when a door is activated
+    g_skip_load_on_door = true;
 }
 
 /**
@@ -1300,6 +1344,191 @@ static void test_item_special_items() {
           "special_items: should have lantern after collection");
 }
 
+// ===== Audio System Tests =====
+// These tests verify audio initialization, shutdown, and priority-based playback
+
+#if defined(HAVE_SDL2_MIXER)
+
+static void test_audio_init_shutdown_idempotency() {
+    // Initialize SDL audio and set dummy driver
+    check(init_sdl_audio(), "audio_idempotency: SDL audio init should succeed");
+
+    // Multiple initializations should succeed
+    check(initialize_audio_system(), 
+          "audio_idempotency: first initialization should succeed");
+    check(is_audio_system_ready(), 
+          "audio_idempotency: system should be ready after init");
+    
+    // Second init should be safe (idempotent)
+    check(initialize_audio_system(), 
+          "audio_idempotency: second initialization should succeed");
+    check(is_audio_system_ready(), 
+          "audio_idempotency: system should still be ready");
+    
+    // Multiple shutdowns should be safe
+    shutdown_audio_system();
+    check(!is_audio_system_ready(), 
+          "audio_idempotency: system should not be ready after shutdown");
+    
+    shutdown_audio_system();  // Should not crash
+    check(!is_audio_system_ready(), 
+          "audio_idempotency: system should remain not ready after second shutdown");
+
+    quit_sdl_audio();
+}
+
+static void test_audio_graceful_failure_when_not_initialized() {
+    // Initialize SDL audio to satisfy SDL_mixer requirement
+    check(init_sdl_audio(), "audio_uninitialized: SDL audio init should succeed");
+
+    // Ensure audio is not initialized by our subsystem
+    shutdown_audio_system();
+    
+    check(!is_audio_system_ready(), 
+          "audio_uninitialized: system should not be ready");
+    
+    // Attempting to play sound should fail gracefully (return false, not crash)
+    check(!play_game_sound(GameSound::FIRE), 
+          "audio_uninitialized: play should fail when not initialized");
+    check(!play_game_sound(GameSound::ENEMY_HIT), 
+          "audio_uninitialized: enemy hit sound should fail when not initialized");
+
+    quit_sdl_audio();
+}
+
+static void test_audio_priority_interrupt() {
+    check(init_sdl_audio(), "audio_priority_interrupt: SDL audio init should succeed");
+    
+    check(initialize_audio_system(), 
+          "audio_priority_interrupt: initialization should succeed");
+    
+    // Play lower priority sound (STAGE_TRANSITION = priority 3)
+    check(play_game_sound(GameSound::STAGE_TRANSITION), 
+          "audio_priority_interrupt: lower priority sound should play");
+    
+    // Higher priority sound (PLAYER_HIT = priority 8) should interrupt
+    check(play_game_sound(GameSound::PLAYER_HIT), 
+          "audio_priority_interrupt: higher priority sound should interrupt");
+    
+    // Even higher priority (PLAYER_DIE = priority 9) should interrupt
+    check(play_game_sound(GameSound::PLAYER_DIE), 
+          "audio_priority_interrupt: even higher priority should interrupt");
+    
+    shutdown_audio_system();
+    quit_sdl_audio();
+}
+
+static void test_audio_priority_blocking() {
+    check(init_sdl_audio(), "audio_priority_blocking: SDL audio init should succeed");
+    
+    check(initialize_audio_system(), 
+          "audio_priority_blocking: initialization should succeed");
+    
+    // Play high priority sound (PLAYER_DIE = priority 9)
+    check(play_game_sound(GameSound::PLAYER_DIE), 
+          "audio_priority_blocking: high priority sound should play");
+    
+    // Lower priority sound (ENEMY_HIT = priority 4) should be blocked
+    // while PLAYER_DIE is still playing.  Assert it returns false.
+    bool blocked = !play_game_sound(GameSound::ENEMY_HIT);
+    check(blocked, "audio_priority_blocking: lower priority sound should be blocked by active higher priority");
+    
+    // Wait for the high-priority sound to finish before trying again
+    wait_for_sfx_channel_idle(1000);
+    
+    // After the channel is idle, lower priority sound should be able to play
+    check(play_game_sound(GameSound::ENEMY_HIT), 
+          "audio_priority_blocking: sound should play after previous completes");
+    
+    shutdown_audio_system();
+    quit_sdl_audio();
+}
+
+static void test_audio_all_sounds_playable() {
+    check(init_sdl_audio(), "audio_all_sounds: SDL audio init should succeed");
+    
+    check(initialize_audio_system(), 
+          "audio_all_sounds: initialization should succeed");
+
+    // Play each actual sound in non-decreasing priority order so that
+    // none are accidentally blocked by a higher-priority sound still
+    // playing.  Assert the return value so missing or malformed
+    // definitions cause a failure.
+    bool ok;
+
+    ok = play_game_sound(GameSound::GAME_OVER);
+    check(ok, "audio_all_sounds: GAME_OVER should play");
+    wait_for_sfx_channel_idle(200);
+
+    ok = play_game_sound(GameSound::STAGE_TRANSITION);
+    check(ok, "audio_all_sounds: STAGE_TRANSITION should play");
+    wait_for_sfx_channel_idle(200);
+
+    ok = play_game_sound(GameSound::ENEMY_HIT);
+    check(ok, "audio_all_sounds: ENEMY_HIT should play");
+    wait_for_sfx_channel_idle(200);
+
+    ok = play_game_sound(GameSound::FIRE);
+    check(ok, "audio_all_sounds: FIRE should play");
+    wait_for_sfx_channel_idle(200);
+
+    ok = play_game_sound(GameSound::DOOR_OPEN);
+    check(ok, "audio_all_sounds: DOOR_OPEN should play");
+    wait_for_sfx_channel_idle(200);
+
+    ok = play_game_sound(GameSound::ITEM_COLLECT);
+    check(ok, "audio_all_sounds: ITEM_COLLECT should play");
+    wait_for_sfx_channel_idle(200);
+
+    ok = play_game_sound(GameSound::TELEPORT);
+    check(ok, "audio_all_sounds: TELEPORT should play");
+    wait_for_sfx_channel_idle(200);
+
+    ok = play_game_sound(GameSound::PLAYER_HIT);
+    check(ok, "audio_all_sounds: PLAYER_HIT should play");
+    wait_for_sfx_channel_idle(200);
+
+    ok = play_game_sound(GameSound::PLAYER_DIE);
+    check(ok, "audio_all_sounds: PLAYER_DIE should play");
+    wait_for_sfx_channel_idle(200);
+
+    // UNUSED_0 has no sequence (jump sound is omitted in original game)
+    check(!play_game_sound(GameSound::UNUSED_0), 
+          "audio_all_sounds: UNUSED_0 should not play (no jump sound)");
+
+    shutdown_audio_system();
+    quit_sdl_audio();
+}
+
+#else
+
+// Stub tests when SDL2_mixer is not available
+static void test_audio_init_shutdown_idempotency() {
+    check(!initialize_audio_system(), 
+          "audio_no_mixer: init should fail without SDL2_mixer");
+    check(!is_audio_system_ready(), 
+          "audio_no_mixer: system should not be ready without SDL2_mixer");
+}
+
+static void test_audio_graceful_failure_when_not_initialized() {
+    check(!play_game_sound(GameSound::FIRE), 
+          "audio_no_mixer: play should fail without SDL2_mixer");
+}
+
+static void test_audio_priority_interrupt() {
+    // No-op when SDL2_mixer not available
+}
+
+static void test_audio_priority_blocking() {
+    // No-op when SDL2_mixer not available
+}
+
+static void test_audio_all_sounds_playable() {
+    // No-op when SDL2_mixer not available
+}
+
+#endif
+
 struct TestCase {
     const char* name;
     void (*run)();
@@ -1348,7 +1577,12 @@ static const std::vector<TestCase>& test_registry() {
         {"item_boots_jump_power", test_item_boots_jump_power},
         {"item_corkscrew_flag", test_item_corkscrew_flag},
         {"item_treasure_counting", test_item_treasure_counting},
-        {"item_special_items", test_item_special_items}
+        {"item_special_items", test_item_special_items},
+        {"audio_init_shutdown_idempotency", test_audio_init_shutdown_idempotency},
+        {"audio_graceful_failure_when_not_initialized", test_audio_graceful_failure_when_not_initialized},
+        {"audio_priority_interrupt", test_audio_priority_interrupt},
+        {"audio_priority_blocking", test_audio_priority_blocking},
+        {"audio_all_sounds_playable", test_audio_all_sounds_playable}
     };
     return tests;
 }
@@ -1361,6 +1595,9 @@ static bool matches_filter(const std::string& name, const std::string& filter) {
 }
 
 static int run_tests(const std::string& filter) {
+    // Ensure level data is initialized before any test uses it
+    initialize_level_data();
+
     int tests_run = 0;
     for (const auto& test : test_registry()) {
         if (!matches_filter(test.name, filter)) {

@@ -7,6 +7,7 @@
 #include "../include/doors.h"
 #include "../include/cheats.h"
 #include "../include/actors.h"
+#include "../include/audio.h"
 
 // Game state
 int comic_x = 20;
@@ -40,6 +41,9 @@ int8_t source_door_stage_number = -1;
 // Checkpoint position (for respawn and boundary crossing)
 uint8_t comic_y_checkpoint = 12;  // Y position to respawn at
 uint8_t comic_x_checkpoint = 14;  // X position to respawn at
+
+// Game state
+bool game_over_triggered = false;  // Flag to track if game-over sound has been played
 
 // Global system pointers (for access from other modules)
 ActorSystem* g_actor_system = nullptr;  // Actor system pointer (for cheat access)
@@ -117,6 +121,10 @@ int main(int argc, char* argv[]) {
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
+    }
+
+    if (!initialize_audio_system()) {
+        std::cerr << "Warning: Audio system initialization failed. Continuing without sound." << std::endl;
     }
     
     // Initialize cheat system
@@ -294,6 +302,9 @@ int main(int argc, char* argv[]) {
                 ? current_level_ptr->stages[current_stage_number].tiles
                 : nullptr;
             actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x, key_state_fire);
+            
+            // Game-over is handled by physics when Comic hits the bottom of playfield
+            // (sound triggered there).  No additional check needed here.
         }
 
         // Update animation based on state (updates every frame for smooth animation)
@@ -398,6 +409,7 @@ int main(int argc, char* argv[]) {
     g_actor_system = nullptr;  // Clear pointer before actor_system goes out of scope
     delete g_cheats;
     delete g_graphics;
+    shutdown_audio_system();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

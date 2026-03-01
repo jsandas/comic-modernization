@@ -44,6 +44,13 @@
  */
 uint8_t check_door_activation();
 
+/* Testing hook: when set to true, activate_door will update the current
+ * level/stage numbers and source_door_* flags but will NOT actually call
+ * load_new_level()/load_new_stage(). This allows unit tests to exercise
+ * door logic deterministically without dragging in asset loading or
+ * clearing the source flags. Default is false in production. */
+extern bool g_skip_load_on_door;
+
 /**
  * activate_door - Perform door transition to target level/stage
  * 
