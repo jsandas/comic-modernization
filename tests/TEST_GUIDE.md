@@ -367,7 +367,7 @@ Areas that would benefit from additional tests:
 
 ---
 
-**Note:** Audio tests use `SDL_AUDIODRIVER=dummy` for headless testing. Tests work even on systems without physical audio hardware. When SDL2_mixer is not available (HAVE_SDL2_MIXER not defined), tests verify graceful degradation.
+**Note:** Audio tests set `SDL_HINT_AUDIODRIVER` to `"dummy"` via `SDL_SetHint()` before initializing SDL, rather than relying on an environment variable. This allows headless testing and ensures the suite runs on systems without physical audio hardware. When SDL2_mixer is not available (`HAVE_SDL2_MIXER` not defined), tests verify graceful degradation.
 
 ---
 
