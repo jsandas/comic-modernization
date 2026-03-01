@@ -77,6 +77,9 @@ uint8_t comic_x_checkpoint = 14;
 // Global system pointers (for cheat system compatibility)
 ActorSystem* g_actor_system = nullptr;
 
+// Game-over flag used by physics module (shared with main.cpp)
+bool game_over_triggered = false;
+
 static int failures = 0;
 
 static void check(bool condition, const std::string& message) {
