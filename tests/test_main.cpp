@@ -1402,45 +1402,51 @@ static void test_audio_all_sounds_playable() {
     
     check(initialize_audio_system(), 
           "audio_all_sounds: initialization should succeed");
-    
-    // Verify all 13 game sounds can be played without crashing
-    // Note: Some may be blocked by priority system when playing in quick succession
-    // The key test is that none crash the system
-    // UNUSED_0 is skipped (no jump sound in original game)
-    
-    play_game_sound(GameSound::FIRE);
-    SDL_Delay(50);  // Small delay between sounds
-    
-    play_game_sound(GameSound::ITEM_COLLECT);
-    SDL_Delay(50);
-    
-    play_game_sound(GameSound::DOOR_OPEN);
-    SDL_Delay(50);
-    
-    play_game_sound(GameSound::STAGE_TRANSITION);
-    SDL_Delay(50);
-    
-    play_game_sound(GameSound::ENEMY_HIT);
-    SDL_Delay(50);
-    
-    play_game_sound(GameSound::PLAYER_HIT);
-    SDL_Delay(50);
-    
-    play_game_sound(GameSound::PLAYER_DIE);
-    SDL_Delay(50);
 
-    play_game_sound(GameSound::GAME_OVER);
-    SDL_Delay(50);
-    
-    play_game_sound(GameSound::TELEPORT);
-    SDL_Delay(50);
-    
-    play_game_sound(GameSound::TELEPORT);
-    SDL_Delay(50);
-    
-    // If we got here without crashing, all sounds are playable
-    check(true, "audio_all_sounds: all sounds played without crashing");
-    
+    // Play each actual sound in non-decreasing priority order so that
+    // none are accidentally blocked by a higher-priority sound still
+    // playing.  Assert the return value so missing or malformed
+    // definitions cause a failure.
+    bool ok;
+
+    ok = play_game_sound(GameSound::GAME_OVER);
+    check(ok, "audio_all_sounds: GAME_OVER should play");
+    SDL_Delay(60);
+
+    ok = play_game_sound(GameSound::STAGE_TRANSITION);
+    check(ok, "audio_all_sounds: STAGE_TRANSITION should play");
+    SDL_Delay(60);
+
+    ok = play_game_sound(GameSound::ENEMY_HIT);
+    check(ok, "audio_all_sounds: ENEMY_HIT should play");
+    SDL_Delay(60);
+
+    ok = play_game_sound(GameSound::FIRE);
+    check(ok, "audio_all_sounds: FIRE should play");
+    SDL_Delay(60);
+
+    ok = play_game_sound(GameSound::DOOR_OPEN);
+    check(ok, "audio_all_sounds: DOOR_OPEN should play");
+    SDL_Delay(60);
+
+    ok = play_game_sound(GameSound::ITEM_COLLECT);
+    check(ok, "audio_all_sounds: ITEM_COLLECT should play");
+    SDL_Delay(60);
+
+    ok = play_game_sound(GameSound::TELEPORT);
+    check(ok, "audio_all_sounds: TELEPORT should play");
+    SDL_Delay(60);
+
+    ok = play_game_sound(GameSound::PLAYER_HIT);
+    check(ok, "audio_all_sounds: PLAYER_HIT should play");
+    SDL_Delay(60);
+
+    ok = play_game_sound(GameSound::PLAYER_DIE);
+    check(ok, "audio_all_sounds: PLAYER_DIE should play");
+    SDL_Delay(60);
+
+    // UNUSED_0 has no sequence and is intentionally skipped here.
+
     shutdown_audio_system();
 }
 
