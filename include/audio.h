@@ -4,7 +4,7 @@
 #include <cstdint>
 
 enum class GameSound : uint8_t {
-    JUMP = 0,           // Jump action
+    UNUSED_0 = 0,       // Reserved (no jump sound in original game)
     FIRE,               // Fireball launch
     ITEM_COLLECT,       // Item pickup
     DOOR_OPEN,          // Door opening

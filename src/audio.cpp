@@ -48,11 +48,6 @@ constexpr int FREQ_TELEPORT_2 = 155;   // 0x1e00
 constexpr int FREQ_TELEPORT_3 = 166;   // 0x1c00
 constexpr int FREQ_TELEPORT_4 = 179;   // 0x1a00
 
-// Jump sound: simple rising tone
-constexpr int FREQ_JUMP_1 = 300;
-constexpr int FREQ_JUMP_2 = 400;
-constexpr int FREQ_JUMP_3 = 500;
-
 // Death sound: descending tones   0x3000, 0x3800, 0x4000, 0x0800, 0x1000, 0x1800
 constexpr int FREQ_DEATH_1 = 97;    // 0x3000
 constexpr int FREQ_DEATH_2 = 83;    // 0x3800
@@ -91,10 +86,6 @@ struct FrequencyNote {
 
 // ===== Sound Sequences (matching original PC speaker sounds) =====
 // Each sound is a sequence of frequencies played in order
-
-static const std::vector<FrequencyNote> SOUND_JUMP_SEQUENCE = {
-    {FREQ_JUMP_1, 2}, {FREQ_JUMP_2, 2}, {FREQ_JUMP_3, 2}
-};
 
 static const std::vector<FrequencyNote> SOUND_FIRE_SEQUENCE = {
     {FREQ_FIRE_1, 1}, {FREQ_FIRE_2, 1}
@@ -161,7 +152,7 @@ uint32_t g_current_sound_end_tick = 0;
 
 // ===== Sound Priorities =====
 constexpr std::array<uint8_t, static_cast<size_t>(GameSound::COUNT)> SOUND_PRIORITIES = {{
-    4,   // JUMP
+    0,   // UNUSED_0 (no jump sound in original game)
     5,   // FIRE
     6,   // ITEM_COLLECT
     5,   // DOOR_OPEN
@@ -267,8 +258,8 @@ void free_loaded_sounds() {
  */
 static const std::vector<FrequencyNote>* get_sound_sequence(GameSound sound) {
     switch (sound) {
-        case GameSound::JUMP:
-            return &SOUND_JUMP_SEQUENCE;
+        case GameSound::UNUSED_0:
+            return nullptr;  // No jump sound in original game
         case GameSound::FIRE:
             return &SOUND_FIRE_SEQUENCE;
         case GameSound::ITEM_COLLECT:
@@ -323,13 +314,18 @@ bool initialize_audio_system() {
 
     Mix_AllocateChannels(8);
 
-    // Load all 13 game sounds
+    // Load all game sounds (skip UNUSED_0 which has no sequence)
     for (size_t index = 0; index < SOUND_PRIORITIES.size(); ++index) {
         GameSound sound = static_cast<GameSound>(index);
         const std::vector<FrequencyNote>* sequence = get_sound_sequence(sound);
         
-        if (!sequence || sequence->empty()) {
-            std::cerr << "Error: Sound #" << index << " has no sequence defined" << std::endl;
+        // Skip unused sound slots
+        if (!sequence) {
+            continue;
+        }
+        
+        if (sequence->empty()) {
+            std::cerr << "Error: Sound #" << index << " has empty sequence" << std::endl;
             free_loaded_sounds();
             Mix_CloseAudio();
             return false;

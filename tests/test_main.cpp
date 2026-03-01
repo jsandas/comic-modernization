@@ -1344,10 +1344,10 @@ static void test_audio_graceful_failure_when_not_initialized() {
           "audio_uninitialized: system should not be ready");
     
     // Attempting to play sound should fail gracefully (return false, not crash)
-    check(!play_game_sound(GameSound::JUMP), 
-          "audio_uninitialized: play should fail when not initialized");
     check(!play_game_sound(GameSound::FIRE), 
-          "audio_uninitialized: fire sound should fail when not initialized");
+          "audio_uninitialized: play should fail when not initialized");
+    check(!play_game_sound(GameSound::ENEMY_HIT), 
+          "audio_uninitialized: enemy hit sound should fail when not initialized");
 }
 
 static void test_audio_priority_interrupt() {
@@ -1356,8 +1356,8 @@ static void test_audio_priority_interrupt() {
     check(initialize_audio_system(), 
           "audio_priority_interrupt: initialization should succeed");
     
-    // Play lower priority sound (JUMP = priority 4)
-    check(play_game_sound(GameSound::JUMP), 
+    // Play lower priority sound (STAGE_TRANSITION = priority 3)
+    check(play_game_sound(GameSound::STAGE_TRANSITION), 
           "audio_priority_interrupt: lower priority sound should play");
     
     // Higher priority sound (PLAYER_HIT = priority 8) should interrupt
@@ -1381,17 +1381,17 @@ static void test_audio_priority_blocking() {
     check(play_game_sound(GameSound::PLAYER_DIE), 
           "audio_priority_blocking: high priority sound should play");
     
-    // Lower priority sound (JUMP = priority 4) should be blocked
+    // Lower priority sound (ENEMY_HIT = priority 4) should be blocked
     // Note: This may return false or succeed depending on timing
     // The important thing is it doesn't crash and respects priority
-    bool lower_played = play_game_sound(GameSound::JUMP);
+    bool lower_played = play_game_sound(GameSound::ENEMY_HIT);
     (void)lower_played;  // Outcome depends on timing, just ensure no crash
     
     // Allow time for sound to complete (death sound is 7 ticks = ~385ms + buffer)
     SDL_Delay(600);
     
     // After delay, lower priority sound should be able to play
-    check(play_game_sound(GameSound::JUMP), 
+    check(play_game_sound(GameSound::ENEMY_HIT), 
           "audio_priority_blocking: sound should play after previous completes");
     
     shutdown_audio_system();
@@ -1403,15 +1403,13 @@ static void test_audio_all_sounds_playable() {
     check(initialize_audio_system(), 
           "audio_all_sounds: initialization should succeed");
     
-    // Verify all 13 game sounds can be played without crashing
+    // Verify all 12 game sounds can be played without crashing
     // Note: Some may be blocked by priority system when playing in quick succession
     // The key test is that none crash the system
-    
-    play_game_sound(GameSound::JUMP);
-    SDL_Delay(50);  // Small delay between sounds
+    // UNUSED_0 is skipped (no jump sound in original game)
     
     play_game_sound(GameSound::FIRE);
-    SDL_Delay(50);
+    SDL_Delay(50);  // Small delay between sounds
     
     play_game_sound(GameSound::ITEM_COLLECT);
     SDL_Delay(50);
@@ -1462,7 +1460,7 @@ static void test_audio_init_shutdown_idempotency() {
 }
 
 static void test_audio_graceful_failure_when_not_initialized() {
-    check(!play_game_sound(GameSound::JUMP), 
+    check(!play_game_sound(GameSound::FIRE), 
           "audio_no_mixer: play should fail without SDL2_mixer");
 }
 

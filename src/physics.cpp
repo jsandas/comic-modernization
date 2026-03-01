@@ -126,7 +126,7 @@ void process_jump_input() {
         key_state_jump && !previous_key_state_jump &&
         comic_jump_counter == comic_jump_power) {
         comic_is_falling_or_jumping = 1;
-        play_game_sound(GameSound::JUMP);
+        // Note: Original game had no jump sound
     }
 
     previous_key_state_jump = key_state_jump;

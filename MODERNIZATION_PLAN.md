@@ -500,22 +500,20 @@ A centralized system for managing debug cheats and development tools. Activated 
 - [x] Add synthesized PC-speaker-style square-wave SFX generation (SDL_mixer `Mix_Chunk`)
 - [x] Implement single-channel SFX priority system (higher priority interrupts lower)
 - [x] Integrate core gameplay SFX triggers
-  - [x] Jump
   - [x] Fire
   - [x] Item collect
   - [x] Door open
   - [x] Stage edge transition
 
 **Phase 6.2: Sound Definitions & Event Mapping ✅ COMPLETE**
-**Objective:** Port the original 13 game sound definitions with frequency sequences and map each to in-game events
+**Objective:** Port the original 12 game sound definitions with frequency sequences and map each to in-game events
 
 **Completed:**
 - [x] Extended audio system to support multi-frequency sound sequences
   - [x] Created `FrequencyNote` structure for frequency/duration pairs
   - [x] Implemented `create_sound_sequence_chunk()` to synthesize complete frequency sequences
   - [x] Updated SDL_mixer chunk synthesis to handle frequency changes per note
-- [x] Ported all 13 original PC-speaker sound definitions
-  - [x] JUMP: Rising three-tone (300→400→500 Hz)
+- [x] Ported all 12 original PC-speaker sound definitions
   - [x] FIRE: Two-note fireball launch (145→155 Hz)
   - [x] ITEM_COLLECT: Three-note ascending (294→371→441→582 Hz)
   - [x] DOOR_OPEN: Nine-note door sequence (310↔466 Hz palindrome)
@@ -529,7 +527,6 @@ A centralized system for managing debug cheats and development tools. Activated 
   - [x] SHIELD: Three-note shield/HP (500→600→700 Hz)
   - [x] VICTORY: Three-note victory jingle (400→500→600 Hz)
 - [x] Integrated sound triggers into game events
-  - [x] JUMP trigger: `physics.cpp` - `process_jump_input()` on jump initiation
   - [x] FIRE trigger: `actors.cpp` - `try_to_fire()` on fireball spawn
   - [x] ITEM_COLLECT trigger: `actors.cpp` - `collect_item()` on collision
   - [x] TREASURE trigger: `actors.cpp` - `apply_item_effect()` for gems/crown/gold
@@ -555,7 +552,7 @@ A centralized system for managing debug cheats and development tools. Activated 
 - PC speaker square-wave synthesis recreated in SDL2 audio
 
 **Todos:**
-- [ ] Test all 13 sounds with actual gameplay
+- [ ] Test all 12 sounds with actual gameplay
 - [ ] Adjust sound frequencies/durations if needed based on player feedback
 - [ ] Port music system (Phase 6.3)
   - [ ] Title screen music
