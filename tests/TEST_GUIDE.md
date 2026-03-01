@@ -336,12 +336,12 @@ Areas that would benefit from additional tests:
 **Purpose:** Verify higher priority sounds can interrupt lower priority sounds.
 
 **What it tests:**
-- Lower priority sound (JUMP = priority 4) plays successfully
+- Lower priority sound (STAGE_TRANSITION = priority 3) plays successfully
 - Higher priority sound (PLAYER_HIT = priority 8) interrupts it
 - Even higher priority (PLAYER_DIE = priority 9) interrupts the previous sound
 - Sound channel properly switches between sounds
 
-**Why it matters:** Audio feedback must match gameplay importance. Critical events like player death should always be audible, even if a jump sound is already playing. Priority-based interruption ensures players hear the most important audio cues.
+**Why it matters:** Audio feedback must match gameplay importance. Critical events like player death should always be audible, even if a lower-priority effect is already playing. Priority-based interruption ensures players hear the most important audio cues.
 
 ---
 
@@ -362,7 +362,8 @@ Areas that would benefit from additional tests:
 **Purpose:** Verify all defined game sounds can be synthesized and played without errors (including the reserved UNUSED_0 entry).
 
 **What it tests:**
-- Each sound enum value (UNUSED_0, FIRE, ITEM_COLLECT, DOOR_OPEN, STAGE_TRANSITION, ENEMY_HIT, PLAYER_HIT, PLAYER_DIE, GAME_OVER, TELEPORT) can be played
+- Each implemented sound enum value (FIRE, ITEM_COLLECT, DOOR_OPEN, STAGE_TRANSITION, ENEMY_HIT, PLAYER_HIT, PLAYER_DIE, GAME_OVER, TELEPORT) can be played
+- `UNUSED_0` is reserved and correctly does not play (matches original game: no jump sound)
 - Sound synthesis succeeds for all sound definitions
 - No crashes or errors when playing any sound
 - All sound sequences are properly defined
