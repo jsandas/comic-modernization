@@ -1481,7 +1481,9 @@ static void test_audio_all_sounds_playable() {
     check(ok, "audio_all_sounds: PLAYER_DIE should play");
     wait_for_sfx_channel_idle(200);
 
-    // UNUSED_0 has no sequence and is intentionally skipped here.
+    // UNUSED_0 has no sequence (jump sound is omitted in original game)
+    check(!play_game_sound(GameSound::UNUSED_0), 
+          "audio_all_sounds: UNUSED_0 should not play (no jump sound)");
 
     shutdown_audio_system();
     quit_sdl_audio();
