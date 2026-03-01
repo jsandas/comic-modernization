@@ -1387,8 +1387,8 @@ static void test_audio_priority_blocking() {
     bool lower_played = play_game_sound(GameSound::JUMP);
     (void)lower_played;  // Outcome depends on timing, just ensure no crash
     
-    // Allow time for sound to complete (death sound is 6 ticks = ~330ms + buffer)
-    SDL_Delay(400);
+    // Allow time for sound to complete (death sound is 7 ticks = ~385ms + buffer)
+    SDL_Delay(600);
     
     // After delay, lower priority sound should be able to play
     check(play_game_sound(GameSound::JUMP), 
