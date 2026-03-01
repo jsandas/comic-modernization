@@ -35,11 +35,11 @@ static void quit_sdl_audio() {
     }
 }
 
-// Wait until the SFX channel is no longer playing or a timeout elapses.
+// Wait until the SFX channel (channel 0) is no longer playing or a timeout elapses.
 // This avoids relying on fixed delays which can slow tests and flake on CI.
 static void wait_for_sfx_channel_idle(uint32_t timeout_ms = 1000) {
     uint32_t start = SDL_GetTicks();
-    while (Mix_Playing(SFX_CHANNEL) && (SDL_GetTicks() - start) < timeout_ms) {
+    while (Mix_Playing(0) && (SDL_GetTicks() - start) < timeout_ms) {
         SDL_Delay(5);
     }
 }
