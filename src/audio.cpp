@@ -132,6 +132,9 @@ struct LoadedSound {
 
 std::array<LoadedSound, static_cast<size_t>(GameSound::COUNT)> g_sounds{};
 bool g_audio_initialized = false;
+// Track whether we called SDL_InitSubSystem(SDL_INIT_AUDIO)
+// so shutdown can undo it. SDL may have been initialized by caller.
+bool g_sdl_audio_initialized = false;
 uint8_t g_current_priority = 0;
 uint32_t g_current_sound_end_tick = 0;
 
@@ -283,6 +286,16 @@ bool initialize_audio_system() {
         return true;
     }
 
+    // Ensure SDL audio subsystem is initialized; SDL_mixer requires this.
+    if ((SDL_WasInit(SDL_INIT_AUDIO) & SDL_INIT_AUDIO) == 0) {
+        if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
+            std::cerr << "Failed to init SDL audio subsystem: " << SDL_GetError() << std::endl;
+            return false;
+        }
+        // track that we initialized it so shutdown can clean up
+        g_sdl_audio_initialized = true;
+    }
+
     if (Mix_OpenAudio(AUDIO_SAMPLE_RATE, AUDIO_S16SYS, AUDIO_CHANNELS, AUDIO_CHUNK_SIZE) < 0) {
         std::cerr << "Failed to initialize SDL_mixer audio: " << Mix_GetError() << std::endl;
         return false;
@@ -338,6 +351,11 @@ void shutdown_audio_system() {
     g_audio_initialized = false;
     g_current_priority = 0;
     g_current_sound_end_tick = 0;
+
+    if (g_sdl_audio_initialized) {
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
+        g_sdl_audio_initialized = false;
+    }
 }
 
 bool is_audio_system_ready() {
