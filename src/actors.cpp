@@ -1490,8 +1490,8 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
             if (!comic_has_gems) {
                 comic_has_gems = 1;
                 comic_num_treasures++;
-                // Play treasure-specific sound
-                play_game_sound(GameSound::TREASURE);
+                // Play item collection sound
+                play_game_sound(GameSound::ITEM_COLLECT);
             }
             break;
 
@@ -1499,8 +1499,8 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
             if (!comic_has_crown) {
                 comic_has_crown = 1;
                 comic_num_treasures++;
-                // Play treasure-specific sound
-                play_game_sound(GameSound::TREASURE);
+                // Play item collection sound
+                play_game_sound(GameSound::ITEM_COLLECT);
             }
             break;
 
@@ -1508,8 +1508,8 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
             if (!comic_has_gold) {
                 comic_has_gold = 1;
                 comic_num_treasures++;
-                // Play treasure-specific sound
-                play_game_sound(GameSound::TREASURE);
+                // Play item collection sound
+                play_game_sound(GameSound::ITEM_COLLECT);
             }
             break;
 

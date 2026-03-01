@@ -6,15 +6,13 @@
 enum class GameSound : uint8_t {
     UNUSED_0 = 0,       // Reserved (no jump sound in original game)
     FIRE,               // Fireball launch
-    ITEM_COLLECT,       // Item pickup
+    ITEM_COLLECT,       // Item pickup (includes treasures and power-ups)
     DOOR_OPEN,          // Door opening
     STAGE_TRANSITION,   // Stage edge crossing
     ENEMY_HIT,          // Fireball hits enemy
     PLAYER_HIT,         // Player takes damage
     PLAYER_DIE,         // Player death
     GAME_OVER,          // Game over jingle
-    POWERUP,            // Shield/power-up collection (shares ITEM_COLLECT sound)
-    TREASURE,           // Treasure collection sound
     TELEPORT,           // Teleport action
     COUNT
 };

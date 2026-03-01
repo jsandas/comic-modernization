@@ -1432,10 +1432,7 @@ static void test_audio_all_sounds_playable() {
     play_game_sound(GameSound::GAME_OVER);
     SDL_Delay(50);
     
-    play_game_sound(GameSound::POWERUP);
-    SDL_Delay(50);
-    
-    play_game_sound(GameSound::TREASURE);
+    play_game_sound(GameSound::TELEPORT);
     SDL_Delay(50);
     
     play_game_sound(GameSound::TELEPORT);

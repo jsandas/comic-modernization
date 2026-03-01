@@ -118,14 +118,6 @@ static const std::vector<FrequencyNote> SOUND_GAME_OVER_SEQUENCE = {
     {NOTE_FS4, 5}, {NOTE_E4, 2}, {NOTE_D4, 4}, {NOTE_E4, 15}
 };
 
-static const std::vector<FrequencyNote> SOUND_POWERUP_SEQUENCE = {
-    {NOTE_C5, 3}, {NOTE_E5, 3}, {NOTE_G5, 4}
-};
-
-static const std::vector<FrequencyNote> SOUND_TREASURE_SEQUENCE = {
-    {NOTE_C5, 3}, {NOTE_E5, 3}, {NOTE_G5, 4}
-};
-
 static const std::vector<FrequencyNote> SOUND_TELEPORT_SEQUENCE = {
     {FREQ_TELEPORT_1, 2}, {FREQ_TELEPORT_2, 2}, {FREQ_TELEPORT_3, 2}, {FREQ_TELEPORT_4, 2},
     {FREQ_TELEPORT_3, 2}, {FREQ_TELEPORT_2, 2}, {FREQ_TELEPORT_1, 2}
@@ -147,15 +139,13 @@ uint32_t g_current_sound_end_tick = 0;
 constexpr std::array<uint8_t, static_cast<size_t>(GameSound::COUNT)> SOUND_PRIORITIES = {{
     0,   // UNUSED_0 (no jump sound in original game)
     5,   // FIRE
-    6,   // ITEM_COLLECT
+    6,   // ITEM_COLLECT (includes treasures and power-ups)
     5,   // DOOR_OPEN
     3,   // STAGE_TRANSITION
     4,   // ENEMY_HIT
     8,   // PLAYER_HIT
     9,   // PLAYER_DIE
     2,   // GAME_OVER
-    5,   // POWERUP
-    7,   // TREASURE
     7,   // TELEPORT
 }};
 
@@ -268,10 +258,6 @@ static const std::vector<FrequencyNote>* get_sound_sequence(GameSound sound) {
             return &SOUND_PLAYER_DIE_SEQUENCE;
         case GameSound::GAME_OVER:
             return &SOUND_GAME_OVER_SEQUENCE;
-        case GameSound::POWERUP:
-            return &SOUND_POWERUP_SEQUENCE;
-        case GameSound::TREASURE:
-            return &SOUND_TREASURE_SEQUENCE;
         case GameSound::TELEPORT:
             return &SOUND_TELEPORT_SEQUENCE;
         default:
