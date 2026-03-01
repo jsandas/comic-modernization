@@ -108,8 +108,7 @@ make
 
 ```bash
 # Note: sdl2-mixer is optional but recommended for audio
-vcpkg install sdl2 sdl2-image sdl2-ttf sdl2-mixerwnload from libsdl.org or use vcpkg)
-vcpkg install sdl2
+vcpkg install sdl2 sdl2-image sdl2-ttf sdl2-mixer
 
 # Build with Visual Studio or MinGW
 mkdir build && cd build
