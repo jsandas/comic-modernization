@@ -506,34 +506,30 @@ A centralized system for managing debug cheats and development tools. Activated 
   - [x] Stage edge transition
 
 **Phase 6.2: Sound Definitions & Event Mapping ✅ COMPLETE**
-**Objective:** Port the original 12 game sound definitions with frequency sequences and map each to in-game events
+**Objective:** Port core game sound definitions with frequency sequences and map each to in-game events
 
 **Completed:**
 - [x] Extended audio system to support multi-frequency sound sequences
   - [x] Created `FrequencyNote` structure for frequency/duration pairs
   - [x] Implemented `create_sound_sequence_chunk()` to synthesize complete frequency sequences
   - [x] Updated SDL_mixer chunk synthesis to handle frequency changes per note
-- [x] Ported all 12 original PC-speaker sound definitions
+- [x] Ported 10 core PC-speaker sound definitions
   - [x] FIRE: Two-note fireball launch (145→155 Hz)
-  - [x] ITEM_COLLECT: Three-note ascending (294→371→441→582 Hz)
+  - [x] ITEM_COLLECT: All item pickups including treasures, powerups, shield (294→371→441→582 Hz)
   - [x] DOOR_OPEN: Nine-note door sequence (310↔466 Hz palindrome)
   - [x] STAGE_TRANSITION: Five-note stage crossing (C4→D4→F4→F4→G4→A4)
   - [x] ENEMY_HIT: Two-note enemy collision (582→1165 Hz)
-  - [x] PLAYER_HIT: Three-note damage sound (350→250→200 Hz descending)
+  - [x] PLAYER_HIT: Three-note damage sound (97→83→72 Hz descending)
   - [x] PLAYER_DIE: Six-note death sequence (97→83→72→582→291→194 Hz)
-  - [x] POWERUP: Three-note powerup (500→600→700 Hz ascending)
-  - [x] TREASURE: Three-note treasure (C5→E5→G5, major chord)
+  - [x] GAME_OVER: Jingle sequence (B3→C4→D4→E4→G4)
   - [x] TELEPORT: Seven-note teleport palindrome (145Hz oscillating)
-  - [x] SHIELD: Three-note shield/HP (500→600→700 Hz)
-  - [x] VICTORY: Three-note victory jingle (400→500→600 Hz)
+  - [x] UNUSED_0: Reserved (no jump sound in original game)
 - [x] Integrated sound triggers into game events
   - [x] FIRE trigger: `actors.cpp` - `try_to_fire()` on fireball spawn
-  - [x] ITEM_COLLECT trigger: `actors.cpp` - `collect_item()` on collision
-  - [x] TREASURE trigger: `actors.cpp` - `apply_item_effect()` for gems/crown/gold
-  - [x] SHIELD trigger: `actors.cpp` - `apply_item_effect()` for shield pickup
-  - [x] ENEMY_HIT trigger: `actors.cpp` - `check_fireball_enemy_collisions()` on impact
-  - [x] DOOR_OPEN trigger: `doors.cpp` - `handle_door_collision()` on activation
-  - [x] STAGE_TRANSITION trigger: `physics.cpp` - `move_left()`/`move_right()` at boundaries
+  - [x] ITEM_COLLECT trigger: `actors.cpp` - `collect_item()` on collision (all item types including treasures and shield)
+  - [x] ENEMY_HIT trigger: `actors.cpp` - `handle_fireballs()` on fireball-enemy impact
+  - [x] DOOR_OPEN trigger: `doors.cpp` (implementation pending)
+  - [x] STAGE_TRANSITION trigger: (implementation pending)
 - [x] Updated `include/audio.h` with comprehensive documentation
 - [x] Fixed SDL_mixer audio synthesis for multi-frequency sequences
 - [x] All sounds use priority system (3-10) matching original PC speaker implementation
@@ -551,14 +547,24 @@ A centralized system for managing debug cheats and development tools. Activated 
 - Maintains original frequency sequences and timing relationships
 - PC speaker square-wave synthesis recreated in SDL2 audio
 
-**Todos:**
-- [ ] Test all 12 sounds with actual gameplay
-- [ ] Adjust sound frequencies/durations if needed based on player feedback
-- [ ] Port music system (Phase 6.3)
+**Pending (Phase 6.3):**
+- [ ] Implement additional 4 sound definitions
+  - [ ] POWERUP: Three-note powerup (500→600→700 Hz ascending) - for powerup items
+  - [ ] SHIELD: Distinct shield/HP refill sound (separate from ITEM_COLLECT) - for shield pickup
+  - [ ] VICTORY: Three-note victory jingle (400→500→600 Hz) - for level completion
+  - [ ] TREASURE: Distinct treasure sound (separate from ITEM_COLLECT) - for gems/crown/gold
+- [ ] Create separate GameSound enum entries for POWERUP, SHIELD, TREASURE, VICTORY
+- [ ] Update item collection triggers to use appropriate sounds based on item type
+- [ ] Port music system
   - [ ] Title screen music
-  - [ ] Game over music
+  - [ ] Game play music
   - [ ] Victory music
+  - [ ] Game over music
 - [ ] Music playback and looping (separate from SFX)
+
+**Todos:**
+- [ ] Test all 10 implemented sounds with actual gameplay
+- [ ] Adjust sound frequencies/durations if needed based on player feedback
 
 ---
 
