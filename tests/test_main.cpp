@@ -17,6 +17,24 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 
+// Simple helper for tests: initialize SDL audio subsystem and set dummy driver.
+static bool init_sdl_audio() {
+    if (SDL_WasInit(SDL_INIT_AUDIO) == 0) {
+        if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+            std::cerr << "SDL_Init AUDIO failed: " << SDL_GetError() << std::endl;
+            return false;
+        }
+    }
+    SDL_SetHint(SDL_HINT_AUDIODRIVER, "dummy");
+    return true;
+}
+
+static void quit_sdl_audio() {
+    if (SDL_WasInit(SDL_INIT_AUDIO)) {
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
+    }
+}
+
 // Wait until the SFX channel is no longer playing or a timeout elapses.
 // This avoids relying on fixed delays which can slow tests and flake on CI.
 static void wait_for_sfx_channel_idle(uint32_t timeout_ms = 1000) {
@@ -1321,9 +1339,9 @@ static void test_item_special_items() {
 #if defined(HAVE_SDL2_MIXER)
 
 static void test_audio_init_shutdown_idempotency() {
-    // Set dummy audio driver to avoid requiring real audio hardware
-    SDL_SetHint(SDL_HINT_AUDIODRIVER, "dummy");
-    
+    // Initialize SDL audio and set dummy driver
+    check(init_sdl_audio(), "audio_idempotency: SDL audio init should succeed");
+
     // Multiple initializations should succeed
     check(initialize_audio_system(), 
           "audio_idempotency: first initialization should succeed");
@@ -1344,10 +1362,15 @@ static void test_audio_init_shutdown_idempotency() {
     shutdown_audio_system();  // Should not crash
     check(!is_audio_system_ready(), 
           "audio_idempotency: system should remain not ready after second shutdown");
+
+    quit_sdl_audio();
 }
 
 static void test_audio_graceful_failure_when_not_initialized() {
-    // Ensure audio is not initialized
+    // Initialize SDL audio to satisfy SDL_mixer requirement
+    check(init_sdl_audio(), "audio_uninitialized: SDL audio init should succeed");
+
+    // Ensure audio is not initialized by our subsystem
     shutdown_audio_system();
     
     check(!is_audio_system_ready(), 
@@ -1358,10 +1381,12 @@ static void test_audio_graceful_failure_when_not_initialized() {
           "audio_uninitialized: play should fail when not initialized");
     check(!play_game_sound(GameSound::ENEMY_HIT), 
           "audio_uninitialized: enemy hit sound should fail when not initialized");
+
+    quit_sdl_audio();
 }
 
 static void test_audio_priority_interrupt() {
-    SDL_SetHint(SDL_HINT_AUDIODRIVER, "dummy");
+    check(init_sdl_audio(), "audio_priority_interrupt: SDL audio init should succeed");
     
     check(initialize_audio_system(), 
           "audio_priority_interrupt: initialization should succeed");
@@ -1379,10 +1404,11 @@ static void test_audio_priority_interrupt() {
           "audio_priority_interrupt: even higher priority should interrupt");
     
     shutdown_audio_system();
+    quit_sdl_audio();
 }
 
 static void test_audio_priority_blocking() {
-    SDL_SetHint(SDL_HINT_AUDIODRIVER, "dummy");
+    check(init_sdl_audio(), "audio_priority_blocking: SDL audio init should succeed");
     
     check(initialize_audio_system(), 
           "audio_priority_blocking: initialization should succeed");
@@ -1404,10 +1430,11 @@ static void test_audio_priority_blocking() {
           "audio_priority_blocking: sound should play after previous completes");
     
     shutdown_audio_system();
+    quit_sdl_audio();
 }
 
 static void test_audio_all_sounds_playable() {
-    SDL_SetHint(SDL_HINT_AUDIODRIVER, "dummy");
+    check(init_sdl_audio(), "audio_all_sounds: SDL audio init should succeed");
     
     check(initialize_audio_system(), 
           "audio_all_sounds: initialization should succeed");
@@ -1457,6 +1484,7 @@ static void test_audio_all_sounds_playable() {
     // UNUSED_0 has no sequence and is intentionally skipped here.
 
     shutdown_audio_system();
+    quit_sdl_audio();
 }
 
 #else
