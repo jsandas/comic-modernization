@@ -19,13 +19,16 @@
 
 // Simple helper for tests: initialize SDL audio subsystem and set dummy driver.
 static bool init_sdl_audio() {
-    if (SDL_WasInit(SDL_INIT_AUDIO) == 0) {
+    // Must be set before SDL audio init so CI/headless environments
+    // reliably select the dummy backend.
+    SDL_SetHint(SDL_HINT_AUDIODRIVER, "dummy");
+
+    if ((SDL_WasInit(SDL_INIT_AUDIO) & SDL_INIT_AUDIO) == 0) {
         if (SDL_Init(SDL_INIT_AUDIO) < 0) {
             std::cerr << "SDL_Init AUDIO failed: " << SDL_GetError() << std::endl;
             return false;
         }
     }
-    SDL_SetHint(SDL_HINT_AUDIODRIVER, "dummy");
     return true;
 }
 
