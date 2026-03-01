@@ -33,10 +33,14 @@ This project ports the game to modern systems while maintaining behavioral fidel
 
 ### Prerequisites
 
+**Required:**
 - CMake 3.16+
 - C++17 compiler (GCC 7+, Clang 5+, MSVC 2017+)
 - SDL2 development libraries (SDL2, SDL2_image, SDL2_ttf)
 - Original game files (https://archive.org/download/TheAdventuresOfCaptainComic/AdventuresOfCaptainComicEpisode1The-PlanetOfDeathR5sw1991michaelA.Denioaction.zip)
+
+**Optional (recommended):**
+- SDL2_mixer (for sound effects and music; game runs without it but silently)
 
 ### Assets
 
@@ -69,8 +73,8 @@ are referenced by the C++ code.
 ### macOS
 
 ```bash
-# Install SDL2
-brew install sdl2 sdl2_image sdl2_mixer sdl2_ttf
+# Install SDL2 (sdl2_mixer is optional but recommended for audio)
+brew install sdl2 sdl2_image sdl2_ttf sdl2_mixer
 
 # Build
 mkdir build && cd build
@@ -85,10 +89,11 @@ make
 
 ```bash
 # Install SDL2 (Ubuntu/Debian)
-sudo apt-get install cmake g++ libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev
+# Note: libsdl2-mixer-dev is optional but recommended for audio
+sudo apt-get install cmake g++ libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev
 
 # Or Fedora
-sudo dnf install cmake gcc-c++ sdl2-compat-devel SDL2_image-devel SDL2_mixer-devel SDL2_ttf-devel
+sudo dnf install cmake gcc-c++ sdl2-compat-devel SDL2_image-devel SDL2_ttf-devel SDL2_mixer-devel
 
 # Build
 mkdir build && cd build
@@ -102,7 +107,8 @@ make
 ### Windows
 
 ```bash
-# Install SDL2 (download from libsdl.org or use vcpkg)
+# Note: sdl2-mixer is optional but recommended for audio
+vcpkg install sdl2 sdl2-image sdl2-ttf sdl2-mixerwnload from libsdl.org or use vcpkg)
 vcpkg install sdl2
 
 # Build with Visual Studio or MinGW

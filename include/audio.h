@@ -4,25 +4,57 @@
 #include <cstdint>
 
 enum class GameSound : uint8_t {
-    JUMP = 0,
-    FIRE,
-    ITEM_COLLECT,
-    DOOR_OPEN,
-    STAGE_TRANSITION,
-    ENEMY_HIT,
-    PLAYER_HIT,
-    PLAYER_DIE,
-    POWERUP,
-    TREASURE,
-    TELEPORT,
-    SHIELD,
-    VICTORY,
+    JUMP = 0,           // Jump action
+    FIRE,               // Fireball launch
+    ITEM_COLLECT,       // Item pickup
+    DOOR_OPEN,          // Door opening
+    STAGE_TRANSITION,   // Stage edge crossing
+    ENEMY_HIT,          // Fireball hits enemy
+    PLAYER_HIT,         // Player takes damage
+    PLAYER_DIE,         // Player death
+    POWERUP,            // Not yet assigned (was POWERUP in original)
+    TREASURE,           // Treasure collection sound
+    TELEPORT,           // Teleport action
+    SHIELD,             // Shield/HP restoration
+    VICTORY,            // Game victory jingle
     COUNT
 };
 
+/**
+ * Initialize the audio subsystem
+ * 
+ * Sets up SDL_mixer and synthesizes all game sound effects.
+ * Call once at startup before calling play_game_sound().
+ * 
+ * @return true if initialization successful, false on error
+ */
 bool initialize_audio_system();
+
+/**
+ * Shutdown the audio subsystem
+ * 
+ * Stops any playing sounds and frees all audio resources.
+ * Call once at program shutdown.
+ */
 void shutdown_audio_system();
+
+/**
+ * Check if audio system is ready
+ * 
+ * @return true if initialized and ready to play sounds
+ */
 bool is_audio_system_ready();
+
+/**
+ * Play a game sound effect
+ * 
+ * Plays the specified sound effect. If a lower-priority sound is
+ * already playing, it will be interrupted. If a higher-priority
+ * sound is playing, the new sound will be ignored.
+ * 
+ * @param sound The game sound to play
+ * @return true if sound was played, false if rejected or error
+ */
 bool play_game_sound(GameSound sound);
 
 #endif // AUDIO_H

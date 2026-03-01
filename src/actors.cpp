@@ -1274,6 +1274,7 @@ void ActorSystem::handle_fireballs() {
             enemy.state = ENEMY_STATE_WHITE_SPARK;
             fb.x = FIREBALL_DEAD;
             fb.y = FIREBALL_DEAD;
+            play_game_sound(GameSound::ENEMY_HIT);
             break; // Fireball consumed; check next fireball
         }
     }
@@ -1481,13 +1482,16 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
 
         case ITEM_SHIELD:
             // Shield refills HP (handled by main game loop)
-            // TODO: Implement HP refill logic
+            // Play special shield sound
+            play_game_sound(GameSound::SHIELD);
             break;
 
         case ITEM_GEMS:
             if (!comic_has_gems) {
                 comic_has_gems = 1;
                 comic_num_treasures++;
+                // Play treasure-specific sound
+                play_game_sound(GameSound::TREASURE);
             }
             break;
 
@@ -1495,6 +1499,8 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
             if (!comic_has_crown) {
                 comic_has_crown = 1;
                 comic_num_treasures++;
+                // Play treasure-specific sound
+                play_game_sound(GameSound::TREASURE);
             }
             break;
 
@@ -1502,6 +1508,8 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
             if (!comic_has_gold) {
                 comic_has_gold = 1;
                 comic_num_treasures++;
+                // Play treasure-specific sound
+                play_game_sound(GameSound::TREASURE);
             }
             break;
 

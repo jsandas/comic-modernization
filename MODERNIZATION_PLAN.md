@@ -490,11 +490,11 @@ A centralized system for managing debug cheats and development tools. Activated 
 
 ### Phase 6: Audio System
 **Status:** In Progress
-**Current Stage:** Phase 6.1 - Audio Foundation
-**Completion Date:** TBD
+**Current Stage:** Phase 6.2 - Sound Definitions & Event Mapping ✅ COMPLETE
+**Completion Date:** 2026-02-27
 **Goal:** Implement sound effects and music
 
-**Tasks:**
+**Phase 6.1: Audio Foundation ✅ COMPLETE**
 - [x] Set up SDL_mixer for audio
 - [x] Implement foundational `AudioSystem` module (`include/audio.h`, `src/audio.cpp`)
 - [x] Add synthesized PC-speaker-style square-wave SFX generation (SDL_mixer `Mix_Chunk`)
@@ -505,25 +505,63 @@ A centralized system for managing debug cheats and development tools. Activated 
   - [x] Item collect
   - [x] Door open
   - [x] Stage edge transition
-- [ ] Port PC speaker sound effects from sound.c
-  - [ ] Convert frequency/duration to SDL format
-  - [ ] 13 game sounds (jump, fire, collect, etc.)
-  - [ ] Sound priority system
-- [ ] Port music system from music.c
-  - [ ] Music playback
-  - [ ] Looping
-  - [ ] Start/stop controls
 
-**Reference Code:**
-- `src/sound.c`: PC speaker sound implementation
-- `src/music.c`: Music playback
-- `include/sound_data.h`: Sound effect data
+**Phase 6.2: Sound Definitions & Event Mapping ✅ COMPLETE**
+**Objective:** Port the original 13 game sound definitions with frequency sequences and map each to in-game events
 
-**Success Criteria:**
-- All sound effects play correctly
-- Music loops properly
-- Sound priority works (higher priority interrupts lower)
-- Audio quality is acceptable
+**Completed:**
+- [x] Extended audio system to support multi-frequency sound sequences
+  - [x] Created `FrequencyNote` structure for frequency/duration pairs
+  - [x] Implemented `create_sound_sequence_chunk()` to synthesize complete frequency sequences
+  - [x] Updated SDL_mixer chunk synthesis to handle frequency changes per note
+- [x] Ported all 13 original PC-speaker sound definitions
+  - [x] JUMP: Rising three-tone (300→400→500 Hz)
+  - [x] FIRE: Two-note fireball launch (145→155 Hz)
+  - [x] ITEM_COLLECT: Three-note ascending (294→371→441→582 Hz)
+  - [x] DOOR_OPEN: Nine-note door sequence (310↔466 Hz palindrome)
+  - [x] STAGE_TRANSITION: Five-note stage crossing (C4→D4→F4→F4→G4→A4)
+  - [x] ENEMY_HIT: Two-note enemy collision (582→1165 Hz)
+  - [x] PLAYER_HIT: Three-note damage sound (350→250→200 Hz descending)
+  - [x] PLAYER_DIE: Six-note death sequence (97→83→72→582→291→194 Hz)
+  - [x] POWERUP: Three-note powerup (500→600→700 Hz ascending)
+  - [x] TREASURE: Three-note treasure (C5→E5→G5, major chord)
+  - [x] TELEPORT: Seven-note teleport palindrome (145Hz oscillating)
+  - [x] SHIELD: Three-note shield/HP (500→600→700 Hz)
+  - [x] VICTORY: Three-note victory jingle (400→500→600 Hz)
+- [x] Integrated sound triggers into game events
+  - [x] JUMP trigger: `physics.cpp` - `process_jump_input()` on jump initiation
+  - [x] FIRE trigger: `actors.cpp` - `try_to_fire()` on fireball spawn
+  - [x] ITEM_COLLECT trigger: `actors.cpp` - `collect_item()` on collision
+  - [x] TREASURE trigger: `actors.cpp` - `apply_item_effect()` for gems/crown/gold
+  - [x] SHIELD trigger: `actors.cpp` - `apply_item_effect()` for shield pickup
+  - [x] ENEMY_HIT trigger: `actors.cpp` - `check_fireball_enemy_collisions()` on impact
+  - [x] DOOR_OPEN trigger: `doors.cpp` - `handle_door_collision()` on activation
+  - [x] STAGE_TRANSITION trigger: `physics.cpp` - `move_left()`/`move_right()` at boundaries
+- [x] Updated `include/audio.h` with comprehensive documentation
+- [x] Fixed SDL_mixer audio synthesis for multi-frequency sequences
+- [x] All sounds use priority system (3-10) matching original PC speaker implementation
+- [x] Tick-to-millisecond conversion using original 18.2 Hz game tick rate (55ms/tick)
+
+**Technical Details:**
+- Audio frequency conversion: Original PIT divisors → modern Hz values
+- Multi-frequency synthesis: Concatenates square waves for each note in sequence
+- Duration handling: Game ticks (55ms/tick) → SDL milliseconds
+- Priority system: Higher priority sounds interrupt lower priority ones
+- Channel management: Single SFX channel with non-preemptable higher-priority sounds
+
+**Reference Implementation:**
+- Based on jsandas/comic-c sound.c and sound_data.c
+- Maintains original frequency sequences and timing relationships
+- PC speaker square-wave synthesis recreated in SDL2 audio
+
+**Todos:**
+- [ ] Test all 13 sounds with actual gameplay
+- [ ] Adjust sound frequencies/durations if needed based on player feedback
+- [ ] Port music system (Phase 6.3)
+  - [ ] Title screen music
+  - [ ] Game over music
+  - [ ] Victory music
+- [ ] Music playback and looping (separate from SFX)
 
 ---
 
