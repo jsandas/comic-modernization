@@ -1392,10 +1392,9 @@ static void test_audio_priority_blocking() {
           "audio_priority_blocking: high priority sound should play");
     
     // Lower priority sound (ENEMY_HIT = priority 4) should be blocked
-    // Note: This may return false or succeed depending on timing
-    // The important thing is it doesn't crash and respects priority
-    bool lower_played = play_game_sound(GameSound::ENEMY_HIT);
-    (void)lower_played;  // Outcome depends on timing, just ensure no crash
+    // while PLAYER_DIE is still playing.  Assert it returns false.
+    bool blocked = !play_game_sound(GameSound::ENEMY_HIT);
+    check(blocked, "audio_priority_blocking: lower priority sound should be blocked by active higher priority");
     
     // Wait for the high-priority sound to finish before trying again
     wait_for_sfx_channel_idle(1000);
