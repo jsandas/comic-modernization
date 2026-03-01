@@ -535,7 +535,7 @@ A centralized system for managing debug cheats and development tools. Activated 
   - [x] STAGE_TRANSITION trigger: `physics.cpp` - stage boundary transitions
 - [x] Updated `include/audio.h` with comprehensive documentation
 - [x] Fixed SDL_mixer audio synthesis for multi-frequency sequences
-- [x] All sounds use priority system (3-10) matching original PC speaker implementation
+- [x] All sounds use priority system (0-9); active sounds span 2-9, with `UNUSED_0` reserved at 0
 - [x] Tick-to-millisecond conversion using original 18.2 Hz game tick rate (55ms/tick)
 
 **Technical Details:**
