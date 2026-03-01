@@ -298,6 +298,11 @@ bool initialize_audio_system() {
 
     if (Mix_OpenAudio(AUDIO_SAMPLE_RATE, AUDIO_S16SYS, AUDIO_CHANNELS, AUDIO_CHUNK_SIZE) < 0) {
         std::cerr << "Failed to initialize SDL_mixer audio: " << Mix_GetError() << std::endl;
+        // if we initialized the subsystem just above, undo it so callers can retry
+        if (g_sdl_audio_initialized) {
+            SDL_QuitSubSystem(SDL_INIT_AUDIO);
+            g_sdl_audio_initialized = false;
+        }
         return false;
     }
 
@@ -317,6 +322,10 @@ bool initialize_audio_system() {
             std::cerr << "Error: Sound #" << index << " has empty sequence" << std::endl;
             free_loaded_sounds();
             Mix_CloseAudio();
+            if (g_sdl_audio_initialized) {
+                SDL_QuitSubSystem(SDL_INIT_AUDIO);
+                g_sdl_audio_initialized = false;
+            }
             return false;
         }
 
@@ -325,6 +334,10 @@ bool initialize_audio_system() {
             std::cerr << "Failed to synthesize sound #" << index << std::endl;
             free_loaded_sounds();
             Mix_CloseAudio();
+            if (g_sdl_audio_initialized) {
+                SDL_QuitSubSystem(SDL_INIT_AUDIO);
+                g_sdl_audio_initialized = false;
+            }
             return false;
         }
 
