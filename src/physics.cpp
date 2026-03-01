@@ -175,6 +175,8 @@ void handle_fall_or_jump() {
             comic_y = 1;
             comic_y_vel = 0;
             comic_is_falling_or_jumping = 0;
+            // Allow future deaths to trigger GAME_OVER sound again
+            game_over_triggered = false;
         }
         
         // STEP 5: Apply gravity
