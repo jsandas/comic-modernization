@@ -17,6 +17,21 @@ constexpr int AUDIO_CHANNELS = 1;
 constexpr int AUDIO_CHUNK_SIZE = 1024;
 constexpr int SFX_CHANNEL = 0;
 
+// ===== Shared Musical Notes (Hz) =====
+// Use these for melodic sequences where exact note names are intended.
+// Keep PIT-derived effect tones as dedicated FREQ_* constants for original fidelity.
+constexpr int NOTE_C4 = 261;
+constexpr int NOTE_D4 = 293;
+constexpr int NOTE_E4 = 330;
+constexpr int NOTE_E5 = 659;
+constexpr int NOTE_F4 = 349;
+constexpr int NOTE_FS4 = 370;
+constexpr int NOTE_G4 = 392;
+constexpr int NOTE_A4 = 440;
+constexpr int NOTE_B3 = 247;
+constexpr int NOTE_C5 = 523;
+constexpr int NOTE_G5 = 784;
+
 // ===== Frequency Definitions (PIT divisors converted to Hz) =====
 // Conversion formula: Frequency = 1193182 Hz / divisor
 // These match the original PC speaker implementation
@@ -56,13 +71,6 @@ constexpr int FREQ_DEATH_4 = 582;   // 0x0800
 constexpr int FREQ_DEATH_5 = 291;   // 0x1000
 constexpr int FREQ_DEATH_6 = 194;   // 0x1800
 
-// Stage transition: NOTE_C4, NOTE_D4, NOTE_F4, NOTE_F4, NOTE_G4, NOTE_A4
-constexpr int FREQ_STAGE_1 = 261;   // C4
-constexpr int FREQ_STAGE_2 = 293;   // D4
-constexpr int FREQ_STAGE_3 = 349;   // F4
-constexpr int FREQ_STAGE_4 = 392;   // G4
-constexpr int FREQ_STAGE_5 = 440;   // A4
-
 // Shield sound
 constexpr int FREQ_SHIELD_1 = 500;
 constexpr int FREQ_SHIELD_2 = 600;
@@ -72,11 +80,6 @@ constexpr int FREQ_SHIELD_3 = 700;
 constexpr int FREQ_VICTORY_1 = 400;
 constexpr int FREQ_VICTORY_2 = 500;
 constexpr int FREQ_VICTORY_3 = 600;
-
-// Treasure collection
-constexpr int FREQ_TREASURE_1 = 523;   // C5
-constexpr int FREQ_TREASURE_2 = 659;   // E5
-constexpr int FREQ_TREASURE_3 = 784;   // G5
 
 // ===== Sound Definition Structure =====
 struct FrequencyNote {
@@ -101,7 +104,8 @@ static const std::vector<FrequencyNote> SOUND_DOOR_OPEN_SEQUENCE = {
 };
 
 static const std::vector<FrequencyNote> SOUND_STAGE_TRANSITION_SEQUENCE = {
-    {FREQ_STAGE_1, 3}, {FREQ_STAGE_2, 3}, {FREQ_STAGE_3, 6}, {FREQ_STAGE_4, 3}, {FREQ_STAGE_5, 6}
+    {NOTE_C4, 3}, {NOTE_D4, 3}, {NOTE_F4, 6}, {NOTE_F4, 6},
+    {NOTE_G4, 3}, {NOTE_A4, 6}, {NOTE_G4, 6}
 };
 
 static const std::vector<FrequencyNote> SOUND_ENEMY_HIT_SEQUENCE = {
@@ -117,12 +121,17 @@ static const std::vector<FrequencyNote> SOUND_PLAYER_DIE_SEQUENCE = {
     {FREQ_DEATH_4, 1}, {FREQ_DEATH_5, 1}, {FREQ_DEATH_6, 2}
 };
 
+static const std::vector<FrequencyNote> SOUND_GAME_OVER_SEQUENCE = {
+    {NOTE_B3, 2}, {NOTE_C4, 4}, {NOTE_D4, 2}, {NOTE_E4, 6}, {NOTE_G4, 7},
+    {NOTE_FS4, 5}, {NOTE_E4, 2}, {NOTE_D4, 4}, {NOTE_E4, 15}
+};
+
 static const std::vector<FrequencyNote> SOUND_POWERUP_SEQUENCE = {
     {FREQ_SHIELD_1, 2}, {FREQ_SHIELD_2, 2}, {FREQ_SHIELD_3, 2}
 };
 
 static const std::vector<FrequencyNote> SOUND_TREASURE_SEQUENCE = {
-    {FREQ_TREASURE_1, 3}, {FREQ_TREASURE_2, 3}, {FREQ_TREASURE_3, 4}
+    {NOTE_C5, 3}, {NOTE_E5, 3}, {NOTE_G5, 4}
 };
 
 static const std::vector<FrequencyNote> SOUND_TELEPORT_SEQUENCE = {
@@ -160,6 +169,7 @@ constexpr std::array<uint8_t, static_cast<size_t>(GameSound::COUNT)> SOUND_PRIOR
     4,   // ENEMY_HIT
     8,   // PLAYER_HIT
     9,   // PLAYER_DIE
+    2,   // GAME_OVER
     5,   // POWERUP
     7,   // TREASURE
     7,   // TELEPORT
@@ -274,6 +284,8 @@ static const std::vector<FrequencyNote>* get_sound_sequence(GameSound sound) {
             return &SOUND_PLAYER_HIT_SEQUENCE;
         case GameSound::PLAYER_DIE:
             return &SOUND_PLAYER_DIE_SEQUENCE;
+        case GameSound::GAME_OVER:
+            return &SOUND_GAME_OVER_SEQUENCE;
         case GameSound::POWERUP:
             return &SOUND_POWERUP_SEQUENCE;
         case GameSound::TREASURE:

@@ -42,6 +42,9 @@ int8_t source_door_stage_number = -1;
 uint8_t comic_y_checkpoint = 12;  // Y position to respawn at
 uint8_t comic_x_checkpoint = 14;  // X position to respawn at
 
+// Game state
+bool game_over_triggered = false;  // Flag to track if game-over sound has been played
+
 // Global system pointers (for access from other modules)
 ActorSystem* g_actor_system = nullptr;  // Actor system pointer (for cheat access)
 
@@ -299,6 +302,15 @@ int main(int argc, char* argv[]) {
                 ? current_level_ptr->stages[current_stage_number].tiles
                 : nullptr;
             actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x, key_state_fire);
+            
+            // Check for game-over condition: player falls off bottom of stage
+            // Stage height is 20 game units (0-19), falling below triggers game-over
+            if (!game_over_triggered && comic_y > 25) {
+                game_over_triggered = true;
+                play_game_sound(GameSound::GAME_OVER);
+                // Note: In a complete implementation, this would show the game-over screen
+                // and wait for user input before returning to menu
+            }
         }
 
         // Update animation based on state (updates every frame for smooth animation)

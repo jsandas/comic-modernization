@@ -12,6 +12,7 @@ enum class GameSound : uint8_t {
     ENEMY_HIT,          // Fireball hits enemy
     PLAYER_HIT,         // Player takes damage
     PLAYER_DIE,         // Player death
+    GAME_OVER,          // Game over jingle
     POWERUP,            // Not yet assigned (was POWERUP in original)
     TREASURE,           // Treasure collection sound
     TELEPORT,           // Teleport action

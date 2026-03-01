@@ -1403,7 +1403,7 @@ static void test_audio_all_sounds_playable() {
     check(initialize_audio_system(), 
           "audio_all_sounds: initialization should succeed");
     
-    // Verify all 12 game sounds can be played without crashing
+    // Verify all 13 game sounds can be played without crashing
     // Note: Some may be blocked by priority system when playing in quick succession
     // The key test is that none crash the system
     // UNUSED_0 is skipped (no jump sound in original game)
@@ -1427,6 +1427,9 @@ static void test_audio_all_sounds_playable() {
     SDL_Delay(50);
     
     play_game_sound(GameSound::PLAYER_DIE);
+    SDL_Delay(50);
+
+    play_game_sound(GameSound::GAME_OVER);
     SDL_Delay(50);
     
     play_game_sound(GameSound::POWERUP);
