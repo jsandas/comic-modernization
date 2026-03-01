@@ -1587,6 +1587,9 @@ static bool matches_filter(const std::string& name, const std::string& filter) {
 }
 
 static int run_tests(const std::string& filter) {
+    // Ensure level data is initialized before any test uses it
+    initialize_level_data();
+
     int tests_run = 0;
     for (const auto& test : test_registry()) {
         if (!matches_filter(test.name, filter)) {
