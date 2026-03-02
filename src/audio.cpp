@@ -118,7 +118,7 @@ static const std::vector<FrequencyNote> SOUND_PLAYER_HIT_SEQUENCE = {
 };
 
 static const std::vector<FrequencyNote> SOUND_PLAYER_DIE_SEQUENCE = {
-    {FREQ_DEATH_1, 1}, {FREQ_DEATH_2, 1}, {FREQ_DEATH_3, 1}, 
+    {FREQ_DEATH_1, 1}, {FREQ_DEATH_2, 1}, {FREQ_DEATH_3, 1},
     {FREQ_DEATH_4, 1}, {FREQ_DEATH_5, 1}, {FREQ_DEATH_6, 2}
 };
 
@@ -136,27 +136,20 @@ static const std::vector<FrequencyNote> SOUND_TELEPORT_SEQUENCE = {
 // Title music - played during title sequence and victory sequence
 // Ported from jsandas/comic-c SOUND_TITLE
 static const std::vector<FrequencyNote> MUSIC_TITLE_SEQUENCE = {
-    {NOTE_D4, 3}, {NOTE_E4, 3}, {NOTE_F4, 6}, {NOTE_A4, 3}, {NOTE_A4, 6}, 
-    {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_G4, 6}, {NOTE_F4, 6}, 
-    {NOTE_E4, 6}, {NOTE_D4, 3}, {NOTE_E4, 3}, {NOTE_F4, 6}, {NOTE_G4, 3}, 
-    {NOTE_G4, 5}, {NOTE_G4, 3}, {NOTE_G4, 3}, {NOTE_G4, 3}, {NOTE_A4, 6}, 
-    {NOTE_A4, 6}, {NOTE_A4, 4}, {NOTE_A4, 2}, {NOTE_A4, 6}, {NOTE_G4, 6}, 
-    {NOTE_F4, 2}, {NOTE_E4, 4}, {NOTE_F4, 3}, {NOTE_D4, 3}, {NOTE_D4, 3}, 
-    {NOTE_D4, 3}, {NOTE_E4, 6}, {NOTE_F4, 3}, {NOTE_F4, 6}, {NOTE_F4, 3}, 
-    {NOTE_F4, 3}, {NOTE_F4, 3}, {NOTE_G4, 6}, {NOTE_A4, 3}, {NOTE_A4, 5}, 
-    {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_G4, 6}, {NOTE_F4, 7}, 
-    {NOTE_E4, 12}, {NOTE_A4, 6}, {NOTE_G4, 3}, {NOTE_F4, 6}, {NOTE_E4, 3}, 
-    {NOTE_D4, 9}, {NOTE_F4, 3}, {NOTE_E4, 6}, {NOTE_D4, 12}, {NOTE_A4, 14}, 
-    {NOTE_G4, 3}, {NOTE_F4, 3}, {NOTE_E4, 3}, {NOTE_F4, 13}, {NOTE_D4, 13}, 
-    {NOTE_G4, 15}, {NOTE_D4, 6}, {NOTE_E4, 6}, {NOTE_F4, 6}, {NOTE_A4, 3}, 
-    {NOTE_A4, 5}, {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_G4, 6}, 
-    {NOTE_F4, 6}, {NOTE_E4, 3}, {NOTE_F4, 6}, {NOTE_F4, 3}, {NOTE_F4, 3}, 
-    {NOTE_F4, 3}, {NOTE_E4, 6}, {NOTE_F4, 3}, {NOTE_E4, 3}, {NOTE_D4, 3}, 
-    {NOTE_E4, 3}, {NOTE_C4, 3}, {NOTE_A3, 6}, {NOTE_G4, 3}, {NOTE_F4, 6}, 
-    {NOTE_E4, 3}, {NOTE_D4, 10}, {NOTE_F4, 3}, {NOTE_E4, 6}, {NOTE_D4, 10},
-    {NOTE_C4, 9}, {NOTE_D4, 3}, {NOTE_E4, 3}, {NOTE_F4, 6}, {NOTE_A4, 3},
-    {NOTE_A4, 6}, {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_A4, 3}, {NOTE_G4, 6},
-    {NOTE_F4, 7}, {NOTE_E4, 12},
+	{NOTE_D3, 3}, {NOTE_E3, 3}, {NOTE_F3, 6}, {NOTE_A3, 3}, {NOTE_A3, 6},
+    {NOTE_A3, 3}, {NOTE_A3, 3}, {NOTE_A3, 3}, {NOTE_G3, 6}, {NOTE_F3, 6},
+    {NOTE_E3, 6}, {NOTE_D3, 3}, {NOTE_E3, 3}, {NOTE_F3, 6}, {NOTE_G3, 3},
+    {NOTE_G3, 5}, {NOTE_G3, 3}, {NOTE_G3, 3}, {NOTE_G3, 3}, {NOTE_F3, 6},
+    {NOTE_E3, 6}, {NOTE_D3, 6}, {NOTE_D3, 3}, {NOTE_E3, 3}, {NOTE_F3, 6},
+    {NOTE_A3, 3}, {NOTE_A3, 5}, {NOTE_A3, 3}, {NOTE_A3, 3}, {NOTE_A3, 3},
+    {NOTE_G3, 6}, {NOTE_F3, 7}, {NOTE_E3, 12}, {NOTE_A3, 6}, {NOTE_G3, 3},
+    {NOTE_F3, 6}, {NOTE_E3, 3}, {NOTE_D3, 9}, {NOTE_F3, 3}, {NOTE_E3, 6},
+    {NOTE_D3, 12}, {NOTE_A3, 14}, {NOTE_G3, 3}, {NOTE_F3, 3}, {NOTE_E3, 3},
+    {NOTE_F3, 13}, {NOTE_D3, 13}, {NOTE_G3, 15}, {NOTE_F3, 3}, {NOTE_E3, 3},
+    {NOTE_D3, 3}, {NOTE_E3, 13}, {NOTE_C3, 13}, {NOTE_A3, 16}, {NOTE_G3, 3},
+    {NOTE_F3, 3}, {NOTE_E3, 3}, {NOTE_F3, 13}, {NOTE_D3, 11}, {NOTE_A3, 6},
+    {NOTE_G3, 3}, {NOTE_F3, 6}, {NOTE_E3, 3}, {NOTE_D3, 10}, {NOTE_F3, 3},
+    {NOTE_E3, 6}, {NOTE_D3, 10}
 };
 
 // ===== Loaded Sound Structure =====
