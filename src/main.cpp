@@ -49,9 +49,6 @@ bool game_over_triggered = false;  // Flag to track if game-over sound has been 
 // Global system pointers (for access from other modules)
 ActorSystem* g_actor_system = nullptr;  // Actor system pointer (for cheat access)
 
-// Rendering scale: 16 pixels per game unit
-const int RENDER_SCALE = 16;
-
 // Original EGA framebuffer dimensions for title/HUD graphics
 constexpr int EGA_WIDTH = 320;
 constexpr int EGA_HEIGHT = 200;
