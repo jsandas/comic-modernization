@@ -379,17 +379,27 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        // Keep gameplay rendering aligned with the same letterboxed 320x200 viewport
-        // used by title/HUD images.
-        SDL_Rect gameplay_viewport = compute_ega_display_rect(renderer);
+        // Keep gameplay aligned with the same letterboxed 320x200 frame used by HUD.
+        SDL_Rect gameplay_frame_rect = compute_ega_display_rect(renderer);
 
         // Render HUD background (sys003.ega) - should be behind all game elements
         SDL_Texture* hud_texture = get_hud_texture();
         if (hud_texture) {
-            SDL_RenderCopy(renderer, hud_texture, nullptr, &gameplay_viewport);
+            SDL_RenderCopy(renderer, hud_texture, nullptr, &gameplay_frame_rect);
         }
 
-        SDL_RenderSetViewport(renderer, &gameplay_viewport);
+        // Calculate the letterbox scale factor to keep playfield dimensions correct
+        // as the window size changes.
+        const float letterbox_scale = static_cast<float>(gameplay_frame_rect.w) / EGA_WIDTH;
+
+        // Render gameplay only inside the HUD playfield window
+        // (C code: top-left at 8,8 EGA pixels; size 192x160 EGA pixels).
+        SDL_Rect playfield_viewport;
+        playfield_viewport.x = gameplay_frame_rect.x + static_cast<int>(8 * letterbox_scale);
+        playfield_viewport.y = gameplay_frame_rect.y + static_cast<int>(8 * letterbox_scale);
+        playfield_viewport.w = static_cast<int>(192 * letterbox_scale);
+        playfield_viewport.h = static_cast<int>(160 * letterbox_scale);
+        SDL_RenderSetViewport(renderer, &playfield_viewport);
 
         bool level_changed = current_level_number != cached_level_number;
         bool stage_changed = current_stage_number != cached_stage_number;
@@ -411,13 +421,21 @@ int main(int argc, char* argv[]) {
 
         Tileset* tileset = cached_tileset;
 
-        // Render tiles
+        // Render tiles with offscreen margin for seamless scrolling.
+        // The C code pre-renders into a 256-byte-wide buffer; we render tiles
+        // slightly outside the visible playfield and let viewport clipping
+        // hide any offscreen portions.
+        const int OFFSCREEN_MARGIN_UNITS = 2;
+        const int min_visible_x = camera_x - OFFSCREEN_MARGIN_UNITS;
+        const int max_visible_x = camera_x + PLAYFIELD_WIDTH + OFFSCREEN_MARGIN_UNITS;
+        
         for (int ty = 0; ty < MAP_HEIGHT_TILES; ty++) {
             for (int tx = 0; tx < MAP_WIDTH_TILES; tx++) {
                 int world_x = tx * 2; // Tile x in game units
                 
-                // Only render tiles visible on camera
-                if (world_x >= camera_x && world_x < camera_x + PLAYFIELD_WIDTH) {
+                // Render tiles within visible range (with left margin for scrolling).
+                // Each tile is 2 units wide, so render if tile overlaps the range.
+                if (world_x + 2 > min_visible_x && world_x < max_visible_x) {
                     uint8_t tile = get_tile_at(tx * 2, ty * 2);
                     
                     int screen_x = (world_x - camera_x) * RENDER_SCALE;
