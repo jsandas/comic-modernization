@@ -3,7 +3,6 @@
 #include "../include/audio.h"
 #include <SDL2/SDL_image.h>
 #include <iostream>
-#include <fstream>
 #include <string>
 
 // ---------------------------------------------------------------------------
