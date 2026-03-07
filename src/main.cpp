@@ -367,7 +367,8 @@ int main(int argc, char* argv[]) {
         // Derive per-frame render scale from letterbox scale.
         // Each game unit = 8 EGA pixels (192 EGA pixels / 24 game units),
         // so gameplay scales consistently with the HUD.
-        const int render_scale = static_cast<int>(8.0f * letterbox_scale);
+        // Round to nearest int and clamp to minimum 1 to prevent zero-sized rendering.
+        const int render_scale = (letterbox_scale < 0.125f) ? 1 : static_cast<int>(8.0f * letterbox_scale + 0.5f);
 
         // Render gameplay only inside the HUD playfield window
         // (C code: top-left at 8,8 EGA pixels; size 192x160 EGA pixels).
