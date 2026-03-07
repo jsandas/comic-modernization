@@ -13,11 +13,8 @@
 constexpr int EGA_WIDTH = 320;
 constexpr int EGA_HEIGHT = 200;
 
-// Fade-in timing (replicates palette_darken + palette_fade_in)
-// Original uses ~16 palette steps with short delays between them.
-// We replicate this with a smooth alpha fade over a similar total duration.
-constexpr int FADE_DURATION_MS = 500;       // Total fade-in time
-constexpr int FADE_STEP_MS = 16;            // ~60 Hz update rate during fade
+// Fade-in timing for palette-step transitions (original: wait_n_ticks(1) per step)
+constexpr int FADE_STEP_DELAY_MS = 55;
 
 // Title screen display time: wait_n_ticks(14) at ~55 ms/tick ≈ 770 ms
 constexpr int TITLE_DISPLAY_MS = 770;
@@ -254,8 +251,6 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
     const uint8_t bright_red = ega_to_rgb(BRIGHT_RED_6BIT);
 
     SDL_Event e;
-    const int step_delay_ms = 55;  // ~1 tick at 55ms/tick (original timing)
-
     // Step 1: All three to dark gray
     if (PALETTE_REG_BACKGROUND < pal->ncolors) {
         pal->colors[PALETTE_REG_BACKGROUND] = {dark_gray, dark_gray, dark_gray, 255};
@@ -292,7 +287,7 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
     };
 
     // Wait after step 1
-    if (!wait_with_events(step_delay_ms)) return false;
+    if (!wait_with_events(FADE_STEP_DELAY_MS)) return false;
 
     // Step 2: All three to light gray
     if (PALETTE_REG_BACKGROUND < pal->ncolors) {
@@ -316,7 +311,7 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
         SDL_DestroyTexture(tex);
     }
 
-    if (!wait_with_events(step_delay_ms)) return false;
+    if (!wait_with_events(FADE_STEP_DELAY_MS)) return false;
 
     // Step 3: Background stays light gray, items and title go white
     if (PALETTE_REG_BACKGROUND < pal->ncolors) {
@@ -340,7 +335,7 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
         SDL_DestroyTexture(tex);
     }
 
-    if (!wait_with_events(step_delay_ms)) return false;
+    if (!wait_with_events(FADE_STEP_DELAY_MS)) return false;
 
     // Step 4: Background → green, items → bright green, title stays white
     if (PALETTE_REG_BACKGROUND < pal->ncolors) {
@@ -364,7 +359,7 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
         SDL_DestroyTexture(tex);
     }
 
-    if (!wait_with_events(step_delay_ms)) return false;
+    if (!wait_with_events(FADE_STEP_DELAY_MS)) return false;
 
     // Step 5: Title goes bright red, restore to original colors
     if (PALETTE_REG_BACKGROUND < pal->ncolors) {
@@ -388,7 +383,7 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
         SDL_DestroyTexture(tex);
     }
 
-    if (!wait_with_events(step_delay_ms)) return false;
+    if (!wait_with_events(FADE_STEP_DELAY_MS)) return false;
 
     // Step 6: Restore all to original colors
     if (PALETTE_REG_BACKGROUND < pal->ncolors) {
