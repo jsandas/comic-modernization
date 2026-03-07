@@ -119,6 +119,15 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
     constexpr int PALETTE_REG_ITEMS = 10;
     constexpr int PALETTE_REG_TITLE = 12;
 
+    constexpr int REQUIRED_PALETTE_SIZE = PALETTE_REG_TITLE + 1;
+    if (pal->ncolors < REQUIRED_PALETTE_SIZE) {
+        std::cerr << "Warning: " << filename
+                  << ": palette has only " << pal->ncolors
+                  << " colors (need at least " << REQUIRED_PALETTE_SIZE
+                  << "), skipping fade effect" << std::endl;
+        return true;  // Non-fatal: skip fade, continue sequence
+    }
+
     // Store original palette colors for restoration using the existing surface
     if (!surface || !surface->format || !surface->format->palette) {
         std::cerr << "Warning: " << filename << ": surface has no valid palette" << std::endl;
