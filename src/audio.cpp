@@ -136,7 +136,7 @@ static const std::vector<FrequencyNote> SOUND_TELEPORT_SEQUENCE = {
 // Title music - played during title sequence and victory sequence
 // Ported from jsandas/comic-c SOUND_TITLE
 static const std::vector<FrequencyNote> MUSIC_TITLE_SEQUENCE = {
-	{NOTE_D3, 3}, {NOTE_E3, 3}, {NOTE_F3, 6}, {NOTE_A3, 3}, {NOTE_A3, 6},
+    {NOTE_D3, 3}, {NOTE_E3, 3}, {NOTE_F3, 6}, {NOTE_A3, 3}, {NOTE_A3, 6},
     {NOTE_A3, 3}, {NOTE_A3, 3}, {NOTE_A3, 3}, {NOTE_G3, 6}, {NOTE_F3, 6},
     {NOTE_E3, 6}, {NOTE_D3, 3}, {NOTE_E3, 3}, {NOTE_F3, 6}, {NOTE_G3, 3},
     {NOTE_G3, 5}, {NOTE_G3, 3}, {NOTE_G3, 3}, {NOTE_G3, 3}, {NOTE_F3, 6},
