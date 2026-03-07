@@ -129,12 +129,7 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
         return true;  // Non-fatal: skip fade, continue sequence
     }
 
-    // Store original palette colors for restoration using the existing surface
-    if (!surface || !surface->format || !surface->format->palette) {
-        std::cerr << "Warning: " << filename << ": surface has no valid palette" << std::endl;
-        return true;  // Non-fatal: skip fade, continue sequence
-    }
-
+    // Store original palette colors for restoration.
     SDL_Color orig_colors[3] = {
         surface->format->palette->colors[PALETTE_REG_BACKGROUND],
         surface->format->palette->colors[PALETTE_REG_ITEMS],
