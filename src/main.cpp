@@ -8,6 +8,7 @@
 #include "../include/cheats.h"
 #include "../include/actors.h"
 #include "../include/audio.h"
+#include "../include/title_sequence.h"
 
 // Game state
 int comic_x = 20;
@@ -80,14 +81,18 @@ void process_door_input() {
 int main(int argc, char* argv[]) {
     // Parse command-line arguments
     bool debug_mode = false;
+    bool skip_title = false;
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--debug") == 0) {
             debug_mode = true;
             std::cout << "Debug mode enabled" << std::endl;
+        } else if (std::strcmp(argv[i], "--skip-title") == 0) {
+            skip_title = true;
         } else if (std::strcmp(argv[i], "--help") == 0) {
             std::cout << "Captain Comic - Usage:" << std::endl;
-            std::cout << "  --debug    Enable debug mode and cheat keys" << std::endl;
-            std::cout << "  --help     Show this help message" << std::endl;
+            std::cout << "  --debug       Enable debug mode and cheat keys" << std::endl;
+            std::cout << "  --skip-title  Skip the title sequence" << std::endl;
+            std::cout << "  --help        Show this help message" << std::endl;
             return 0;
         }
     }
@@ -126,7 +131,22 @@ int main(int argc, char* argv[]) {
     if (!initialize_audio_system()) {
         std::cerr << "Warning: Audio system initialization failed. Continuing without sound." << std::endl;
     }
-    
+
+    // Run title sequence (title screen, story, items screen)
+    // Skipped with --skip-title flag for faster iteration during development
+    if (!skip_title) {
+        if (!run_title_sequence(renderer, g_graphics)) {
+            // User quit during title sequence
+            cleanup_title_sequence();
+            delete g_graphics;
+            shutdown_audio_system();
+            SDL_DestroyRenderer(renderer);
+            SDL_DestroyWindow(window);
+            SDL_Quit();
+            return 0;
+        }
+    }
+
     // Initialize cheat system
     g_cheats = new CheatSystem();
     g_cheats->initialize(debug_mode);
@@ -408,6 +428,7 @@ int main(int argc, char* argv[]) {
     // Cleanup
     g_actor_system = nullptr;  // Clear pointer before actor_system goes out of scope
     delete g_cheats;
+    cleanup_title_sequence();
     delete g_graphics;
     shutdown_audio_system();
     SDL_DestroyRenderer(renderer);
