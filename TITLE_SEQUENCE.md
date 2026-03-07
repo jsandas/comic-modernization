@@ -1,6 +1,7 @@
 # Title Sequence Function Overview
 
-This document explains the **`title_sequence()`** function from `src/game_main.c`.
+This document explains the **`title_sequence()`** function from the original C reference implementation  
+in [`jsandas/comic-c`](https://github.com/jsandas/comic-c/blob/master/src/game_main.c).
 It outlines every step that this routine performs so another AI (or developer) can reproduce the behaviour in **C++ using SDL**.
 Focus is on the flow and intent rather than exact DOS/BIOS calls.
 
