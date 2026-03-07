@@ -20,9 +20,9 @@ class GraphicsSystem;
  * Palette fade effects:
  *   The original DOS code calls palette_darken() then palette_fade_in()
  *   to produce a smooth transition from black when each screen appears.
- *   In SDL2 this is replicated by drawing a full-screen black overlay
- *   whose alpha decreases from 255→0 over the fade duration.
- *
+ *   In SDL2 this is replicated by performing a multi-step color/palette
+ *   transition on the rendered content, emulating the original palette
+ *   register fades rather than using a simple full-screen alpha overlay.
  * Timing:
  *   Original uses wait_n_ticks(14) ≈ 770 ms for the title screen delay.
  *   Each tick is ~55 ms (DOS 18.2 Hz timer).
