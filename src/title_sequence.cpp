@@ -145,20 +145,17 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
     constexpr int PALETTE_REG_ITEMS = 10;
     constexpr int PALETTE_REG_TITLE = 12;
 
-    // Load and store original palette colors for restoration
-    SDL_Surface* fresh = IMG_Load(graphics->get_asset_path(filename).c_str());
-    if (!fresh || !fresh->format || !fresh->format->palette) {
-        if (fresh) SDL_FreeSurface(fresh);
-        std::cerr << "Warning: fade_in_paletted_surface: failed to load original palette, skipping fade effect\n";
-        return true;  // Non-fatal: skip fade, continue sequence
+    // Store original palette colors for restoration using the existing surface
+    if (!surface || !surface->format || !surface->format->palette) {
+        std::cerr << "fade_in_paletted_surface: surface has no valid palette\n";
+        return false;
     }
 
     SDL_Color orig_colors[3] = {
-        fresh->format->palette->colors[PALETTE_REG_BACKGROUND],
-        fresh->format->palette->colors[PALETTE_REG_ITEMS],
-        fresh->format->palette->colors[PALETTE_REG_TITLE]
+        surface->format->palette->colors[PALETTE_REG_BACKGROUND],
+        surface->format->palette->colors[PALETTE_REG_ITEMS],
+        surface->format->palette->colors[PALETTE_REG_TITLE]
     };
-    SDL_FreeSurface(fresh);
 
     // Helper: Convert 6-bit EGA color to 8-bit RGB
     auto ega_to_rgb = [](uint8_t ega_6bit) -> uint8_t {
