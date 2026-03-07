@@ -392,6 +392,11 @@ int main(int argc, char* argv[]) {
         // as the window size changes.
         const float letterbox_scale = static_cast<float>(gameplay_frame_rect.w) / EGA_WIDTH;
 
+        // Derive per-frame render scale from letterbox scale.
+        // Each game unit = 8 EGA pixels (192 EGA pixels / 24 game units),
+        // so gameplay scales consistently with the HUD.
+        const int render_scale = static_cast<int>(8.0f * letterbox_scale);
+
         // Render gameplay only inside the HUD playfield window
         // (C code: top-left at 8,8 EGA pixels; size 192x160 EGA pixels).
         SDL_Rect playfield_viewport;
@@ -438,17 +443,17 @@ int main(int argc, char* argv[]) {
                 if (world_x + 2 > min_visible_x && world_x < max_visible_x) {
                     uint8_t tile = get_tile_at(tx * 2, ty * 2);
                     
-                    int screen_x = (world_x - camera_x) * RENDER_SCALE;
-                    int screen_y = ty * 2 * RENDER_SCALE;
+                    int screen_x = (world_x - camera_x) * render_scale;
+                    int screen_y = ty * 2 * render_scale;
                     
-                    g_graphics->render_tile(screen_x, screen_y, tileset, tile, RENDER_SCALE);
+                    g_graphics->render_tile(screen_x, screen_y, tileset, tile, render_scale);
                 }
             }
         }
 
-        actor_system.render_enemies(g_graphics, camera_x, RENDER_SCALE);
-        actor_system.render_fireballs(g_graphics, camera_x, RENDER_SCALE);
-        actor_system.render_item(g_graphics, camera_x, RENDER_SCALE);
+        actor_system.render_enemies(g_graphics, camera_x, render_scale);
+        actor_system.render_fireballs(g_graphics, camera_x, render_scale);
+        actor_system.render_item(g_graphics, camera_x, render_scale);
 
         // Render player sprite
         if (current_animation) {
@@ -456,10 +461,10 @@ int main(int argc, char* argv[]) {
             if (frame) {
                 // Center player on screen relative to camera
                 // Player is 2 units wide, 4 units tall in game coords
-                int screen_x = (comic_x - camera_x) * RENDER_SCALE + RENDER_SCALE;  // Center X
-                int screen_y = comic_y * RENDER_SCALE + RENDER_SCALE * 2; // Center Y
-                int player_width = RENDER_SCALE * 2;
-                int player_height = RENDER_SCALE * 4;
+                int screen_x = (comic_x - camera_x) * render_scale + render_scale;  // Center X
+                int screen_y = comic_y * render_scale + render_scale * 2; // Center Y
+                int player_width = render_scale * 2;
+                int player_height = render_scale * 4;
                 g_graphics->render_sprite_centered_scaled(screen_x, screen_y, frame->sprite, player_width, player_height);
             }
         }
