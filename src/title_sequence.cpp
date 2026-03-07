@@ -9,10 +9,6 @@
 // Constants
 // ---------------------------------------------------------------------------
 
-// Original EGA resolution
-constexpr int EGA_WIDTH = 320;
-constexpr int EGA_HEIGHT = 200;
-
 // Fade-in timing for palette-step transitions (original: wait_n_ticks(1) per step)
 constexpr int FADE_STEP_DELAY_MS = 55;
 
@@ -91,29 +87,7 @@ static SDL_Texture* surface_to_texture(SDL_Renderer* renderer,
     return texture;
 }
 
-/**
- * Compute a destination rect that scales a 320x200 image to fill the current
- * renderer output while preserving aspect ratio (letterboxed if needed).
- */
-static SDL_Rect compute_display_rect(SDL_Renderer* renderer) {
-    int win_w = 0, win_h = 0;
-    SDL_GetRendererOutputSize(renderer, &win_w, &win_h);
-
-    // Compute scale factor that fits both dimensions (preserving aspect ratio)
-    float scale_x = static_cast<float>(win_w) / EGA_WIDTH;
-    float scale_y = static_cast<float>(win_h) / EGA_HEIGHT;
-    float scale = (scale_x < scale_y) ? scale_x : scale_y;
-
-    int dst_w = static_cast<int>(EGA_WIDTH * scale);
-    int dst_h = static_cast<int>(EGA_HEIGHT * scale);
-
-    SDL_Rect rect;
-    rect.x = (win_w - dst_w) / 2;
-    rect.y = (win_h - dst_h) / 2;
-    rect.w = dst_w;
-    rect.h = dst_h;
-    return rect;
-}
+// Note: Letterbox rect calculation now centralized in GraphicsSystem::compute_letterbox_rect()
 
 /**
  * Display a paletted surface with the 5-step palette fade-in effect from the original.
@@ -138,7 +112,7 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
     }
 
     SDL_Palette* pal = surface->format->palette;
-    SDL_Rect dst = compute_display_rect(renderer);
+    SDL_Rect dst = GraphicsSystem::compute_letterbox_rect(renderer);
 
     // Palette entry indices (from original DOS code)
     constexpr int PALETTE_REG_BACKGROUND = 2;
@@ -359,7 +333,7 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
  * Display a texture (no fade) and render one frame.
  */
 static void show_texture(SDL_Renderer* renderer, SDL_Texture* texture) {
-    SDL_Rect dst = compute_display_rect(renderer);
+    SDL_Rect dst = GraphicsSystem::compute_letterbox_rect(renderer);
 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
@@ -388,7 +362,7 @@ static bool wait_ms(int duration_ms) {
  * Returns false if SDL_QUIT received.
  */
 static bool wait_for_keypress(SDL_Renderer* renderer, SDL_Texture* texture) {
-    SDL_Rect dst = compute_display_rect(renderer);
+    SDL_Rect dst = GraphicsSystem::compute_letterbox_rect(renderer);
     SDL_Event e;
 
     while (true) {

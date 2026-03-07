@@ -49,31 +49,6 @@ bool game_over_triggered = false;  // Flag to track if game-over sound has been 
 // Global system pointers (for access from other modules)
 ActorSystem* g_actor_system = nullptr;  // Actor system pointer (for cheat access)
 
-// Original EGA framebuffer dimensions for title/HUD graphics
-constexpr int EGA_WIDTH = 320;
-constexpr int EGA_HEIGHT = 200;
-
-// Compute letterboxed destination rect for 320x200 images.
-static SDL_Rect compute_ega_display_rect(SDL_Renderer* renderer) {
-    int win_w = 0;
-    int win_h = 0;
-    SDL_GetRendererOutputSize(renderer, &win_w, &win_h);
-
-    const float scale_x = static_cast<float>(win_w) / EGA_WIDTH;
-    const float scale_y = static_cast<float>(win_h) / EGA_HEIGHT;
-    const float scale = (scale_x < scale_y) ? scale_x : scale_y;
-
-    const int dst_w = static_cast<int>(EGA_WIDTH * scale);
-    const int dst_h = static_cast<int>(EGA_HEIGHT * scale);
-
-    SDL_Rect rect;
-    rect.x = (win_w - dst_w) / 2;
-    rect.y = (win_h - dst_h) / 2;
-    rect.w = dst_w;
-    rect.h = dst_h;
-    return rect;
-}
-
 // Level names (indexed by level number)
 static constexpr const char* level_names[] = {
     "lake", "forest", "space", "base", "cave", "shed", "castle", "comp"
@@ -377,7 +352,7 @@ int main(int argc, char* argv[]) {
         SDL_RenderClear(renderer);
 
         // Keep gameplay aligned with the same letterboxed 320x200 frame used by HUD.
-        SDL_Rect gameplay_frame_rect = compute_ega_display_rect(renderer);
+        SDL_Rect gameplay_frame_rect = g_graphics->compute_letterbox_rect(renderer);
 
         // Render HUD background (sys003.ega) - should be behind all game elements
         SDL_Texture* hud_texture = get_hud_texture();
