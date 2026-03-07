@@ -90,17 +90,18 @@ static SDL_Texture* surface_to_texture(SDL_Renderer* renderer,
 // Note: Letterbox rect calculation now centralized in GraphicsSystem::compute_letterbox_rect()
 
 /**
- * Display a paletted surface with the 5-step palette fade-in effect from the original.
+ * Display a paletted surface with the palette fade-in sequence from the original.
  *
- * Replicates palette_fade_in() from the DOS code:
+ * Replicates palette_fade_in() from the DOS code with six rendered steps:
  *   Step 1: All three entries (2,10,12) → dark gray (0x18)
  *   Step 2: All three → light gray (0x07)
  *   Step 3: Background stays gray, items/title → white (0x1f)
  *   Step 4: Background→green (0x02), items→bright green (0x1a), title stays white
- *   Step 5: Title → bright red (0x1c)
+ *   Step 5: Title → bright red (0x1c), background/items restored
+ *   Step 6: Restore all three entries to original colors and render final frame
  *
- * Each step waits ~55ms (original: wait_n_ticks(1)).
- * 
+ * Each rendered step waits ~55ms (original: wait_n_ticks(1)).
+ *
  * Returns false ONLY if SDL_QUIT was received. Format/palette errors are treated
  * as non-fatal (logs warning, skips fade effect, returns true to continue).
  */
