@@ -52,6 +52,31 @@ ActorSystem* g_actor_system = nullptr;  // Actor system pointer (for cheat acces
 // Rendering scale: 16 pixels per game unit
 const int RENDER_SCALE = 16;
 
+// Original EGA framebuffer dimensions for title/HUD graphics
+constexpr int EGA_WIDTH = 320;
+constexpr int EGA_HEIGHT = 200;
+
+// Compute letterboxed destination rect for 320x200 images.
+static SDL_Rect compute_ega_display_rect(SDL_Renderer* renderer) {
+    int win_w = 0;
+    int win_h = 0;
+    SDL_GetRendererOutputSize(renderer, &win_w, &win_h);
+
+    const float scale_x = static_cast<float>(win_w) / EGA_WIDTH;
+    const float scale_y = static_cast<float>(win_h) / EGA_HEIGHT;
+    const float scale = (scale_x < scale_y) ? scale_x : scale_y;
+
+    const int dst_w = static_cast<int>(EGA_WIDTH * scale);
+    const int dst_h = static_cast<int>(EGA_HEIGHT * scale);
+
+    SDL_Rect rect;
+    rect.x = (win_w - dst_w) / 2;
+    rect.y = (win_h - dst_h) / 2;
+    rect.w = dst_w;
+    rect.h = dst_h;
+    return rect;
+}
+
 // Level names (indexed by level number)
 static constexpr const char* level_names[] = {
     "lake", "forest", "space", "base", "cave", "shed", "castle", "comp"
@@ -354,6 +379,18 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
+        // Keep gameplay rendering aligned with the same letterboxed 320x200 viewport
+        // used by title/HUD images.
+        SDL_Rect gameplay_viewport = compute_ega_display_rect(renderer);
+
+        // Render HUD background (sys003.ega) - should be behind all game elements
+        SDL_Texture* hud_texture = get_hud_texture();
+        if (hud_texture) {
+            SDL_RenderCopy(renderer, hud_texture, nullptr, &gameplay_viewport);
+        }
+
+        SDL_RenderSetViewport(renderer, &gameplay_viewport);
+
         bool level_changed = current_level_number != cached_level_number;
         bool stage_changed = current_stage_number != cached_stage_number;
 
@@ -413,6 +450,9 @@ int main(int argc, char* argv[]) {
         if (g_cheats->should_show_debug_overlay()) {
             g_graphics->render_debug_overlay();
         }
+
+        // Restore full renderer viewport for the next frame.
+        SDL_RenderSetViewport(renderer, nullptr);
 
         // Present
         SDL_RenderPresent(renderer);

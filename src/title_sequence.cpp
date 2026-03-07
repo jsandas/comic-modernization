@@ -532,7 +532,21 @@ bool run_title_sequence(SDL_Renderer* renderer, GraphicsSystem* graphics) {
     s_items_surface = nullptr;
 
     // ------------------------------------------------------------------
-    // Step 5: Cleanup and transition
+    // Step 5: Display HUD graphic as transition (SYS003.EGA)
+    //   - Show the game UI background that will be used during gameplay
+    //   - Convert and display the retained HUD texture before returning
+    // ------------------------------------------------------------------
+    if (s_hud_texture) {
+        show_texture(renderer, s_hud_texture);
+        // Hold HUD display briefly before transitioning to gameplay
+        if (!wait_ms(300)) {
+            stop_game_music();
+            return false;
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Step 6: Cleanup and transition
     //   - Stop title music before entering gameplay
     // ------------------------------------------------------------------
     stop_game_music();
