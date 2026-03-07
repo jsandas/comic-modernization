@@ -99,7 +99,7 @@ static SDL_Rect compute_display_rect(SDL_Renderer* renderer) {
     int win_w = 0, win_h = 0;
     SDL_GetRendererOutputSize(renderer, &win_w, &win_h);
 
-    // Compute integer scale that fits both dimensions
+    // Compute scale factor that fits both dimensions (preserving aspect ratio)
     float scale_x = static_cast<float>(win_w) / EGA_WIDTH;
     float scale_y = static_cast<float>(win_h) / EGA_HEIGHT;
     float scale = (scale_x < scale_y) ? scale_x : scale_y;
