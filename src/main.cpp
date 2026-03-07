@@ -469,13 +469,13 @@ int main(int argc, char* argv[]) {
             }
         }
         
-        // Render debug overlay if enabled via F3
+        // Restore full renderer viewport before rendering debug overlay.
+        SDL_RenderSetViewport(renderer, nullptr);
+        
+        // Render debug overlay if enabled via F3 (in full window space)
         if (g_cheats->should_show_debug_overlay()) {
             g_graphics->render_debug_overlay();
         }
-
-        // Restore full renderer viewport for the next frame.
-        SDL_RenderSetViewport(renderer, nullptr);
 
         // Present
         SDL_RenderPresent(renderer);
