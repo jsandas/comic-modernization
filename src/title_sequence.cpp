@@ -131,9 +131,9 @@ static SDL_Rect compute_display_rect(SDL_Renderer* renderer) {
  * as non-fatal (logs warning, skips fade effect, returns true to continue).
  */
 static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surface,
-                                     GraphicsSystem* graphics, const char* filename) {
+                                     const char* filename) {
     if (!surface || !surface->format || !surface->format->palette) {
-        std::cerr << "Warning: fade_in_paletted_surface: surface is not paletted, skipping fade effect\n";
+        std::cerr << "Warning: " << filename << ": surface is not paletted, skipping fade effect" << std::endl;
         return true;  // Non-fatal: skip fade, continue sequence
     }
 
@@ -147,8 +147,8 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
 
     // Store original palette colors for restoration using the existing surface
     if (!surface || !surface->format || !surface->format->palette) {
-        std::cerr << "fade_in_paletted_surface: surface has no valid palette\n";
-        return false;
+        std::cerr << "Warning: " << filename << ": surface has no valid palette" << std::endl;
+        return true;  // Non-fatal: skip fade, continue sequence
     }
 
     SDL_Color orig_colors[3] = {
@@ -191,7 +191,7 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
 
     SDL_Texture* tex = surface_to_texture(renderer, surface);
     if (!tex) {
-        std::cerr << "Warning: fade_in_paletted_surface: texture creation failed, skipping fade effect\n";
+        std::cerr << "Warning: " << filename << ": texture creation failed at step 1, skipping fade effect" << std::endl;
         return true;  // Non-fatal: skip fade, continue sequence
     }
 
@@ -232,7 +232,7 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
 
     tex = surface_to_texture(renderer, surface);
     if (!tex) {
-        std::cerr << "Warning: fade_in_paletted_surface: texture creation failed at step 2, skipping fade effect\n";
+        std::cerr << "Warning: " << filename << ": texture creation failed at step 2, skipping fade effect" << std::endl;
         return true;  // Non-fatal: skip fade, continue sequence
     }
 
@@ -259,7 +259,7 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
 
     tex = surface_to_texture(renderer, surface);
     if (!tex) {
-        std::cerr << "Warning: fade_in_paletted_surface: texture creation failed at step 3, skipping fade effect\n";
+        std::cerr << "Warning: " << filename << ": texture creation failed at step 3, skipping fade effect" << std::endl;
         return true;  // Non-fatal: skip fade, continue sequence
     }
 
@@ -286,7 +286,7 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
 
     tex = surface_to_texture(renderer, surface);
     if (!tex) {
-        std::cerr << "Warning: fade_in_paletted_surface: texture creation failed at step 4, skipping fade effect\n";
+        std::cerr << "Warning: " << filename << ": texture creation failed at step 4, skipping fade effect" << std::endl;
         return true;  // Non-fatal: skip fade, continue sequence
     }
 
@@ -313,7 +313,7 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
 
     tex = surface_to_texture(renderer, surface);
     if (!tex) {
-        std::cerr << "Warning: fade_in_paletted_surface: texture creation failed at step 5, skipping fade effect\n";
+        std::cerr << "Warning: " << filename << ": texture creation failed at step 5, skipping fade effect" << std::endl;
         return true;  // Non-fatal: skip fade, continue sequence
     }
 
@@ -340,7 +340,7 @@ static bool fade_in_paletted_surface(SDL_Renderer* renderer, SDL_Surface* surfac
 
     tex = surface_to_texture(renderer, surface);
     if (!tex) {
-        std::cerr << "Warning: fade_in_paletted_surface: texture creation failed at step 6, skipping fade effect\n";
+        std::cerr << "Warning: " << filename << ": texture creation failed at step 6, skipping fade effect" << std::endl;
         return true;  // Non-fatal: skip fade, continue sequence
     }
 
@@ -423,7 +423,7 @@ bool run_title_sequence(SDL_Renderer* renderer, GraphicsSystem* graphics) {
     }
 
     // Palette fade-in (darkens registers 2,10,12 then restores with color effects)
-    if (!fade_in_paletted_surface(renderer, s_title_surface, graphics, TITLE_SCREEN_FILE)) {
+    if (!fade_in_paletted_surface(renderer, s_title_surface, TITLE_SCREEN_FILE)) {
         SDL_FreeSurface(s_title_surface);
         s_title_surface = nullptr;
         return false;
@@ -465,7 +465,7 @@ bool run_title_sequence(SDL_Renderer* renderer, GraphicsSystem* graphics) {
         return true;
     }
 
-    if (!fade_in_paletted_surface(renderer, s_story_surface, graphics, STORY_SCREEN_FILE)) {
+    if (!fade_in_paletted_surface(renderer, s_story_surface, STORY_SCREEN_FILE)) {
         SDL_FreeSurface(s_story_surface);
         s_story_surface = nullptr;
         stop_game_music();
