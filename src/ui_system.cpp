@@ -373,7 +373,8 @@ void UISystem::render_inventory(
     
     // Row 1: Y=112
     {
-        // Blastola Cola - rendered if firepower > 0 (show 1-5 variant)
+        // Blastola Cola - rendered if firepower > 0 (animated even/odd frames)
+        // NOTE: firepower value (1-5) currently not used to select variant
         if (firepower > 0 && !blastola_cola_sprites.empty()) {
             size_t frame = inventory_animation_counter % blastola_cola_sprites.size();
             render_sprite_at(blastola_cola_sprites[frame], 232, 112, 16, 16);
