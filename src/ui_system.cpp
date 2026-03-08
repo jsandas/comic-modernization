@@ -66,7 +66,7 @@ bool UISystem::initialize() {
         return false;
     }
     
-    // Load Blastola Cola sprites (even/odd frames)
+    // Load base Blastola Cola sprites (even/odd frames)
     for (const char* suffix : {"even", "odd"}) {
         std::ostringstream oss;
         oss << "cola_" << suffix;
@@ -76,6 +76,40 @@ bool UISystem::initialize() {
             return false;
         }
         blastola_cola_sprites.push_back(sprite);
+    }
+
+    // Load firepower-specific Blastola Cola inventory sprites (1-5, even/odd).
+    // If a variant is missing, fallback to base cola frames so HUD rendering still works.
+    for (int firepower = 1; firepower <= 5; ++firepower) {
+        std::vector<Sprite*> firepower_frames;
+        firepower_frames.reserve(2);
+
+        for (const char* suffix : {"even", "odd"}) {
+            std::ostringstream oss;
+            oss << "cola_inventory_" << firepower << "_" << suffix;
+
+            Sprite* sprite = load_ui_sprite(oss.str());
+            if (!sprite) {
+                if (blastola_cola_sprites.empty()) {
+                    std::cerr << "Failed to load Blastola Cola inventory sprite: " << oss.str()
+                              << std::endl;
+                    return false;
+                }
+
+                const size_t fallback_frame = std::string(suffix) == "odd" ? 1u : 0u;
+                if (fallback_frame >= blastola_cola_sprites.size()) {
+                    std::cerr << "Missing fallback Blastola Cola sprite for frame: " << suffix
+                              << std::endl;
+                    return false;
+                }
+
+                firepower_frames.push_back(blastola_cola_sprites[fallback_frame]);
+            } else {
+                firepower_frames.push_back(sprite);
+            }
+        }
+
+        blastola_cola_inventory_sprites.push_back(firepower_frames);
     }
     
     // Load corkscrew sprites (even/odd frames)
@@ -182,6 +216,7 @@ void UISystem::cleanup() {
     // Just clear our vectors
     score_digit_sprites.clear();
     blastola_cola_sprites.clear();
+    blastola_cola_inventory_sprites.clear();
     corkscrew_sprites.clear();
     door_key_sprites.clear();
     boots_sprites.clear();
@@ -373,11 +408,29 @@ void UISystem::render_inventory(
     
     // Row 1: Y=112
     {
-        // Blastola Cola - rendered if firepower > 0 (animated even/odd frames)
-        // NOTE: firepower value (1-5) currently not used to select variant
+        // Blastola Cola - rendered if firepower > 0 with firepower-specific icon variants.
         if (firepower > 0 && !blastola_cola_sprites.empty()) {
-            size_t frame = inventory_animation_counter % blastola_cola_sprites.size();
-            render_sprite_at(blastola_cola_sprites[frame], 232, 112, 16, 16);
+            const uint8_t clamped_firepower = firepower > 5 ? 5 : firepower;
+            const size_t variant_index = static_cast<size_t>(clamped_firepower - 1);
+            const size_t frame = inventory_animation_counter % 2;
+
+            if (variant_index < blastola_cola_inventory_sprites.size() &&
+                frame < blastola_cola_inventory_sprites[variant_index].size()) {
+                render_sprite_at(
+                    blastola_cola_inventory_sprites[variant_index][frame],
+                    232,
+                    112,
+                    16,
+                    16);
+            } else {
+                // Safety fallback to base Blastola Cola frame.
+                render_sprite_at(
+                    blastola_cola_sprites[frame % blastola_cola_sprites.size()],
+                    232,
+                    112,
+                    16,
+                    16);
+            }
         }
         
         // Corkscrew - rendered if has_corkscrew (use even frame for now)

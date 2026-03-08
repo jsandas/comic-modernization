@@ -641,8 +641,9 @@ if (comic_num_treasures == 3) {
 
 ### Phase 7: UI and Menus
 **Status:** In Progress
-**Current Stage:** Phase 7.1 - Title Sequence System ✅ COMPLETE
+**Current Stage:** Phase 7.2 - HUD/UI System ✅ COMPLETE
 **Completion Date (7.1):** 2026-03-07
+**Completion Date (7.2):** 2026-03-07
 **Goal:** Implement game menus and HUD
 
 **Phase 7.1: Title Sequence System ✅ COMPLETE**
@@ -699,13 +700,104 @@ if (comic_num_treasures == 3) {
 - Original palette fade sequence fully replicated
 - Asset timing matches original (~770ms title display, instant story/items)
 
-**Remaining Tasks (Phase 7.2+):**
-- [ ] Port UI rendering from game_main.c
-  - [ ] Score display (3-digit score at top)
-  - [ ] Lives counter (life icons showing player lives)
-  - [ ] HP/shield meter (health bar display)
-  - [ ] Fireball power meter (charge indicator)
-  - [ ] Inventory display (keys, wand, other items)
+**Phase 7.2: HUD/UI System ✅ COMPLETE**
+**Objective:** Port complete HUD rendering system with score, lives, meters, and inventory from reference implementation
+
+**Completed:**
+- [x] Created `UISystem` class with comprehensive HUD management
+  - [x] Score display rendering (6-digit base-100 encoded system)
+  - [x] Lives counter with bright/dark icon states (0-5 lives)
+  - [x] HP meter with 6 cells (0-6 HP visualization)
+  - [x] Fireball meter with 6 cells (0-12 value mapping with half/full states)
+  - [x] Complete inventory grid rendering (3x3 layout)
+- [x] Score system implementation
+  - [x] Base-100 to decimal conversion (3 bytes → 6 digits)
+  - [x] Score digit sprite loading (0-9)
+  - [x] Proper rendering alignment (right-aligned at X=232-280)
+  - [x] Static helper `score_bytes_to_digits()` for testing
+- [x] Lives display implementation
+  - [x] Life icon sprites (bright/dark variants)
+  - [x] 5-icon display with active/inactive states
+  - [x] Proper spacing (24px intervals starting at X=48)
+- [x] HP meter implementation
+  - [x] 6-cell meter with full/empty sprite states
+  - [x] Right-aligned at Y=82, X=248-296
+  - [x] HP value directly controls cell fill count
+- [x] Fireball meter implementation
+  - [x] 6-cell meter with full/half/empty sprite states
+  - [x] 0-12 meter value mapped to cell states
+  - [x] Right-aligned at Y=54, X=248-296
+  - [x] Static helper `fireball_meter_to_cell_state()` for cell mapping logic
+- [x] Inventory system implementation
+  - [x] 9 inventory items with sprite loading
+    - [x] Blastola Cola (firepower indicator, animated)
+    - [x] Corkscrew (fireball oscillation upgrade)
+    - [x] Door Key (unlock doors)
+    - [x] Boots (increased jump power, static helper `has_boots()`)
+    - [x] Lantern (castle lighting)
+    - [x] Teleport Wand (special teleport)
+    - [x] Gems (treasure 1/3)
+    - [x] Crown (treasure 2/3)
+    - [x] Gold (treasure 3/3)
+  - [x] Two-frame animation system (even/odd frames)
+  - [x] Animation counter toggling each game tick
+  - [x] 3x3 grid layout (Y=112/136/160, X=232/256/280)
+- [x] Sprite asset loading
+  - [x] Score digit sprites (`score_digit_0` through `score_digit_9`)
+  - [x] Life icon sprites (`life_icon_bright`, `life_icon_dark`)
+  - [x] Meter sprites (`meter_full`, `meter_half`, `meter_empty`)
+  - [x] Item sprites with animation frames (`<item>_even`, `<item>_odd`)
+  - [x] Non-directional sprite loading (empty direction parameter)
+- [x] Integration with game loop
+  - [x] `UISystem` instantiated in `main()`
+  - [x] `initialize()` called at startup (loads all sprites)
+  - [x] `update()` called each game tick (toggles animation counter)
+  - [x] `render_hud()` called each frame with complete game state
+  - [x] Passes all player stats: score, lives, HP, fireball meter, firepower, inventory flags
+- [x] Testing and validation
+  - [x] Unit test: `test_ui_score_base100_encoding` (score conversion accuracy)
+  - [x] Unit test: `test_ui_fireball_meter_cell_mapping` (meter cell state logic)
+  - [x] Unit test: `test_ui_boots_detection` (boots detection from jump power)
+  - [x] All tests passing
+- [x] Created `include/ui_system.h` and `src/ui_system.cpp`
+- [x] Updated `CMakeLists.txt` to build ui_system.cpp
+
+**Technical Implementation:**
+- Score encoding: 3 base-100 bytes represent 0-999,999 scores
+  - Each byte (0-99) converts to 2 decimal digits
+  - Rightmost byte is least significant (ones/tens)
+  - Rendering order: most significant → least significant (left to right)
+- Lives icons: 16×16px sprites scaled to render coordinates
+  - Bright icon for active lives, dark icon for lost/unavailable lives
+- HP Meter: 6 cells at 8×16px each, right-aligned
+  - Simple threshold: cell N filled if HP > N
+- Fireball Meter: 6 cells representing 0-12 meter value
+  - Cell 0 = meter 1-2, Cell 1 = 3-4, ..., Cell 5 = 11-12
+  - Odd values show half-filled cell, even values show full cell
+- Inventory animation: toggles between even/odd frame each tick (~9 Hz)
+- Sprite rendering: uses `render_sprite_scaled()` with fixed sizes (16×16 for items, 8×16 for meters/digits)
+- RAII pattern: sprites owned by GraphicsSystem, UISystem holds non-owning pointers
+  - `cleanup()` only clears vectors, does not destroy textures
+
+**Reference Code:**
+- Based on jsandas/comic-c `game_main.c` (HUD rendering logic)
+- Based on jsandas/comic-c `graphics.c` (sprite positioning)
+
+**Success Criteria:**
+- ✅ Score displays correctly with 6 digits
+- ✅ Lives icons show active/inactive states
+- ✅ HP meter accurately reflects player health
+- ✅ Fireball meter shows charge state with half/full cells
+- ✅ Inventory items appear when collected
+- ✅ Inventory animations toggle smoothly
+- ✅ All sprites load without errors
+- ✅ Unit tests pass for helper functions
+- ✅ HUD renders every frame at correct positions
+- ✅ No rendering artifacts or performance issues
+
+---
+
+**Remaining Tasks (Phase 7.3+):**
 - [ ] Implement menus from game_main.c
   - [ ] Startup notice (initial acknowledgement screen)
   - [ ] High scores screen (leaderboard display)
@@ -733,11 +825,18 @@ if (comic_num_treasures == 3) {
 - ✅ Seamless transition to gameplay
 
 **Success Criteria (Full Phase 7):**
-- HUD displays correctly during gameplay with all elements
-- All menus are functional and match original
-- Animations play smoothly
-- High score system works
-- All game states transition correctly
+- ✅ HUD displays correctly during gameplay with all elements
+  - ✅ Score (6 digits) renders at correct position
+  - ✅ Lives (0-5 icons) show active/inactive states
+  - ✅ HP meter (6 cells) reflects player health
+  - ✅ Fireball meter (6 cells) shows charge with half/full states
+  - ✅ Inventory items (9 items) appear when collected with animations
+- [ ] All menus are functional and match original
+- [ ] Startup notice and high scores screens work
+- [ ] Pause menu functions properly
+- [ ] Beam-in/beam-out animations play correctly
+- [ ] Death and victory sequences work
+- [ ] Game state transitions are smooth
 
 ---
 

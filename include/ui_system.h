@@ -63,7 +63,8 @@ private:
     Sprite* meter_empty;
     
     // Inventory item sprites
-    std::vector<Sprite*> blastola_cola_sprites;  // 1-5 variants
+    std::vector<Sprite*> blastola_cola_sprites;  // Base even/odd frames
+    std::vector<std::vector<Sprite*>> blastola_cola_inventory_sprites;  // Firepower 1-5, each even/odd
     std::vector<Sprite*> corkscrew_sprites;      // even/odd frames
     std::vector<Sprite*> door_key_sprites;       // even/odd frames
     std::vector<Sprite*> boots_sprites;          // even/odd frames
