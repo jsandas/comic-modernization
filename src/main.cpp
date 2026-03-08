@@ -366,7 +366,7 @@ int main(int argc, char* argv[]) {
                 }
             }
             
-            // Gradually fill HP from 0 to MAX_HP at game start/respawn
+            // Gradually fill HP from 0 to MAX_HP at game startup
             // Each tick, increment HP if pending increase is scheduled
             if (comic_hp_pending_increase > 0) {
                 comic_hp_pending_increase--;
