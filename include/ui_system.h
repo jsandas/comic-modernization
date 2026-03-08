@@ -38,6 +38,11 @@ public:
         bool has_gold,
         uint8_t jump_power            // For boots detection (> 4 means boots)
     );
+    
+    // Public testable helper functions for HUD logic
+    static void score_bytes_to_digits(const uint8_t score_bytes[3], uint8_t digits[6]);
+    static uint8_t fireball_meter_to_cell_state(uint8_t meter_value, uint8_t cell_index);
+    static bool has_boots(uint8_t jump_power);
 
 private:
     uint8_t inventory_animation_counter;

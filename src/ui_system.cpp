@@ -430,3 +430,73 @@ void UISystem::render_inventory(
         }
     }
 }
+
+// ============================================================================
+// PUBLIC TESTABLE HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Convert 3 base-100 encoded score bytes to 6 decimal digits.
+ * Digits are ordered from most significant to least significant (left to right).
+ * 
+ * @param score_bytes 3 base-100 encoded bytes (each 0-99)
+ * @param digits Output array of 6 decimal digits (each 0-9)
+ * 
+ * Example: score_bytes[0]=34, score_bytes[1]=12, score_bytes[2]=5
+ *          -> digits = [5, 1, 2, 3, 4] (score 51234)
+ *          Actually: digits = [0, 5, 1, 2, 3, 4] for 051234
+ */
+void UISystem::score_bytes_to_digits(const uint8_t score_bytes[3], uint8_t digits[6]) {
+    // score_bytes[2] is most significant (tens of thousands)
+    // score_bytes[1] is middle (hundreds)
+    // score_bytes[0] is least significant (ones)
+    
+    // Convert each base-100 byte to two decimal digits
+    for (int i = 0; i < 3; i++) {
+        uint8_t base100_value = score_bytes[2 - i];  // Process from most significant
+        digits[i * 2] = base100_value / 10;          // High digit
+        digits[i * 2 + 1] = base100_value % 10;      // Low digit
+    }
+}
+
+/**
+ * Determine the display state of a fireball meter cell.
+ * 
+ * @param meter_value Current meter value (0-12)
+ * @param cell_index Cell index (0-5)
+ * @return 0 = empty, 1 = half, 2 = full
+ * 
+ * Meter mapping: cells represent meter value pairs
+ * - Cell 0: meter 1-2 (1=half, 2=full)
+ * - Cell 1: meter 3-4 (3=half, 4=full)
+ * - Cell 2: meter 5-6 (5=half, 6=full)
+ * - Cell 3: meter 7-8 (7=half, 8=full)
+ * - Cell 4: meter 9-10 (9=half, 10=full)
+ * - Cell 5: meter 11-12 (11=half, 12=full)
+ */
+uint8_t UISystem::fireball_meter_to_cell_state(uint8_t meter_value, uint8_t cell_index) {
+    if (cell_index >= 6) return 0;  // Invalid cell
+    
+    uint8_t meter_value_low = (cell_index * 2) + 1;   // 1, 3, 5, 7, 9, 11
+    uint8_t meter_value_high = (cell_index * 2) + 2;  // 2, 4, 6, 8, 10, 12
+    
+    if (meter_value >= meter_value_high) {
+        return 2;  // Full cell
+    } else if (meter_value >= meter_value_low) {
+        return 1;  // Half cell
+    } else {
+        return 0;  // Empty cell
+    }
+}
+
+/**
+ * Check if player has boots based on jump power.
+ * 
+ * @param jump_power Current jump power value
+ * @return true if jump power indicates boots are equipped
+ */
+bool UISystem::has_boots(uint8_t jump_power) {
+    constexpr uint8_t JUMP_POWER_DEFAULT = 4;
+    return jump_power > JUMP_POWER_DEFAULT;
+}
+

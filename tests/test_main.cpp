@@ -13,6 +13,7 @@
 #include "../include/doors.h"
 #include "../include/actors.h"
 #include "../include/audio.h"
+#include "../include/ui_system.h"
 
 #if defined(HAVE_SDL2_MIXER)
 #include <SDL2/SDL.h>
@@ -1554,131 +1555,176 @@ static void test_audio_all_sounds_playable() {
 
 #endif
 
+// ============================================================================
+// UI SYSTEM TESTS
+// ============================================================================
+
+/**
+ * Test score byte to digit conversion (base-100 to decimal)
+ */
+static void test_ui_score_base100_encoding() {
+    uint8_t digits[6];
+    
+    // Test zero score
+    uint8_t score_zero[3] = {0, 0, 0};
+    UISystem::score_bytes_to_digits(score_zero, digits);
+    check(digits[0] == 0 && digits[1] == 0 && digits[2] == 0 &&
+          digits[3] == 0 && digits[4] == 0 && digits[5] == 0,
+          "ui_score: zero should convert to all 0 digits");
+    
+    // Test score 99 (0, 0, 99)
+    uint8_t score_99[3] = {99, 0, 0};
+    UISystem::score_bytes_to_digits(score_99, digits);
+    check(digits[4] == 9 && digits[5] == 9,
+          "ui_score: score 99 should have rightmost digits as 9,9");
+    
+    // Test score 123,456 = (56, 34, 12)
+    uint8_t score_123456[3] = {56, 34, 12};
+    UISystem::score_bytes_to_digits(score_123456, digits);
+    check(digits[0] == 1 && digits[1] == 2 && digits[2] == 3 &&
+          digits[3] == 4 && digits[4] == 5 && digits[5] == 6,
+          "ui_score: 123456 should convert to digits 1,2,3,4,5,6");
+    
+    // Test max score 999,999 = (99, 99, 99)
+    uint8_t score_max[3] = {99, 99, 99};
+    UISystem::score_bytes_to_digits(score_max, digits);
+    check(digits[0] == 9 && digits[1] == 9 && digits[2] == 9 &&
+          digits[3] == 9 && digits[4] == 9 && digits[5] == 9,
+          "ui_score: max score should convert to all 9 digits");
+}
+
 struct TestCase {
     const char* name;
     void (*run)();
 };
 
-    // UI System Tests
-
-    // Test: Score display uses base-100 encoding correctly
-    static void test_ui_score_base100_encoding() {
-        // Test basic score encoding
-        uint8_t score[3] = {0, 0, 0};  // 0 points
-        assert(score[0] == 0 && score[1] == 0 && score[2] == 0);
+/**
+ * Test fireball meter to cell state mapping
+ */
+static void test_ui_fireball_meter_cell_mapping() {
+    // Test empty meter (0)
+    check(UISystem::fireball_meter_to_cell_state(0, 0) == 0,
+          "ui_fireball: meter 0, cell 0 should be empty");
+    check(UISystem::fireball_meter_to_cell_state(0, 5) == 0,
+          "ui_fireball: meter 0, all cells should be empty");
     
-        // Test score 99 (all in first byte)
-        score[0] = 99;
-        assert(score[0] / 10 == 9 && score[0] % 10 == 9);  // 99 -> two 9s
+    // Test meter value 1 (first cell half-filled)
+    check(UISystem::fireball_meter_to_cell_state(1, 0) == 1,
+          "ui_fireball: meter 1, cell 0 should be half");
+    check(UISystem::fireball_meter_to_cell_state(1, 1) == 0,
+          "ui_fireball: meter 1, cell 1 should be empty");
     
-        // Test score 100 (rolls over to second byte)
-        score[0] = 0;
-        score[1] = 1;  // 1 * 100 = 100
-        assert(score[1] >= 1);
+    // Test meter value 2 (first cell full)
+    check(UISystem::fireball_meter_to_cell_state(2, 0) == 2,
+          "ui_fireball: meter 2, cell 0 should be full");
+    check(UISystem::fireball_meter_to_cell_state(2, 1) == 0,
+          "ui_fireball: meter 2, cell 1 should be empty");
     
-        // Test max score 999,999
-        score[0] = 99;
-        score[1] = 99;
-        score[2] = 99;  // (99 * 1) + (99 * 100) + (99 * 10000) = 999,999
-        assert(score[2] == 99);
+    // Test meter value 7 (cells 0-2 full, cell 3 half, cells 4-5 empty)
+    check(UISystem::fireball_meter_to_cell_state(7, 0) == 2,
+          "ui_fireball: meter 7, cell 0 should be full");
+    check(UISystem::fireball_meter_to_cell_state(7, 1) == 2,
+          "ui_fireball: meter 7, cell 1 should be full");
+    check(UISystem::fireball_meter_to_cell_state(7, 2) == 2,
+          "ui_fireball: meter 7, cell 2 should be full");
+    check(UISystem::fireball_meter_to_cell_state(7, 3) == 1,
+          "ui_fireball: meter 7, cell 3 should be half");
+    check(UISystem::fireball_meter_to_cell_state(7, 4) == 0,
+          "ui_fireball: meter 7, cell 4 should be empty");
+    
+    // Test max meter value (12 - all cells full)
+    for (uint8_t cell = 0; cell < 6; cell++) {
+        check(UISystem::fireball_meter_to_cell_state(12, cell) == 2,
+              "ui_fireball: meter 12, all cells should be full");
     }
-
-    // Test: Lives counter validates range 0-5
-    static void test_ui_lives_count_range() {
-        // Test minimum
-        uint8_t lives = 0;
-        assert(lives >= 0 && lives <= 5);
     
-        // Test within range
-        for (int i = 0; i <= 5; i++) {
-            lives = i;
-            assert(lives >= 0 && lives <= 5);
+    // Test invalid cell index
+    check(UISystem::fireball_meter_to_cell_state(12, 6) == 0,
+          "ui_fireball: invalid cell index should return 0");
+}
+
+/**
+ * Test boots detection from jump power
+ */
+static void test_ui_boots_detection() {
+    // JUMP_POWER_DEFAULT is 4, WITH_BOOTS is 5
+    check(!UISystem::has_boots(4),
+          "ui_boots: jump power 4 (default) should not indicate boots");
+    check(UISystem::has_boots(5),
+          "ui_boots: jump power 5 (with boots) should indicate boots");
+    check(!UISystem::has_boots(0),
+          "ui_boots: jump power 0 should not indicate boots");
+    check(!UISystem::has_boots(3),
+          "ui_boots: jump power 3 should not indicate boots");
+}
+
+/**
+ * Test edge cases for score conversion
+ */
+static void test_ui_score_edge_cases() {
+    uint8_t digits[6];
+    
+    // Test single digit in each position
+    uint8_t score_1[3] = {1, 0, 0};
+    UISystem::score_bytes_to_digits(score_1, digits);
+    check(digits[5] == 1,
+          "ui_score_edge: score 1 should have rightmost digit as 1");
+    
+    uint8_t score_100[3] = {0, 1, 0};
+    UISystem::score_bytes_to_digits(score_100, digits);
+    check(digits[3] == 1 && digits[4] == 0 && digits[5] == 0,
+          "ui_score_edge: score 100 should convert to 0,0,0,1,0,0");
+    
+    uint8_t score_10000[3] = {0, 0, 1};
+    UISystem::score_bytes_to_digits(score_10000, digits);
+    check(digits[1] == 1 && digits[2] == 0,
+          "ui_score_edge: score 10000 should have digits[1]=1");
+}
+
+/**
+ * Test all meter states for comprehensive coverage
+ */
+static void test_ui_meter_all_states() {
+    // Test each meter value from 0-12 maps correctly
+    const uint8_t expected_states[13][6] = {
+        // meter 0: all empty
+        {0, 0, 0, 0, 0, 0},
+        // meter 1: cell 0 half, rest empty
+        {1, 0, 0, 0, 0, 0},
+        // meter 2: cell 0 full, rest empty
+        {2, 0, 0, 0, 0, 0},
+        // meter 3: cell 0 full, cell 1 half
+        {2, 1, 0, 0, 0, 0},
+        // meter 4: cells 0-1 full
+        {2, 2, 0, 0, 0, 0},
+        // meter 5: cells 0-1 full, cell 2 half
+        {2, 2, 1, 0, 0, 0},
+        // meter 6: cells 0-2 full
+        {2, 2, 2, 0, 0, 0},
+        // meter 7: cells 0-2 full, cell 3 half
+        {2, 2, 2, 1, 0, 0},
+        // meter 8: cells 0-3 full
+        {2, 2, 2, 2, 0, 0},
+        // meter 9: cells 0-3 full, cell 4 half
+        {2, 2, 2, 2, 1, 0},
+        // meter 10: cells 0-4 full
+        {2, 2, 2, 2, 2, 0},
+        // meter 11: cells 0-4 full, cell 5 half
+        {2, 2, 2, 2, 2, 1},
+        // meter 12: all full
+        {2, 2, 2, 2, 2, 2}
+    };
+    
+    for (uint8_t meter = 0; meter <= 12; meter++) {
+        for (uint8_t cell = 0; cell < 6; cell++) {
+            uint8_t state = UISystem::fireball_meter_to_cell_state(meter, cell);
+            check(state == expected_states[meter][cell],
+                  "ui_meter_all_states: meter value mismatch");
         }
-    
-        // Test max
-        lives = 5;
-        assert(lives == 5);
     }
+}
 
-    // Test: HP meter tracks 0-6 health values
-    static void test_ui_hp_meter_values() {
-        constexpr uint8_t MAX_HP = 6;
-    
-        // Test minimum
-        uint8_t hp = 0;
-        assert(hp <= MAX_HP);
-    
-        // Test all valid values
-        for (uint8_t h = 0; h <= MAX_HP; h++) {
-            assert(h <= MAX_HP);
-        }
-    
-        // Test max HP
-        hp = MAX_HP;
-        assert(hp == MAX_HP);
-    }
 
-    // Test: Fireball meter maps 0-12 to 6 cells correctly
-    static void test_ui_fireball_meter_cell_mapping() {
-        constexpr uint8_t MAX_METER = 12;
-        constexpr uint8_t MAX_CELLS = 6;
-    
-        // Test meter to cell mapping
-        for (uint8_t meter = 0; meter <= MAX_METER; meter++) {
-            uint8_t cell = (meter > 0) ? (meter - 1) / 2 : 0;
-            // Meter 1-2 maps to cell 0, 3-4 to cell 1, etc.
-            assert(cell < MAX_CELLS || meter == 0);
-        }
-    
-        // Test specific mappings
-        assert((1 - 1) / 2 == 0);  // Meter 1 -> cell 0
-        assert((2 - 1) / 2 == 0);  // Meter 2 -> cell 0
-        assert((3 - 1) / 2 == 1);  // Meter 3 -> cell 1
-        assert((12 - 1) / 2 == 5); // Meter 12 -> cell 5
-    }
-
-    // Test: Inventory items have valid states (0 or 1)
-    static void test_ui_inventory_item_states() {
-        // Test door key
-        uint8_t has_door_key = 0;
-        assert(has_door_key == 0 || has_door_key == 1);
-    
-        has_door_key = 1;
-        assert(has_door_key == 0 || has_door_key == 1);
-    
-        // Test all items are boolean
-        uint8_t items[] = {
-            0,  // corkscrew
-            1,  // door_key
-            0,  // teleport_wand
-            1,  // lantern
-            0,  // gems
-            1,  // crown
-            0   // gold
-        };
-    
-        for (uint8_t item : items) {
-            assert(item == 0 || item == 1);
-        }
-    }
-
-    // Test: Firepower counts valid fireballs (0-5)
-    static void test_ui_firepower_range() {
-        constexpr uint8_t MAX_FIREPOWER = 5;
-    
-        // Test minimum
-        uint8_t firepower = 0;
-        assert(firepower <= MAX_FIREPOWER);
-    
-        // Test all valid values
-        for (uint8_t fp = 0; fp <= MAX_FIREPOWER; fp++) {
-            assert(fp >= 0 && fp <= MAX_FIREPOWER);
-        }
-    
-        // Test max
-        firepower = MAX_FIREPOWER;
-        assert(firepower == MAX_FIREPOWER);
-    }
 
 static const std::vector<TestCase>& test_registry() {
     static const std::vector<TestCase> tests = {
@@ -1731,11 +1777,10 @@ static const std::vector<TestCase>& test_registry() {
         {"audio_all_sounds_playable", test_audio_all_sounds_playable},
         {"audio_music_playback", test_audio_music_playback},
         {"ui_score_base100_encoding", test_ui_score_base100_encoding},
-        {"ui_lives_count_range", test_ui_lives_count_range},
-        {"ui_hp_meter_values", test_ui_hp_meter_values},
         {"ui_fireball_meter_cell_mapping", test_ui_fireball_meter_cell_mapping},
-        {"ui_inventory_item_states", test_ui_inventory_item_states},
-        {"ui_firepower_range", test_ui_firepower_range}
+        {"ui_boots_detection", test_ui_boots_detection},
+        {"ui_score_edge_cases", test_ui_score_edge_cases},
+        {"ui_meter_all_states", test_ui_meter_all_states}
     };
     return tests;
 }
