@@ -334,6 +334,7 @@ int main(int argc, char* argv[]) {
                 ? current_level_ptr->stages[current_stage_number].tiles
                 : nullptr;
             actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x, key_state_fire);
+            ui_system.update();
             
             // Lives count-up sequence: award 5 lives with 1-tick delay between each,
             // then subtract 1 (the life currently in use)

@@ -22,6 +22,9 @@ public:
     // Cleanup UI resources
     void cleanup();
     
+    // Update animation state (call once per game tick)
+    void update();
+    
     // Render all UI elements to the screen
     void render_hud(
         const uint8_t score_bytes[3], // 3 base-100 encoded digits

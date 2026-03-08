@@ -192,6 +192,12 @@ void UISystem::cleanup() {
     gold_sprites.clear();
 }
 
+void UISystem::update() {
+    // Toggle animation counter once per game tick (~9 Hz)
+    // This drives the even/odd frame alternation for inventory sprites
+    inventory_animation_counter ^= 1;
+}
+
 Sprite* UISystem::load_ui_sprite(const std::string& sprite_name) {
     if (!g_graphics) return nullptr;
     
@@ -223,8 +229,6 @@ void UISystem::render_hud(
     bool has_gold,
     uint8_t jump_power)
 {
-    inventory_animation_counter ^= 1;
-
     render_score(score_bytes);
     render_lives(num_lives);
     render_hp_meter(hp);
