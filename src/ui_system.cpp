@@ -209,7 +209,7 @@ void UISystem::render_sprite_at(Sprite* sprite, int x, int y, int width, int hei
 }
 
 void UISystem::render_hud(
-    uint8_t score_bytes[3],
+    const uint8_t score_bytes[3],
     uint8_t num_lives,
     uint8_t hp,
     uint8_t fireball_meter,

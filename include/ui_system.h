@@ -24,7 +24,7 @@ public:
     
     // Render all UI elements to the screen
     void render_hud(
-        uint8_t score_bytes[3],      // 3 base-100 encoded digits
+        const uint8_t score_bytes[3], // 3 base-100 encoded digits
         uint8_t num_lives,            // 0-5
         uint8_t hp,                   // 0-6
         uint8_t fireball_meter,       // 0-12
