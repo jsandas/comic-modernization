@@ -38,15 +38,8 @@ uint8_t lives_sequence_delay = 1;  // Delay counter for lives animation (1 tick 
 bool lives_sequence_complete = false;  // Flag to stop lives sequence after completion
 uint8_t comic_hp = 0;  // Current health points (0-6)
 uint8_t comic_hp_pending_increase = 6;  // HP fills gradually from 0 to MAX_HP at game start
-uint8_t comic_firepower = 0;  // Number of active fireballs (0-5)
-uint8_t comic_has_corkscrew = 0;  // 1 if player has corkscrew effect
-uint8_t comic_has_teleport_wand = 0;  // 1 if player has teleport wand
-uint8_t comic_has_lantern = 0;  // 1 if player has lantern
-uint8_t comic_has_gems = 0;  // 1st treasure
-uint8_t comic_has_crown = 0;  // 2nd treasure
-uint8_t comic_has_gold = 0;  // 3rd treasure
-uint8_t comic_num_treasures = 0;  // Track treasure count for victory
 uint8_t score_bytes[3] = {0, 0, 0};  // Score in base-100 encoding
+// Note: Firepower, items, and treasures are managed by ActorSystem (authoritative state)
 
 // Level/stage transition tracking
 uint8_t current_level_number = 1;  // Current level (0=LAKE, 1=FOREST, etc.)
