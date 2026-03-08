@@ -640,41 +640,104 @@ if (comic_num_treasures == 3) {
 ---
 
 ### Phase 7: UI and Menus
-**Status:** Not Started
-**Completion Date:** TBD
+**Status:** In Progress
+**Current Stage:** Phase 7.1 - Title Sequence System ✅ COMPLETE
+**Completion Date (7.1):** 2026-03-07
 **Goal:** Implement game menus and HUD
 
-**Tasks:**
+**Phase 7.1: Title Sequence System ✅ COMPLETE**
+**Objective:** Port complete title sequence from original game with proper visual transitions and asset loading
+
+**Completed:**
+- [x] Title sequence function structure
+  - [x] Load and display title screen (SYS000.EGA) with palette fade-in
+  - [x] Load and display story screen (SYS001.EGA) with palette fade-in
+  - [x] Load game UI background (SYS003.EGA) into HUD texture for gameplay
+  - [x] Load and display items/controls screen (SYS004.EGA)
+  - [x] Proper blocking on keypresses between screens
+  - [x] Title music playback (integrated with Phase 6 audio system)
+- [x] Palette fade effects
+  - [x] 6-step palette transition sequence mimicking DOS palette_fade_in()
+  - [x] EGA color conversion (6-bit → 8-bit RGB)
+  - [x] Multi-step color animation for smooth visual transitions
+  - [x] Non-fatal handling for missing/invalid palette data (continue without fade)
+- [x] Asset loading
+  - [x] Load paletted PNG files (320×200 EGA graphics)
+  - [x] Preserve indexed color format with palette
+  - [x] Convert to RGBA textures for SDL rendering
+  - [x] Proper error handling and logging
+- [x] Timing and input handling
+  - [x] Title screen auto-advances after ~770 ms (14 ticks × 55 ms)
+  - [x] Story and items screens wait for keypress (blocking)
+  - [x] Event polling during fade sequences allows SDL_QUIT detection
+  - [x] Letterbox rendering for 320×200 content on modern resolutions
+- [x] Integration with game loop
+  - [x] `run_title_sequence()` called at startup
+  - [x] `get_hud_texture()` returns preserved SYS003.EGA for in-game HUD rendering
+  - [x] HUD texture rendered as background layer during gameplay
+  - [x] Playfield viewport (8,8 offset, 192×160 size) matches original HUD layout
+  - [x] `--skip-title` command-line flag bypasses sequence for development speed
+  - [x] `cleanup_title_sequence()` properly releases loaded surfaces and textures
+- [x] Created `include/title_sequence.h` and `src/title_sequence.cpp`
+- [x] Created `TITLE_SEQUENCE.md` with detailed documentation
+
+**Technical Implementation:**
+- Paletted PNG loading preserves EGA palette data (8-bit indexed color)
+- Letterbox calculation centralized in `GraphicsSystem::compute_letterbox_rect()`
+- Fade sequence renders 6 frames with 55ms delays (matching original tick rate)
+- Multi-step palette color transitions:
+  - Step 1: All colors → dark gray (0x18)
+  - Step 2: All colors → light gray (0x07)
+  - Step 3: Background stays light gray, items/title → white (0x1f)
+  - Step 4: Background → dark green (0x02), items → bright green (0x1a)
+  - Step 5: Title → bright red (0x1c), background/items restored
+  - Step 6: All restored to original colors
+- Surface format conversion: paletted → RGBA32 for SDL rendering
+
+**Reference Implementation:**
+- Based on jsandas/comic-c `game_main.c:title_sequence()`
+- Original palette fade sequence fully replicated
+- Asset timing matches original (~770ms title display, instant story/items)
+
+**Remaining Tasks (Phase 7.2+):**
 - [ ] Port UI rendering from game_main.c
-  - [ ] Score display
-  - [ ] Inventory display (keys, wand)
-  - [ ] HP/shield meter
-  - [ ] Fireball power meter
-  - [ ] Lives counter
+  - [ ] Score display (3-digit score at top)
+  - [ ] Lives counter (life icons showing player lives)
+  - [ ] HP/shield meter (health bar display)
+  - [ ] Fireball power meter (charge indicator)
+  - [ ] Inventory display (keys, wand, other items)
 - [ ] Implement menus from game_main.c
-  - [ ] Startup notice
-  - [ ] Title sequence
-  - [ ] Story screen
-  - [ ] Items screen
-  - [ ] High scores
-  - [ ] Keyboard setup
-  - [ ] Pause menu
+  - [ ] Startup notice (initial acknowledgement screen)
+  - [ ] High scores screen (leaderboard display)
+  - [ ] Keyboard setup menu (control configuration)
+  - [ ] Pause menu (in-game pause functionality)
 - [ ] Port special sequences
-  - [ ] Beam-in animation
-  - [ ] Beam-out animation
-  - [ ] Death animation
-  - [ ] Victory sequence
-  - [ ] Game over screen
+  - [ ] Beam-in animation (entering level/stage)
+  - [ ] Beam-out animation (exiting level/stage to victory)
+  - [ ] Death animation (player death sequence)
+  - [ ] Victory sequence (treasure collection celebration)
+  - [ ] Game over screen (game-over state display)
 
 **Reference Code:**
 - `src/game_main.c`: UI and menu functions
 - `src/graphics.c`: Text rendering, fullscreen graphics
 
-**Success Criteria:**
-- HUD displays correctly during gameplay
-- All menus are functional
+**Success Criteria Phase 7.1:**
+- ✅ Title sequence displays in correct order
+- ✅ Palette fades smoothly (6 steps at 55ms each)
+- ✅ All screens display correctly
+- ✅ Title music plays during title screen
+- ✅ Input advances story and items screens
+- ✅ HUD texture preserved for gameplay rendering
+- ✅ No crashes or memory leaks
+- ✅ Seamless transition to gameplay
+
+**Success Criteria (Full Phase 7):**
+- HUD displays correctly during gameplay with all elements
+- All menus are functional and match original
 - Animations play smoothly
 - High score system works
+- All game states transition correctly
 
 ---
 
