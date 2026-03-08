@@ -8,6 +8,7 @@
 #include "../include/cheats.h"
 #include "../include/actors.h"
 #include "../include/audio.h"
+#include "../include/title_sequence.h"
 
 // Game state
 int comic_x = 20;
@@ -48,9 +49,6 @@ bool game_over_triggered = false;  // Flag to track if game-over sound has been 
 // Global system pointers (for access from other modules)
 ActorSystem* g_actor_system = nullptr;  // Actor system pointer (for cheat access)
 
-// Rendering scale: 16 pixels per game unit
-const int RENDER_SCALE = 16;
-
 // Level names (indexed by level number)
 static constexpr const char* level_names[] = {
     "lake", "forest", "space", "base", "cave", "shed", "castle", "comp"
@@ -80,14 +78,18 @@ void process_door_input() {
 int main(int argc, char* argv[]) {
     // Parse command-line arguments
     bool debug_mode = false;
+    bool skip_title = false;
     for (int i = 1; i < argc; ++i) {
         if (std::strcmp(argv[i], "--debug") == 0) {
             debug_mode = true;
             std::cout << "Debug mode enabled" << std::endl;
+        } else if (std::strcmp(argv[i], "--skip-title") == 0) {
+            skip_title = true;
         } else if (std::strcmp(argv[i], "--help") == 0) {
             std::cout << "Captain Comic - Usage:" << std::endl;
-            std::cout << "  --debug    Enable debug mode and cheat keys" << std::endl;
-            std::cout << "  --help     Show this help message" << std::endl;
+            std::cout << "  --debug       Enable debug mode and cheat keys" << std::endl;
+            std::cout << "  --skip-title  Skip the title sequence" << std::endl;
+            std::cout << "  --help        Show this help message" << std::endl;
             return 0;
         }
     }
@@ -126,7 +128,22 @@ int main(int argc, char* argv[]) {
     if (!initialize_audio_system()) {
         std::cerr << "Warning: Audio system initialization failed. Continuing without sound." << std::endl;
     }
-    
+
+    // Run title sequence (title screen, story, items screen)
+    // Skipped with --skip-title flag for faster iteration during development
+    if (!skip_title) {
+        if (!run_title_sequence(renderer, g_graphics)) {
+            // User quit during title sequence
+            cleanup_title_sequence();
+            delete g_graphics;
+            shutdown_audio_system();
+            SDL_DestroyRenderer(renderer);
+            SDL_DestroyWindow(window);
+            SDL_Quit();
+            return 0;
+        }
+    }
+
     // Initialize cheat system
     g_cheats = new CheatSystem();
     g_cheats->initialize(debug_mode);
@@ -334,6 +351,34 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
+        // Keep gameplay aligned with the same letterboxed 320x200 frame used by HUD.
+        SDL_Rect gameplay_frame_rect = g_graphics->compute_letterbox_rect(renderer);
+
+        // Render HUD background (sys003.ega) - should be behind all game elements
+        SDL_Texture* hud_texture = get_hud_texture();
+        if (hud_texture) {
+            SDL_RenderCopy(renderer, hud_texture, nullptr, &gameplay_frame_rect);
+        }
+
+        // Calculate the letterbox scale factor to keep playfield dimensions correct
+        // as the window size changes.
+        const float letterbox_scale = static_cast<float>(gameplay_frame_rect.w) / EGA_WIDTH;
+
+        // Derive per-frame render scale from letterbox scale.
+        // Each game unit = 8 EGA pixels (192 EGA pixels / 24 game units),
+        // so gameplay scales consistently with the HUD.
+        // Round to nearest int and clamp to minimum 1 to prevent zero-sized rendering.
+        const int render_scale = (letterbox_scale < 0.125f) ? 1 : static_cast<int>(8.0f * letterbox_scale + 0.5f);
+
+        // Render gameplay only inside the HUD playfield window
+        // (C code: top-left at 8,8 EGA pixels; size 192x160 EGA pixels).
+        SDL_Rect playfield_viewport;
+        playfield_viewport.x = gameplay_frame_rect.x + static_cast<int>(8 * letterbox_scale);
+        playfield_viewport.y = gameplay_frame_rect.y + static_cast<int>(8 * letterbox_scale);
+        playfield_viewport.w = static_cast<int>(192 * letterbox_scale);
+        playfield_viewport.h = static_cast<int>(160 * letterbox_scale);
+        SDL_RenderSetViewport(renderer, &playfield_viewport);
+
         bool level_changed = current_level_number != cached_level_number;
         bool stage_changed = current_stage_number != cached_stage_number;
 
@@ -354,26 +399,34 @@ int main(int argc, char* argv[]) {
 
         Tileset* tileset = cached_tileset;
 
-        // Render tiles
+        // Render tiles with offscreen margin for seamless scrolling.
+        // The C code pre-renders into a 256-byte-wide buffer; we render tiles
+        // slightly outside the visible playfield and let viewport clipping
+        // hide any offscreen portions.
+        const int OFFSCREEN_MARGIN_UNITS = 2;
+        const int min_visible_x = camera_x - OFFSCREEN_MARGIN_UNITS;
+        const int max_visible_x = camera_x + PLAYFIELD_WIDTH + OFFSCREEN_MARGIN_UNITS;
+        
         for (int ty = 0; ty < MAP_HEIGHT_TILES; ty++) {
             for (int tx = 0; tx < MAP_WIDTH_TILES; tx++) {
                 int world_x = tx * 2; // Tile x in game units
                 
-                // Only render tiles visible on camera
-                if (world_x >= camera_x && world_x < camera_x + PLAYFIELD_WIDTH) {
+                // Render tiles within visible range (with left margin for scrolling).
+                // Each tile is 2 units wide, so render if tile overlaps the range.
+                if (world_x + 2 > min_visible_x && world_x < max_visible_x) {
                     uint8_t tile = get_tile_at(tx * 2, ty * 2);
                     
-                    int screen_x = (world_x - camera_x) * RENDER_SCALE;
-                    int screen_y = ty * 2 * RENDER_SCALE;
+                    int screen_x = (world_x - camera_x) * render_scale;
+                    int screen_y = ty * 2 * render_scale;
                     
-                    g_graphics->render_tile(screen_x, screen_y, tileset, tile, RENDER_SCALE);
+                    g_graphics->render_tile(screen_x, screen_y, tileset, tile, render_scale);
                 }
             }
         }
 
-        actor_system.render_enemies(g_graphics, camera_x, RENDER_SCALE);
-        actor_system.render_fireballs(g_graphics, camera_x, RENDER_SCALE);
-        actor_system.render_item(g_graphics, camera_x, RENDER_SCALE);
+        actor_system.render_enemies(g_graphics, camera_x, render_scale);
+        actor_system.render_fireballs(g_graphics, camera_x, render_scale);
+        actor_system.render_item(g_graphics, camera_x, render_scale);
 
         // Render player sprite
         if (current_animation) {
@@ -381,15 +434,18 @@ int main(int argc, char* argv[]) {
             if (frame) {
                 // Center player on screen relative to camera
                 // Player is 2 units wide, 4 units tall in game coords
-                int screen_x = (comic_x - camera_x) * RENDER_SCALE + RENDER_SCALE;  // Center X
-                int screen_y = comic_y * RENDER_SCALE + RENDER_SCALE * 2; // Center Y
-                int player_width = RENDER_SCALE * 2;
-                int player_height = RENDER_SCALE * 4;
+                int screen_x = (comic_x - camera_x) * render_scale + render_scale;  // Center X
+                int screen_y = comic_y * render_scale + render_scale * 2; // Center Y
+                int player_width = render_scale * 2;
+                int player_height = render_scale * 4;
                 g_graphics->render_sprite_centered_scaled(screen_x, screen_y, frame->sprite, player_width, player_height);
             }
         }
         
-        // Render debug overlay if enabled via F3
+        // Restore full renderer viewport before rendering debug overlay.
+        SDL_RenderSetViewport(renderer, nullptr);
+        
+        // Render debug overlay if enabled via F3 (in full window space)
         if (g_cheats->should_show_debug_overlay()) {
             g_graphics->render_debug_overlay();
         }
@@ -408,6 +464,7 @@ int main(int argc, char* argv[]) {
     // Cleanup
     g_actor_system = nullptr;  // Clear pointer before actor_system goes out of scope
     delete g_cheats;
+    cleanup_title_sequence();
     delete g_graphics;
     shutdown_audio_system();
     SDL_DestroyRenderer(renderer);

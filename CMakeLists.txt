@@ -25,6 +25,7 @@ add_executable(captain_comic
     src/cheats.cpp
     src/actors.cpp
     src/audio.cpp
+    src/title_sequence.cpp
 )
 
 # Link libraries
@@ -54,6 +55,7 @@ add_executable(comic_tests
     src/cheats.cpp
     src/actors.cpp
     src/audio.cpp
+    src/title_sequence.cpp
 )
 
 target_link_libraries(comic_tests

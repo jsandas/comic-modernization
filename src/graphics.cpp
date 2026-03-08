@@ -665,6 +665,26 @@ void GraphicsSystem::render_debug_overlay() {
     }
 }
 
+SDL_Rect GraphicsSystem::compute_letterbox_rect(SDL_Renderer* renderer) {
+    int win_w = 0;
+    int win_h = 0;
+    SDL_GetRendererOutputSize(renderer, &win_w, &win_h);
+
+    const float scale_x = static_cast<float>(win_w) / EGA_WIDTH;
+    const float scale_y = static_cast<float>(win_h) / EGA_HEIGHT;
+    const float scale = (scale_x < scale_y) ? scale_x : scale_y;
+
+    const int dst_w = static_cast<int>(EGA_WIDTH * scale);
+    const int dst_h = static_cast<int>(EGA_HEIGHT * scale);
+
+    SDL_Rect rect;
+    rect.x = (win_w - dst_w) / 2;
+    rect.y = (win_h - dst_h) / 2;
+    rect.w = dst_w;
+    rect.h = dst_h;
+    return rect;
+}
+
 void GraphicsSystem::cleanup() {
     // Clean up tilesets
     for (auto& pair : tilesets) {

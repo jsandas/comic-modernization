@@ -8,6 +8,10 @@
 #include <map>
 #include <vector>
 
+// Original EGA resolution (used for letterbox scaling)
+constexpr int EGA_WIDTH = 320;
+constexpr int EGA_HEIGHT = 200;
+
 // Forward declarations
 struct Texture;
 struct Tileset;
@@ -104,6 +108,9 @@ public:
     
     // Debug rendering
     void render_debug_overlay();
+    
+    // Utility: Compute letterboxed destination rect for 320x200 EGA content
+    static SDL_Rect compute_letterbox_rect(SDL_Renderer* renderer);
     
     // Cleanup
     
