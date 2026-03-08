@@ -346,12 +346,17 @@ Tileset* GraphicsSystem::get_tileset(const std::string& level_name) {
 }
 
 bool GraphicsSystem::load_sprite(const std::string& sprite_name, const std::string& direction) {
-    std::string key = sprite_name + "_" + direction;
+    std::string key = direction.empty() ? sprite_name : (sprite_name + "_" + direction);
     if (sprites.find(key) != sprites.end()) {
         return true;
     }
     
-    std::string filename = "sprite-" + sprite_name + "_" + direction + ".png";
+    std::string filename;
+    if (direction.empty()) {
+        filename = "sprite-" + sprite_name + ".png";
+    } else {
+        filename = "sprite-" + sprite_name + "_" + direction + ".png";
+    }
     std::string filepath = get_asset_path(filename);
     
     TextureInfo texture = load_png(filepath);
@@ -370,7 +375,7 @@ bool GraphicsSystem::load_sprite(const std::string& sprite_name, const std::stri
 }
 
 Sprite* GraphicsSystem::get_sprite(const std::string& sprite_name, const std::string& direction) {
-    std::string key = sprite_name + "_" + direction;
+    std::string key = direction.empty() ? sprite_name : (sprite_name + "_" + direction);
     auto it = sprites.find(key);
     if (it != sprites.end()) {
         return &it->second;

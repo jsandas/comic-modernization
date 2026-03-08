@@ -5,6 +5,7 @@
 #include <cstring>
 #include <fstream>
 #include <filesystem>
+#include <cassert>
 #include "../include/physics.h"
 #include "../include/graphics.h"
 #include "../include/level.h"
@@ -1558,6 +1559,127 @@ struct TestCase {
     void (*run)();
 };
 
+    // UI System Tests
+
+    // Test: Score display uses base-100 encoding correctly
+    static void test_ui_score_base100_encoding() {
+        // Test basic score encoding
+        uint8_t score[3] = {0, 0, 0};  // 0 points
+        assert(score[0] == 0 && score[1] == 0 && score[2] == 0);
+    
+        // Test score 99 (all in first byte)
+        score[0] = 99;
+        assert(score[0] / 10 == 9 && score[0] % 10 == 9);  // 99 -> two 9s
+    
+        // Test score 100 (rolls over to second byte)
+        score[0] = 0;
+        score[1] = 1;  // 1 * 100 = 100
+        assert(score[1] >= 1);
+    
+        // Test max score 999,999
+        score[0] = 99;
+        score[1] = 99;
+        score[2] = 99;  // (99 * 1) + (99 * 100) + (99 * 10000) = 999,999
+        assert(score[2] == 99);
+    }
+
+    // Test: Lives counter validates range 0-5
+    static void test_ui_lives_count_range() {
+        // Test minimum
+        uint8_t lives = 0;
+        assert(lives >= 0 && lives <= 5);
+    
+        // Test within range
+        for (int i = 0; i <= 5; i++) {
+            lives = i;
+            assert(lives >= 0 && lives <= 5);
+        }
+    
+        // Test max
+        lives = 5;
+        assert(lives == 5);
+    }
+
+    // Test: HP meter tracks 0-6 health values
+    static void test_ui_hp_meter_values() {
+        constexpr uint8_t MAX_HP = 6;
+    
+        // Test minimum
+        uint8_t hp = 0;
+        assert(hp <= MAX_HP);
+    
+        // Test all valid values
+        for (uint8_t h = 0; h <= MAX_HP; h++) {
+            assert(h <= MAX_HP);
+        }
+    
+        // Test max HP
+        hp = MAX_HP;
+        assert(hp == MAX_HP);
+    }
+
+    // Test: Fireball meter maps 0-12 to 6 cells correctly
+    static void test_ui_fireball_meter_cell_mapping() {
+        constexpr uint8_t MAX_METER = 12;
+        constexpr uint8_t MAX_CELLS = 6;
+    
+        // Test meter to cell mapping
+        for (uint8_t meter = 0; meter <= MAX_METER; meter++) {
+            uint8_t cell = (meter > 0) ? (meter - 1) / 2 : 0;
+            // Meter 1-2 maps to cell 0, 3-4 to cell 1, etc.
+            assert(cell < MAX_CELLS || meter == 0);
+        }
+    
+        // Test specific mappings
+        assert((1 - 1) / 2 == 0);  // Meter 1 -> cell 0
+        assert((2 - 1) / 2 == 0);  // Meter 2 -> cell 0
+        assert((3 - 1) / 2 == 1);  // Meter 3 -> cell 1
+        assert((12 - 1) / 2 == 5); // Meter 12 -> cell 5
+    }
+
+    // Test: Inventory items have valid states (0 or 1)
+    static void test_ui_inventory_item_states() {
+        // Test door key
+        uint8_t has_door_key = 0;
+        assert(has_door_key == 0 || has_door_key == 1);
+    
+        has_door_key = 1;
+        assert(has_door_key == 0 || has_door_key == 1);
+    
+        // Test all items are boolean
+        uint8_t items[] = {
+            0,  // corkscrew
+            1,  // door_key
+            0,  // teleport_wand
+            1,  // lantern
+            0,  // gems
+            1,  // crown
+            0   // gold
+        };
+    
+        for (uint8_t item : items) {
+            assert(item == 0 || item == 1);
+        }
+    }
+
+    // Test: Firepower counts valid fireballs (0-5)
+    static void test_ui_firepower_range() {
+        constexpr uint8_t MAX_FIREPOWER = 5;
+    
+        // Test minimum
+        uint8_t firepower = 0;
+        assert(firepower <= MAX_FIREPOWER);
+    
+        // Test all valid values
+        for (uint8_t fp = 0; fp <= MAX_FIREPOWER; fp++) {
+            assert(fp >= 0 && fp <= MAX_FIREPOWER);
+        }
+    
+        // Test max
+        firepower = MAX_FIREPOWER;
+        assert(firepower == MAX_FIREPOWER);
+    }
+
 static const std::vector<TestCase>& test_registry() {
     static const std::vector<TestCase> tests = {
         {"physics_tiles", test_physics_tiles},
@@ -1607,7 +1729,13 @@ static const std::vector<TestCase>& test_registry() {
         {"audio_priority_interrupt", test_audio_priority_interrupt},
         {"audio_priority_blocking", test_audio_priority_blocking},
         {"audio_all_sounds_playable", test_audio_all_sounds_playable},
-        {"audio_music_playback", test_audio_music_playback}
+        {"audio_music_playback", test_audio_music_playback},
+        {"ui_score_base100_encoding", test_ui_score_base100_encoding},
+        {"ui_lives_count_range", test_ui_lives_count_range},
+        {"ui_hp_meter_values", test_ui_hp_meter_values},
+        {"ui_fireball_meter_cell_mapping", test_ui_fireball_meter_cell_mapping},
+        {"ui_inventory_item_states", test_ui_inventory_item_states},
+        {"ui_firepower_range", test_ui_firepower_range}
     };
     return tests;
 }

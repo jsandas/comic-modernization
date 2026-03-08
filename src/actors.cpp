@@ -33,7 +33,7 @@ ActorSystem::ActorSystem()
       g_camera_x(0),
       comic_firepower(0),
       comic_has_corkscrew(0),
-      fireball_meter(MAX_FIREBALL_METER),
+      fireball_meter(0),
       comic_has_boots(0),
       comic_has_lantern(0),
       comic_has_door_key(0),
