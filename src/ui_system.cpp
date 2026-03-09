@@ -303,7 +303,7 @@ void UISystem::render_score(const uint8_t score_bytes[3]) {
 
 void UISystem::render_lives(uint8_t num_lives) {
     // Render life icons: bright for active lives, dark for inactive
-    // Position: Y=180, X=24 + (life_count × 24) pixels
+    // Position: Y=180, X=48 + (life_count × 24) pixels
     // MAX_NUM_LIVES = 5
     
     if (!life_icon_bright || !life_icon_dark) return;

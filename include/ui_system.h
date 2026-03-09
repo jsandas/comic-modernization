@@ -2,6 +2,7 @@
 #define UI_SYSTEM_H
 
 #include <cstdint>
+#include <string>
 #include <vector>
 #include "graphics.h"
 
