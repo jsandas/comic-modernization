@@ -37,7 +37,7 @@ uint8_t lives_sequence_counter = 5;  // Lives count-up sequence: award 5 lives, 
 uint8_t lives_sequence_delay = 1;  // Delay counter for lives animation (1 tick between each award)
 bool lives_sequence_complete = false;  // Flag to stop lives sequence after completion
 uint8_t comic_hp = 0;  // Current health points (0-6)
-uint8_t comic_hp_pending_increase = 6;  // HP fills gradually from 0 to MAX_HP at game start
+uint8_t comic_hp_pending_increase = MAX_HP;  // HP fills gradually from 0 to MAX_HP at game start
 uint8_t score_bytes[3] = {0, 0, 0};  // Score in base-100 encoding
 // Note: Firepower, items, and treasures are managed by ActorSystem (authoritative state)
 
@@ -371,7 +371,7 @@ int main(int argc, char* argv[]) {
             // Each tick, increment HP if pending increase is scheduled
             if (comic_hp_pending_increase > 0) {
                 comic_hp_pending_increase--;
-                if (comic_hp < 6) {  // MAX_HP = 6
+                if (comic_hp < MAX_HP) {
                     comic_hp++;
                 }
             }

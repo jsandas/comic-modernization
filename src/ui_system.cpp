@@ -333,8 +333,6 @@ void UISystem::render_hp_meter(uint8_t hp) {
     // hp range: 0-6 (MAX_HP = 6)
     
     if (!meter_full || !meter_empty) return;
-    
-    constexpr uint8_t MAX_HP = 6;
     constexpr int METER_Y = 82;
     constexpr int CELL_WIDTH = 8;
     constexpr uint8_t MAX_CELLS = 6;

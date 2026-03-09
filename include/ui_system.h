@@ -5,6 +5,9 @@
 #include <vector>
 #include "graphics.h"
 
+// Game constants
+constexpr uint8_t MAX_HP = 6;  // Maximum health points
+
 /**
  * UISystem manages all HUD rendering during gameplay.
  * Displays score, lives, HP meter, fireball meter, and inventory items.
