@@ -88,6 +88,9 @@ ActorSystem* g_actor_system = nullptr;
 // Game-over flag used by physics module (shared with main.cpp)
 bool game_over_triggered = false;
 
+// Score bytes (used by award_points()) - base-100 encoding
+uint8_t score_bytes[3] = {0, 0, 0};
+
 static int failures = 0;
 
 static void check(bool condition, const std::string& message) {
