@@ -3,8 +3,9 @@
 #include <sstream>
 
 UISystem::UISystem()
-        : inventory_animation_counter(0),
-            life_icon_bright(nullptr),
+      : initialized(false),
+        inventory_animation_counter(0),
+        life_icon_bright(nullptr),
       life_icon_dark(nullptr),
       meter_full(nullptr),
       meter_half(nullptr),
@@ -17,6 +18,13 @@ UISystem::~UISystem() {
 }
 
 bool UISystem::initialize() {
+    if (initialized) {
+        return true;
+    }
+
+    // Ensure retries start from a known empty state.
+    cleanup();
+
     if (!g_graphics) {
         std::cerr << "Graphics system not initialized" << std::endl;
         return false;
@@ -208,12 +216,14 @@ bool UISystem::initialize() {
         gold_sprites.push_back(sprite);
     }
     
+    initialized = true;
     return true;
 }
 
 void UISystem::cleanup() {
     // Note: We don't own the Sprite pointers - they're owned by GraphicsSystem
     // Reset cached references so repeated cleanup/initialize cycles are safe.
+    initialized = false;
     inventory_animation_counter = 0;
 
     life_icon_bright = nullptr;

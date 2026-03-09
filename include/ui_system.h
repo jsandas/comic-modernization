@@ -52,6 +52,7 @@ public:
     static bool has_boots(uint8_t jump_power);
 
 private:
+    bool initialized;
     uint8_t inventory_animation_counter;
 
     // Score digit sprites (0-9)
