@@ -497,12 +497,20 @@ void UISystem::render_inventory(
  * Convert 3 base-100 encoded score bytes to 6 decimal digits.
  * Digits are ordered from most significant to least significant (left to right).
  * 
- * @param score_bytes 3 base-100 encoded bytes (each 0-99)
- * @param digits Output array of 6 decimal digits (each 0-9)
+ * Base-100 encoding formula:
+ *   Total score = score_bytes[0] + (score_bytes[1] * 100) + (score_bytes[2] * 10000)
  * 
- * Example: score_bytes[0]=34, score_bytes[1]=12, score_bytes[2]=5
- *          -> digits = [5, 1, 2, 3, 4] (score 51234)
- *          Actually: digits = [0, 5, 1, 2, 3, 4] for 051234
+ * Each base-100 byte is split into two decimal digits (high, low):
+ *   - score_bytes[2] (MSB): tens of thousands & hundred thousands → digits[0] & digits[1]
+ *   - score_bytes[1] (mid): thousands & hundreds → digits[2] & digits[3]
+ *   - score_bytes[0] (LSB): tens & ones → digits[4] & digits[5]
+ * 
+ * @param score_bytes 3 base-100 encoded bytes (each 0-99)
+ * @param digits Output array of 6 decimal digits (each 0-9), ordered MSB to LSB
+ * 
+ * Example: score_bytes = [34, 12, 5]
+ *          Total score = 34 + 1200 + 50000 = 51234
+ *          -> digits = [0, 5, 1, 2, 3, 4] (displays as "051234")
  */
 void UISystem::score_bytes_to_digits(const uint8_t score_bytes[3], uint8_t digits[6]) {
     // score_bytes[2] is most significant (tens of thousands)

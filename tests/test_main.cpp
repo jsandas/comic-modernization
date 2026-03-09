@@ -1575,7 +1575,7 @@ static void test_ui_score_base100_encoding() {
           digits[3] == 0 && digits[4] == 0 && digits[5] == 0,
           "ui_score: zero should convert to all 0 digits");
     
-    // Test score 99 (0, 0, 99)
+    // Test score 99 (99, 0, 0)
     uint8_t score_99[3] = {99, 0, 0};
     UISystem::score_bytes_to_digits(score_99, digits);
     check(digits[4] == 9 && digits[5] == 9,
