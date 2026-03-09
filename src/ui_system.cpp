@@ -337,7 +337,7 @@ void UISystem::render_hp_meter(uint8_t hp) {
     // Render 6 HP cells
     // Position: Y=82, X=248-288 (cells at 8-pixel intervals)
     // Each cell is 8×16 pixels
-    // Cell N shows full if hp >= N, otherwise empty
+    // Cell with index 'cell' shows full if hp > cell (i.e., hp >= cell + 1), otherwise empty
     // hp range: 0-6 (MAX_HP = 6)
     
     if (!meter_full || !meter_empty) return;
