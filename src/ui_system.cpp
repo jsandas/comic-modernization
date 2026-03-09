@@ -213,7 +213,15 @@ bool UISystem::initialize() {
 
 void UISystem::cleanup() {
     // Note: We don't own the Sprite pointers - they're owned by GraphicsSystem
-    // Just clear our vectors
+    // Reset cached references so repeated cleanup/initialize cycles are safe.
+    inventory_animation_counter = 0;
+
+    life_icon_bright = nullptr;
+    life_icon_dark = nullptr;
+    meter_full = nullptr;
+    meter_half = nullptr;
+    meter_empty = nullptr;
+
     score_digit_sprites.clear();
     blastola_cola_sprites.clear();
     blastola_cola_inventory_sprites.clear();
