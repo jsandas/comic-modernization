@@ -371,7 +371,7 @@ void UISystem::render_hp_meter(uint8_t hp) {
 
 void UISystem::render_fireball_meter(uint8_t meter) {
     // Render 6 cells representing 0-12 meter value (2 units per cell)
-    // Position: Y=54, X=240-280 (cells at 8-pixel intervals)
+    // Position: Y=54, X=248-296 (cells at 8-pixel intervals)
     // Each cell is 8×16 pixels
     // Meter mapping: cells represent meter value pairs (1-2, 3-4, 5-6, etc.)
     // Odd meter values → half cell, even meter values → full cell
