@@ -5,9 +5,7 @@
 #include <string>
 #include <vector>
 #include "graphics.h"
-
-// Game constants
-constexpr uint8_t MAX_HP = 6;  // Maximum health points
+#include "physics.h"  // MAX_HP and other shared gameplay constants
 
 /**
  * UISystem manages all HUD rendering during gameplay.
