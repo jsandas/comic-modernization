@@ -20,40 +20,23 @@ extern uint8_t score_bytes[3];
  *   score_bytes[2] = ten-thousands/hundred-thousands (0-99)
  * Total score = byte[0] + (byte[1] * 100) + (byte[2] * 10000), max 999,999
  * 
- * Each unit of input represents 100 displayed points.
+ * Each unit of input represents 100 displayed points, mapping directly into
+ * score_bytes[1] (the 100s/1000s byte). score_bytes[0] is not affected.
  * Example: award_points(3) adds 300 points
  *          award_points(20) adds 2000 points
  */
 void award_points(uint16_t points) {
-    uint8_t points_byte = static_cast<uint8_t>(points & 0xFF);
-    uint8_t carry = 0;
-    
-    // Add points to byte[0] with carry propagation
-    uint16_t sum = score_bytes[0] + points_byte;
+    // points units each represent 100 displayed points, so they map directly
+    // into score_bytes[1] (the hundreds/thousands byte). score_bytes[0] is unchanged.
+    uint16_t sum = static_cast<uint16_t>(score_bytes[1]) + points;
     if (sum >= 100) {
-        carry = static_cast<uint8_t>(sum / 100);
-        score_bytes[0] = static_cast<uint8_t>(sum % 100);
+        uint16_t carry = sum / 100;
+        score_bytes[1] = static_cast<uint8_t>(sum % 100);
+        // Propagate full carry into byte[2], clamping at 99 (max score 999,999)
+        uint16_t high = static_cast<uint16_t>(score_bytes[2]) + carry;
+        score_bytes[2] = (high >= 100) ? static_cast<uint8_t>(99) : static_cast<uint8_t>(high);
     } else {
-        score_bytes[0] = static_cast<uint8_t>(sum);
-    }
-    
-    // Propagate carry through byte[1]
-    if (carry > 0) {
-        sum = score_bytes[1] + carry;
-        if (sum >= 100) {
-            carry = static_cast<uint8_t>(sum / 100);
-            score_bytes[1] = static_cast<uint8_t>(sum % 100);
-        } else {
-            score_bytes[1] = static_cast<uint8_t>(sum);
-            carry = 0;
-        }
-    }
-    
-    // Propagate carry through byte[2], capping at 99 to prevent overflow
-    if (carry > 0) {
-        if (score_bytes[2] < 99) {
-            score_bytes[2] += 1;
-        }
+        score_bytes[1] = static_cast<uint8_t>(sum);
     }
 }
 
