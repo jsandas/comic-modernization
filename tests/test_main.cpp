@@ -5,7 +5,6 @@
 #include <cstring>
 #include <fstream>
 #include <filesystem>
-#include <cassert>
 #include "../include/physics.h"
 #include "../include/graphics.h"
 #include "../include/level.h"
