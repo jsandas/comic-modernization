@@ -7,6 +7,39 @@
 // Global door key flag defined in main.cpp (used by doors.cpp)
 extern uint8_t comic_has_door_key;
 
+// Score bytes from main.cpp for award_points()
+extern uint8_t score_bytes[3];
+
+/**
+ * award_points - Award points to the player's score
+ * 
+ * Adds points to the player's score using base-100 arithmetic with carry propagation.
+ * Score is stored as three base-100 bytes where:
+ *   score_bytes[0] = ones/tens (0-99)
+ *   score_bytes[1] = hundreds/thousands (0-99)
+ *   score_bytes[2] = ten-thousands/hundred-thousands (0-99)
+ * Total score = byte[0] + (byte[1] * 100) + (byte[2] * 10000), max 999,999
+ * 
+ * Each unit of input represents 100 displayed points, mapping directly into
+ * score_bytes[1] (the 100s/1000s byte). score_bytes[0] is not affected.
+ * Example: award_points(3) adds 300 points
+ *          award_points(20) adds 2000 points
+ */
+void award_points(uint16_t points) {
+    // points units each represent 100 displayed points, so they map directly
+    // into score_bytes[1] (the hundreds/thousands byte). score_bytes[0] is unchanged.
+    uint16_t sum = static_cast<uint16_t>(score_bytes[1]) + points;
+    if (sum >= 100) {
+        uint16_t carry = sum / 100;
+        score_bytes[1] = static_cast<uint8_t>(sum % 100);
+        // Propagate full carry into byte[2], clamping at 99 (max score 999,999)
+        uint16_t high = static_cast<uint16_t>(score_bytes[2]) + carry;
+        score_bytes[2] = (high >= 100) ? static_cast<uint8_t>(99) : static_cast<uint8_t>(high);
+    } else {
+        score_bytes[1] = static_cast<uint8_t>(sum);
+    }
+}
+
 /**
  * ActorSystem constructor
  */
@@ -33,7 +66,7 @@ ActorSystem::ActorSystem()
       g_camera_x(0),
       comic_firepower(0),
       comic_has_corkscrew(0),
-      fireball_meter(MAX_FIREBALL_METER),
+      fireball_meter(0),
       comic_has_boots(0),
       comic_has_lantern(0),
       comic_has_door_key(0),
@@ -1274,6 +1307,7 @@ void ActorSystem::handle_fireballs() {
             enemy.state = ENEMY_STATE_WHITE_SPARK;
             fb.x = FIREBALL_DEAD;
             fb.y = FIREBALL_DEAD;
+            award_points(3);  // Award 300 points for killing an enemy with a fireball
             play_game_sound(GameSound::ENEMY_HIT);
             break; // Fireball consumed; check next fireball
         }

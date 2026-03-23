@@ -82,6 +82,18 @@ _item_order = [
 _BASE = 0x2dc4
 for idx, nm in enumerate(_item_order):
     _add_sprite(f"{nm}_even", _BASE + 160 * idx, (16, 16), True)
+
+# Blastola Cola inventory icons (firepower count 1-5).
+# In the original data these are stored in the five 16x16 masked slots
+# immediately after the base cola icon.
+for firepower in range(1, 6):
+    _add_sprite(
+        f"cola_inventory_{firepower}_even",
+        _BASE + 160 * (8 + firepower),
+        (16, 16),
+        True,
+    )
+
 # shield_even is at position 14
 _add_sprite("shield_even", _BASE + 160 * 14, (16, 16), True)
 # life icon
@@ -89,6 +101,15 @@ _add_sprite("life_icon_bright", _BASE + 160 * 15, (16, 16), True)
 # odd set begins 0xa00 bytes later (16*160)
 for idx, nm in enumerate(_item_order):
     _add_sprite(f"{nm}_odd", _BASE + 0xa00 + 160 * idx, (16, 16), True)
+
+for firepower in range(1, 6):
+    _add_sprite(
+        f"cola_inventory_{firepower}_odd",
+        _BASE + 0xa00 + 160 * (8 + firepower),
+        (16, 16),
+        True,
+    )
+
 _add_sprite("shield_odd", _BASE + 0xa00 + 160 * 14, (16, 16), True)
 _add_sprite("life_icon_dark", _BASE + 0xa00 + 160 * 15, (16, 16), True)
 

@@ -9,6 +9,7 @@
 #include "../include/actors.h"
 #include "../include/audio.h"
 #include "../include/title_sequence.h"
+#include "../include/ui_system.h"
 
 // Game state
 int comic_x = 20;
@@ -31,6 +32,14 @@ int camera_x = 0;
 
 // Item collection state
 uint8_t comic_has_door_key = 0;  // 1 if player has door key, 0 otherwise
+uint8_t comic_num_lives = 0;  // Number of lives remaining (counts up from 0 to 5, then subtracts 1)
+uint8_t lives_sequence_counter = 5;  // Lives count-up sequence: award 5 lives, then subtract 1
+uint8_t lives_sequence_delay = 1;  // Delay counter for lives animation (1 tick between each award)
+bool lives_sequence_complete = false;  // Flag to stop lives sequence after completion
+uint8_t comic_hp = 0;  // Current health points (0-6)
+uint8_t comic_hp_pending_increase = MAX_HP;  // HP fills gradually from 0 to MAX_HP at game start
+uint8_t score_bytes[3] = {0, 0, 0};  // Score in base-100 encoding
+// Note: Firepower, items, and treasures are managed by ActorSystem (authoritative state)
 
 // Level/stage transition tracking
 uint8_t current_level_number = 1;  // Current level (0=LAKE, 1=FOREST, etc.)
@@ -157,6 +166,12 @@ int main(int argc, char* argv[]) {
     // Make actor system accessible to cheat system
     g_actor_system = &actor_system;
 
+    // Initialize UI system
+    UISystem ui_system;
+    if (!ui_system.initialize()) {
+        std::cerr << "Warning: UI system initialization failed. HUD will not display properly."
+                  << std::endl;
+    }
     // Pre-load player sprites and create animations
     const char* sprite_names[] = {
         "comic_standing", "comic_running_1", "comic_running_2", "comic_running_3", "comic_jumping"
@@ -319,6 +334,50 @@ int main(int argc, char* argv[]) {
                 ? current_level_ptr->stages[current_stage_number].tiles
                 : nullptr;
             actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x, key_state_fire);
+            ui_system.update();
+            
+            // Lives count-up sequence: award 5 lives with 1-tick delay between each,
+            // then subtract 1 (the life currently in use)
+            if (!lives_sequence_complete) {
+                if (lives_sequence_counter > 0) {
+                    lives_sequence_delay--;
+                    if (lives_sequence_delay == 0) {
+                        // Award a life
+                        comic_num_lives++;
+                        lives_sequence_counter--;
+                        
+                        if (lives_sequence_counter > 0) {
+                            // Still more lives to award (wait 1 tick)
+                            lives_sequence_delay = 1;
+                        } else {
+                            // Awarded all 5, wait 3 ticks then subtract 1
+                            lives_sequence_delay = 3;
+                        }
+                    }
+                } else if (lives_sequence_delay > 0) {
+                    // Waiting 3 ticks after awarding all 5 lives
+                    lives_sequence_delay--;
+                    if (lives_sequence_delay == 0) {
+                        // Subtract 1 life (currently in use: 5→4)
+                        if (comic_num_lives > 0) {
+                            comic_num_lives--;
+                        }
+                        lives_sequence_complete = true;
+                    }
+                }
+            }
+            
+            // Gradually fill HP from 0 to MAX_HP at game startup
+            // Each tick, increment HP if pending increase is scheduled
+            if (comic_hp_pending_increase > 0) {
+                comic_hp_pending_increase--;
+                if (comic_hp < MAX_HP) {
+                    comic_hp++;
+                }
+            }
+            
+            // Fireball meter charging is handled by ActorSystem::update()
+            // (charges at 1 unit per 2 ticks when not firing)
             
             // Game-over is handled by physics when Comic hits the bottom of playfield
             // (sound triggered there).  No additional check needed here.
@@ -450,6 +509,27 @@ int main(int argc, char* argv[]) {
             g_graphics->render_debug_overlay();
         }
 
+        // Render HUD (score, lives, HP, fireball meter, inventory)
+        // Draw in the same 320x200 letterboxed coordinate space as SYS003.
+        SDL_RenderSetViewport(renderer, &gameplay_frame_rect);
+        SDL_RenderSetScale(renderer, letterbox_scale, letterbox_scale);
+        ui_system.render_hud(
+            score_bytes,
+            comic_num_lives,
+            comic_hp,
+            actor_system.fireball_meter,
+            actor_system.comic_firepower,
+            actor_system.comic_has_corkscrew != 0,
+            comic_has_door_key != 0,
+            actor_system.comic_has_teleport_wand != 0,
+            actor_system.comic_has_lantern != 0,
+            actor_system.comic_has_gems != 0,
+            actor_system.comic_has_crown != 0,
+            actor_system.comic_has_gold != 0,
+            comic_jump_power
+        );
+        SDL_RenderSetScale(renderer, 1.0f, 1.0f);
+        SDL_RenderSetViewport(renderer, nullptr);
         // Present
         SDL_RenderPresent(renderer);
 

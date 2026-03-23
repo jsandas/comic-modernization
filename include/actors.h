@@ -239,4 +239,9 @@ protected:
     bool check_vertical_enemy_map_collision(uint8_t x, uint8_t y) const;
 };
 
+/* Award points to the player's score.
+ * Each unit represents 100 displayed points; points are added into
+ * score_bytes[1] with full carry propagation into score_bytes[2]. */
+void award_points(uint16_t points);
+
 #endif /* ACTORS_H */
