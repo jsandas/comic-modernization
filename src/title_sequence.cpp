@@ -2,8 +2,12 @@
 #include "../include/graphics.h"
 #include "../include/audio.h"
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
+#include <algorithm>
+#include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -27,6 +31,20 @@ static const char* ITEMS_SCREEN_FILE   = "sys004.ega.png";  // Items/controls sc
 
 // HUD texture retained for gameplay rendering
 static SDL_Texture* s_hud_texture = nullptr;
+
+static const InputBindings DEFAULT_INPUT_BINDINGS = {
+    SDLK_LEFT,
+    SDLK_RIGHT,
+    SDLK_SPACE,
+    SDLK_LCTRL,
+    SDLK_LALT,
+    SDLK_t
+};
+
+static InputBindings s_input_bindings = DEFAULT_INPUT_BINDINGS;
+
+static constexpr const char* KEY_BINDINGS_FILENAME = "KEYS.DEF";
+static constexpr const char* KEY_BINDINGS_MAGIC = "CCKB1";
 
 // Paletted surfaces for title sequence screens (kept as-is, not converted to RGBA)
 static SDL_Surface* s_title_surface = nullptr;
@@ -386,9 +404,635 @@ static bool wait_for_keypress(SDL_Renderer* renderer, SDL_Texture* texture) {
     }
 }
 
+struct RenderedTextLine {
+    SDL_Texture* texture = nullptr;
+    int width = 0;
+    int height = 0;
+};
+
+struct DosTextLayout {
+    int left = 0;
+    int top = 0;
+    int max_width = 0;
+    int line_spacing = 0;
+};
+
+static DosTextLayout compute_dos_text_layout(SDL_Renderer* renderer, TTF_Font* font) {
+    int output_w = 0;
+    int output_h = 0;
+    SDL_GetRendererOutputSize(renderer, &output_w, &output_h);
+
+    int char_w = 8;
+    int char_h = 16;
+    if (font) {
+        TTF_SizeText(font, "M", &char_w, &char_h);
+    }
+
+    constexpr int DOS_COLS = 80;
+    constexpr int DOS_ROWS = 25;
+
+    DosTextLayout layout;
+    layout.max_width = std::min(output_w - 20, char_w * DOS_COLS);
+    if (layout.max_width < 120) {
+        layout.max_width = std::max(120, output_w - 20);
+    }
+
+    layout.left = (output_w - layout.max_width) / 2;
+    if (layout.left < 0) {
+        layout.left = 0;
+    }
+
+    layout.line_spacing = std::max(0, char_h / 5);
+
+    const int row_height = char_h + layout.line_spacing;
+    const int text_mode_height = row_height * DOS_ROWS;
+    layout.top = (output_h - text_mode_height) / 2;
+    if (layout.top < 10) {
+        layout.top = 10;
+    }
+
+    return layout;
+}
+
+static void destroy_text_lines(std::vector<RenderedTextLine>& lines) {
+    for (RenderedTextLine& line : lines) {
+        if (line.texture) {
+            SDL_DestroyTexture(line.texture);
+            line.texture = nullptr;
+        }
+    }
+    lines.clear();
+}
+
+static std::vector<RenderedTextLine> build_text_lines(SDL_Renderer* renderer,
+                                                      TTF_Font* font,
+                                                      const std::vector<std::string>& lines,
+                                                      SDL_Color color,
+                                                      int max_line_width) {
+    std::vector<RenderedTextLine> rendered_lines;
+    rendered_lines.reserve(lines.size());
+
+    for (const std::string& line_text : lines) {
+        if (line_text.empty()) {
+            // SDL_ttf cannot render empty strings ("Text has zero width").
+            // Treat empty lines as vertical spacers.
+            RenderedTextLine spacer;
+            spacer.texture = nullptr;
+            spacer.width = 0;
+            spacer.height = TTF_FontLineSkip(font);
+            rendered_lines.push_back(spacer);
+            continue;
+        }
+
+        SDL_Surface* surface = TTF_RenderText_Blended_Wrapped(
+            font,
+            line_text.c_str(),
+            color,
+            static_cast<Uint32>(max_line_width));
+        if (!surface) {
+            std::cerr << "Startup notice: failed to render text line: "
+                      << TTF_GetError() << std::endl;
+            destroy_text_lines(rendered_lines);
+            return rendered_lines;
+        }
+
+        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+        if (!texture) {
+            std::cerr << "Startup notice: failed to create text texture: "
+                      << SDL_GetError() << std::endl;
+            SDL_FreeSurface(surface);
+            destroy_text_lines(rendered_lines);
+            return rendered_lines;
+        }
+
+        RenderedTextLine rendered;
+        rendered.texture = texture;
+        rendered.width = surface->w;
+        rendered.height = surface->h;
+        rendered_lines.push_back(rendered);
+
+        SDL_FreeSurface(surface);
+    }
+
+    return rendered_lines;
+}
+
+static void render_text_lines_centered(SDL_Renderer* renderer,
+                                       const std::vector<RenderedTextLine>& lines,
+                                       int top_margin,
+                                       int line_spacing,
+                                       SDL_Color background_color) {
+    SDL_SetRenderDrawColor(renderer,
+                           background_color.r,
+                           background_color.g,
+                           background_color.b,
+                           background_color.a);
+    SDL_RenderClear(renderer);
+
+    int output_w = 0, output_h_unused = 0;
+    SDL_GetRendererOutputSize(renderer, &output_w, &output_h_unused);
+
+    int y = top_margin;
+
+    for (const RenderedTextLine& line : lines) {
+        SDL_Rect dst;
+        dst.w = line.width;
+        dst.h = line.height;
+        dst.x = (output_w - line.width) / 2;
+        if (dst.x < 0) dst.x = 0;
+        dst.y = y;
+        if (line.texture) {
+            SDL_RenderCopy(renderer, line.texture, nullptr, &dst);
+        }
+        y += line.height + line_spacing;
+    }
+
+    SDL_RenderPresent(renderer);
+}
+
+static TTF_Font* open_startup_notice_font() {
+    if (TTF_WasInit() == 0) {
+        std::cerr << "Startup notice: SDL_ttf is not initialized" << std::endl;
+        return nullptr;
+    }
+
+    auto try_open_font_candidate = [](const std::string& path,
+                                      int size,
+                                      bool try_indices) -> TTF_Font* {
+        TTF_Font* font = TTF_OpenFont(path.c_str(), size);
+        if (font) {
+            return font;
+        }
+
+        if (!try_indices) {
+            return nullptr;
+        }
+
+        // Many system fonts on macOS are TrueType collections (.ttc).
+        // Try a few face indices in case the default face cannot be opened.
+        constexpr long MAX_FONT_COLLECTION_INDEX = 8;
+        for (long index = 0; index < MAX_FONT_COLLECTION_INDEX; ++index) {
+            font = TTF_OpenFontIndex(path.c_str(), size, index);
+            if (font) {
+                return font;
+            }
+        }
+
+        return nullptr;
+    };
+
+    const std::vector<std::string> font_candidates = {
+        // macOS common monospace/system fonts
+        "/System/Library/Fonts/Menlo.ttc",
+        "/System/Library/Fonts/Courier.ttc",
+        "/System/Library/Fonts/Monaco.ttf",
+        "/System/Library/Fonts/SFNSMono.ttf",
+        "/System/Library/Fonts/Supplemental/Andale Mono.ttf",
+        "/System/Library/Fonts/Supplemental/Courier New.ttf",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+        "/Library/Fonts/Menlo.ttc",
+
+        // Linux common monospace fonts
+        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+
+        // Windows common monospace fonts
+        "C:\\Windows\\Fonts\\lucidaconsole.ttf",
+        "C:\\Windows\\Fonts\\consola.ttf"
+    };
+
+    constexpr int STARTUP_NOTICE_FONT_SIZE = 24;
+    for (const std::string& path : font_candidates) {
+        const bool is_collection = path.size() >= 4 && path.substr(path.size() - 4) == ".ttc";
+        TTF_Font* font = try_open_font_candidate(path, STARTUP_NOTICE_FONT_SIZE, is_collection);
+        if (font) {
+            return font;
+        }
+    }
+
+    std::cerr << "Startup notice: unable to load any fallback font" << std::endl;
+    return nullptr;
+}
+
+static bool run_modal_text_screen(SDL_Renderer* renderer,
+                                  TTF_Font* font,
+                                  const std::vector<std::string>& lines) {
+    constexpr SDL_Color TEXT_COLOR = {170, 170, 170, 255};
+    constexpr SDL_Color BACKGROUND = {0, 0, 0, 255};
+
+    const DosTextLayout layout = compute_dos_text_layout(renderer, font);
+
+    std::vector<RenderedTextLine> rendered_lines =
+        build_text_lines(renderer, font, lines, TEXT_COLOR, layout.max_width);
+    if (rendered_lines.empty()) {
+        return true;
+    }
+
+    SDL_Event e;
+    while (true) {
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_QUIT) {
+                destroy_text_lines(rendered_lines);
+                return false;
+            }
+            if (e.type == SDL_KEYDOWN) {
+                destroy_text_lines(rendered_lines);
+                return true;
+            }
+        }
+
+        render_text_lines_centered(
+            renderer,
+            rendered_lines,
+            layout.top,
+            layout.line_spacing,
+            BACKGROUND);
+        SDL_Delay(16);
+    }
+}
+
+static std::vector<std::string> build_keyboard_setup_lines(const InputBindings& draft,
+                                                           int action_index,
+                                                           const std::string& status_line,
+                                                           bool is_confirm_mode) {
+    const std::vector<std::string> action_names = {
+        "Move Left",
+        "Move Right",
+        "Jump",
+        "Fireball",
+        "Open Door",
+        "Teleport"
+    };
+
+    const std::vector<SDL_Keycode> action_keys = {
+        draft.move_left,
+        draft.move_right,
+        draft.jump,
+        draft.fire,
+        draft.open_door,
+        draft.teleport
+    };
+
+    std::vector<std::string> lines;
+    lines.push_back("Keyboard Setup");
+    lines.push_back("");
+
+    if (is_confirm_mode) {
+        lines.push_back("Review bindings");
+        lines.push_back("Press Y to accept, N to reconfigure, ESC to cancel");
+    } else {
+        lines.push_back("Press a key for: " + action_names[action_index]);
+        lines.push_back("ESC cancels and returns");
+    }
+
+    lines.push_back("");
+    for (size_t i = 0; i < action_names.size(); ++i) {
+        lines.push_back(action_names[i] + ": " + SDL_GetKeyName(action_keys[i]));
+    }
+
+    if (!status_line.empty()) {
+        lines.push_back("");
+        lines.push_back(status_line);
+    }
+
+    return lines;
+}
+
+static bool key_is_already_assigned(const InputBindings& bindings,
+                                    SDL_Keycode key,
+                                    int current_action_index) {
+    const SDL_Keycode keys[] = {
+        bindings.move_left,
+        bindings.move_right,
+        bindings.jump,
+        bindings.fire,
+        bindings.open_door,
+        bindings.teleport
+    };
+
+    for (int i = 0; i < 6; ++i) {
+        if (i == current_action_index) {
+            continue;
+        }
+        if (keys[i] == key) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static void set_binding_for_action(InputBindings& bindings, int action_index, SDL_Keycode key) {
+    switch (action_index) {
+        case 0: bindings.move_left = key; break;
+        case 1: bindings.move_right = key; break;
+        case 2: bindings.jump = key; break;
+        case 3: bindings.fire = key; break;
+        case 4: bindings.open_door = key; break;
+        case 5: bindings.teleport = key; break;
+        default: break;
+    }
+}
+
+static bool run_keyboard_setup_menu(SDL_Renderer* renderer, TTF_Font* font) {
+    constexpr SDL_Color TEXT_COLOR = {170, 170, 170, 255};
+    constexpr SDL_Color BACKGROUND = {0, 0, 0, 255};
+
+    InputBindings draft = s_input_bindings;
+    int action_index = 0;
+    std::string status_line;
+    SDL_Event e;
+
+    while (true) {
+        const bool is_confirm_mode = action_index >= 6;
+
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_QUIT) {
+                return false;
+            }
+
+            if (e.type != SDL_KEYDOWN) {
+                continue;
+            }
+
+            const SDL_Keycode key = e.key.keysym.sym;
+
+            if (key == SDLK_ESCAPE) {
+                return true;
+            }
+
+            if (is_confirm_mode) {
+                if (key == SDLK_y) {
+                    set_input_bindings(draft);
+                    const bool saved_ok = save_input_bindings_to_file();
+                    if (saved_ok) {
+                        if (!run_modal_text_screen(renderer, font,
+                                                   {
+                                                       "Keyboard Setup",
+                                                       "",
+                                                       "Bindings saved to KEYS.DEF",
+                                                       "",
+                                                       "Press any key to continue"
+                                                   })) {
+                            return false;
+                        }
+                    } else {
+                        if (!run_modal_text_screen(renderer, font,
+                                                   {
+                                                       "Keyboard Setup",
+                                                       "",
+                                                       "Error: could not save KEYS.DEF",
+                                                       "",
+                                                       "Press any key to continue"
+                                                   })) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                if (key == SDLK_n) {
+                    draft = s_input_bindings;
+                    action_index = 0;
+                    status_line.clear();
+                }
+                continue;
+            }
+
+            if (key_is_already_assigned(draft, key, action_index)) {
+                status_line = "That key is already assigned. Choose a different key.";
+                continue;
+            }
+
+            set_binding_for_action(draft, action_index, key);
+            action_index++;
+            status_line.clear();
+        }
+
+        std::vector<std::string> lines =
+            build_keyboard_setup_lines(draft, action_index, status_line, is_confirm_mode);
+
+        const DosTextLayout layout = compute_dos_text_layout(renderer, font);
+
+        std::vector<RenderedTextLine> rendered =
+            build_text_lines(renderer, font, lines, TEXT_COLOR, layout.max_width);
+        if (rendered.empty()) {
+            return true;
+        }
+
+        render_text_lines_centered(
+            renderer,
+            rendered,
+            layout.top,
+            layout.line_spacing,
+            BACKGROUND);
+        destroy_text_lines(rendered);
+        SDL_Delay(16);
+    }
+}
+
+static std::string get_key_bindings_path() {
+    char* base_path = SDL_GetBasePath();
+    if (!base_path) {
+        return std::string(KEY_BINDINGS_FILENAME);
+    }
+
+    std::string path = std::string(base_path) + KEY_BINDINGS_FILENAME;
+    SDL_free(base_path);
+    return path;
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
+
+const InputBindings& get_input_bindings() {
+    return s_input_bindings;
+}
+
+void reset_input_bindings_to_defaults() {
+    s_input_bindings = DEFAULT_INPUT_BINDINGS;
+}
+
+void set_input_bindings(const InputBindings& bindings) {
+    s_input_bindings = bindings;
+}
+
+bool load_input_bindings_from_file() {
+    const std::string path = get_key_bindings_path();
+    std::ifstream input(path);
+    if (!input.good()) {
+        return false;
+    }
+
+    std::string magic;
+    std::getline(input, magic);
+    if (magic != KEY_BINDINGS_MAGIC) {
+        std::cerr << "Input bindings: invalid format in " << path << std::endl;
+        return false;
+    }
+
+    int32_t move_left = 0;
+    int32_t move_right = 0;
+    int32_t jump = 0;
+    int32_t fire = 0;
+    int32_t open_door = 0;
+    if (!(input >> move_left >> move_right >> jump >> fire >> open_door)) {
+        std::cerr << "Input bindings: invalid key data in " << path << std::endl;
+        return false;
+    }
+
+    // Backward compatibility: older files store only five bindings.
+    int32_t teleport = static_cast<int32_t>(DEFAULT_INPUT_BINDINGS.teleport);
+    if (!(input >> teleport)) {
+        if (!input.eof()) {
+            std::cerr << "Input bindings: invalid teleport key data in " << path << std::endl;
+            return false;
+        }
+    }
+
+    InputBindings loaded = {
+        static_cast<SDL_Keycode>(move_left),
+        static_cast<SDL_Keycode>(move_right),
+        static_cast<SDL_Keycode>(jump),
+        static_cast<SDL_Keycode>(fire),
+        static_cast<SDL_Keycode>(open_door),
+        static_cast<SDL_Keycode>(teleport)
+    };
+
+    set_input_bindings(loaded);
+    return true;
+}
+
+bool save_input_bindings_to_file() {
+    const std::string path = get_key_bindings_path();
+    std::ofstream output(path, std::ios::trunc);
+    if (!output.good()) {
+        std::cerr << "Input bindings: could not open " << path << " for writing" << std::endl;
+        return false;
+    }
+
+    const InputBindings& bindings = get_input_bindings();
+    output << KEY_BINDINGS_MAGIC << "\n";
+    output << static_cast<int32_t>(bindings.move_left) << " "
+           << static_cast<int32_t>(bindings.move_right) << " "
+           << static_cast<int32_t>(bindings.jump) << " "
+           << static_cast<int32_t>(bindings.fire) << " "
+            << static_cast<int32_t>(bindings.open_door) << " "
+            << static_cast<int32_t>(bindings.teleport) << "\n";
+
+    if (!output.good()) {
+        std::cerr << "Input bindings: failed while writing " << path << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+bool run_startup_notice(SDL_Renderer* renderer, GraphicsSystem* graphics) {
+    (void)graphics;
+
+    TTF_Font* font = open_startup_notice_font();
+    if (!font) {
+        // Non-fatal fallback: continue startup flow even if text cannot be rendered.
+        return true;
+    }
+
+    const std::vector<std::string> startup_lines = {
+        "Captain Comic",
+        "",
+        "Press K for Keyboard setup",
+        "Press J for Joystick calibration",
+        "Press R for Registration info",
+        "Press ESC to quit",
+        "Press any other key to continue"
+    };
+
+    constexpr SDL_Color TEXT_COLOR = {170, 170, 170, 255};
+    constexpr SDL_Color BACKGROUND = {0, 0, 0, 255};
+
+    const DosTextLayout layout = compute_dos_text_layout(renderer, font);
+
+    std::vector<RenderedTextLine> rendered_startup =
+        build_text_lines(renderer, font, startup_lines, TEXT_COLOR, layout.max_width);
+    if (rendered_startup.empty()) {
+        TTF_CloseFont(font);
+        return true;
+    }
+
+    SDL_Event e;
+    bool keep_running = true;
+    while (keep_running) {
+        while (SDL_PollEvent(&e)) {
+            if (e.type == SDL_QUIT) {
+                destroy_text_lines(rendered_startup);
+                TTF_CloseFont(font);
+                return false;
+            }
+
+            if (e.type == SDL_KEYDOWN) {
+                switch (e.key.keysym.sym) {
+                    case SDLK_ESCAPE:
+                        destroy_text_lines(rendered_startup);
+                        TTF_CloseFont(font);
+                        return false;
+                    case SDLK_k:
+                        if (!run_keyboard_setup_menu(renderer, font)) {
+                            destroy_text_lines(rendered_startup);
+                            TTF_CloseFont(font);
+                            return false;
+                        }
+                        break;
+                    case SDLK_j:
+                        if (!run_modal_text_screen(renderer, font,
+                                                   {
+                                                       "Joystick Calibration",
+                                                       "",
+                                                       "Not yet implemented",
+                                                       "",
+                                                       "Press any key to return"
+                                                   })) {
+                            destroy_text_lines(rendered_startup);
+                            TTF_CloseFont(font);
+                            return false;
+                        }
+                        break;
+                    case SDLK_r:
+                        if (!run_modal_text_screen(renderer, font,
+                                                   {
+                                                       "Registration",
+                                                       "",
+                                                       "Captain Comic Modernization",
+                                                       "Original game by Michael A. Denio",
+                                                       "",
+                                                       "Press any key to return"
+                                                   })) {
+                            destroy_text_lines(rendered_startup);
+                            TTF_CloseFont(font);
+                            return false;
+                        }
+                        break;
+                    default:
+                        keep_running = false;
+                        break;
+                }
+            }
+        }
+
+        if (keep_running) {
+            render_text_lines_centered(
+                renderer,
+                rendered_startup,
+                layout.top,
+                layout.line_spacing,
+                BACKGROUND);
+            SDL_Delay(16);
+        }
+    }
+
+    destroy_text_lines(rendered_startup);
+    TTF_CloseFont(font);
+    return true;
+}
 
 bool run_title_sequence(SDL_Renderer* renderer, GraphicsSystem* graphics) {
     // ------------------------------------------------------------------

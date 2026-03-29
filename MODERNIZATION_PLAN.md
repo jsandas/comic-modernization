@@ -799,9 +799,9 @@ if (comic_num_treasures == 3) {
 
 **Remaining Tasks (Phase 7.3+):**
 - [ ] Implement menus from game_main.c
-  - [ ] Startup notice (initial acknowledgement screen)
+  - [x] Startup notice (initial acknowledgement screen)
   - [ ] High scores screen (leaderboard display)
-  - [ ] Keyboard setup menu (control configuration)
+  - [x] Keyboard setup menu (control configuration)
   - [ ] Pause menu (in-game pause functionality)
 - [ ] Port special sequences
   - [ ] Beam-in animation (entering level/stage)

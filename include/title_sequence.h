@@ -7,6 +7,59 @@
 // Forward declaration
 class GraphicsSystem;
 
+struct InputBindings {
+	SDL_Keycode move_left;
+	SDL_Keycode move_right;
+	SDL_Keycode jump;
+	SDL_Keycode fire;
+	SDL_Keycode open_door;
+    SDL_Keycode teleport;
+};
+
+/**
+ * Get the current configured gameplay input bindings.
+ */
+const InputBindings& get_input_bindings();
+
+/**
+ * Restore default gameplay bindings.
+ */
+void reset_input_bindings_to_defaults();
+
+/**
+ * Replace gameplay bindings with the provided mapping.
+ */
+void set_input_bindings(const InputBindings& bindings);
+
+/**
+ * Load gameplay bindings from KEYS.DEF.
+ *
+ * Returns true if bindings were loaded and applied.
+ * Returns false if the file is missing or invalid.
+ */
+bool load_input_bindings_from_file();
+
+/**
+ * Save gameplay bindings to KEYS.DEF.
+ *
+ * Returns true on success, false on write failure.
+ */
+bool save_input_bindings_to_file();
+
+/**
+ * Run the startup notice/menu shown before the title sequence.
+ *
+ * This replicates the original startup text-mode menu behavior:
+ *   - K: keyboard setup
+ *   - J: joystick calibration (placeholder screen for now)
+ *   - R: registration info (placeholder screen for now)
+ *   - ESC: quit
+ *   - Any other key: continue to title sequence
+ *
+ * Returns false if the user chooses to quit or closes the window.
+ */
+bool run_startup_notice(SDL_Renderer* renderer, GraphicsSystem* graphics);
+
 /**
  * Title Sequence System
  *

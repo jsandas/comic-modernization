@@ -138,9 +138,22 @@ int main(int argc, char* argv[]) {
         std::cerr << "Warning: Audio system initialization failed. Continuing without sound." << std::endl;
     }
 
-    // Run title sequence (title screen, story, items screen)
-    // Skipped with --skip-title flag for faster iteration during development
+    // Load persisted key bindings if KEYS.DEF is present.
+    load_input_bindings_from_file();
+
+    // Run startup notice and title sequence.
+    // Both are skipped with --skip-title for faster iteration during development.
     if (!skip_title) {
+        if (!run_startup_notice(renderer, g_graphics)) {
+            cleanup_title_sequence();
+            delete g_graphics;
+            shutdown_audio_system();
+            SDL_DestroyRenderer(renderer);
+            SDL_DestroyWindow(window);
+            SDL_Quit();
+            return 0;
+        }
+
         if (!run_title_sequence(renderer, g_graphics)) {
             // User quit during title sequence
             cleanup_title_sequence();
@@ -277,29 +290,48 @@ int main(int argc, char* argv[]) {
                 quit = true;
             } else if (e.type == SDL_KEYDOWN) {
                 // Process regular gameplay keys
-                switch (e.key.keysym.sym) {
-                    case SDLK_LEFT: key_state_left = 1; break;
-                    case SDLK_RIGHT: key_state_right = 1; break;
-                    case SDLK_SPACE: key_state_jump = 1; break;
-                    case SDLK_LCTRL:
-                    case SDLK_RCTRL: key_state_fire = 1; break;
+                const InputBindings& bindings = get_input_bindings();
+                const SDL_Keycode key = e.key.keysym.sym;
+
+                if (key == bindings.move_left) {
+                    key_state_left = 1;
+                }
+                if (key == bindings.move_right) {
+                    key_state_right = 1;
+                }
+                if (key == bindings.jump) {
+                    key_state_jump = 1;
+                }
+                if (key == bindings.fire) {
+                    key_state_fire = 1;
+                }
+                if (key == bindings.open_door) {
+                    key_state_open = 1;
                 }
                 
                 // Process cheat keys (only active if --debug flag set)
                 g_cheats->process_input(e.key.keysym.sym);
             } else if (e.type == SDL_KEYUP) {
-                switch (e.key.keysym.sym) {
-                    case SDLK_LEFT: key_state_left = 0; break;
-                    case SDLK_RIGHT: key_state_right = 0; break;
-                    case SDLK_SPACE: key_state_jump = 0; break;
-                    case SDLK_LCTRL:
-                    case SDLK_RCTRL: key_state_fire = 0; break;
+                const InputBindings& bindings = get_input_bindings();
+                const SDL_Keycode key = e.key.keysym.sym;
+
+                if (key == bindings.move_left) {
+                    key_state_left = 0;
+                }
+                if (key == bindings.move_right) {
+                    key_state_right = 0;
+                }
+                if (key == bindings.jump) {
+                    key_state_jump = 0;
+                }
+                if (key == bindings.fire) {
+                    key_state_fire = 0;
+                }
+                if (key == bindings.open_door) {
+                    key_state_open = 0;
                 }
             }
         }
-
-        // Update Alt key state using modifier mask (supports either left or right Alt)
-        key_state_open = (SDL_GetModState() & KMOD_ALT) ? 1 : 0;
 
         // Process physics ticks at ~9.1 Hz (original game speed)
         // This decouples physics from rendering rate
