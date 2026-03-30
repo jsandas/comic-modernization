@@ -163,8 +163,11 @@ void ActorSystem::setup_enemies_for_stage(
 
         // Check if slot is used
         if ((record.behavior & ~ENEMY_BEHAVIOR_FAST) >= ENEMY_BEHAVIOR_UNUSED) {
+            enemy.behavior = ENEMY_BEHAVIOR_UNUSED;
             enemy.state = ENEMY_STATE_DESPAWNED;
             enemy.spawn_timer_and_animation = 100;
+            enemy.sprite_descriptor = nullptr;
+            enemy.num_animation_frames = 0;
             enemy.animation_data = nullptr;
             continue;
         }
@@ -357,6 +360,11 @@ void ActorSystem::update(
             update_enemy_animation(&enemy);
             handle_single_enemy(i);
             check_enemy_despawn(&enemy);
+
+            if (enemy.state != ENEMY_STATE_SPAWNED) {
+                continue;
+            }
+
             check_enemy_player_collision(&enemy);
         }
     }
@@ -555,6 +563,10 @@ void ActorSystem::check_enemy_despawn(enemy_t* enemy) {
  */
 void ActorSystem::check_enemy_player_collision(enemy_t* enemy) {
     if (!enemy) return;
+
+    if (enemy->state != ENEMY_STATE_SPAWNED) {
+        return;
+    }
 
     if (is_player_dying()) {
         return;
