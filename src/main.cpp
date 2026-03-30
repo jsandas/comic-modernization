@@ -447,7 +447,7 @@ int main(int argc, char* argv[]) {
         current_time = SDL_GetTicks();
         Animation* previous_animation = current_animation;
         if (is_player_dying()) {
-            current_animation = &comic_death;
+            current_animation = should_show_player_death_animation() ? &comic_death : nullptr;
         } else if (comic_is_falling_or_jumping) {
             current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
         } else {

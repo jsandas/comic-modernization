@@ -48,6 +48,7 @@ static bool ceiling_stick_flag = false;
 // Player death sequence state
 static bool player_is_dying = false;
 static bool player_death_too_bad_phase = false;
+static bool player_death_show_animation = true;
 static uint8_t player_death_ticks_remaining = 0;
 constexpr uint8_t PLAYER_DEATH_ANIMATION_TICKS = 8;
 constexpr uint8_t PLAYER_DEATH_TOO_BAD_TICKS = 15;
@@ -56,20 +57,27 @@ bool is_player_dying() {
     return player_is_dying;
 }
 
-void trigger_player_death() {
+bool should_show_player_death_animation() {
+    return player_is_dying && !player_death_too_bad_phase && player_death_show_animation;
+}
+
+void trigger_player_death(bool show_animation) {
     if (player_is_dying) {
         return;
     }
 
     player_is_dying = true;
     player_death_too_bad_phase = false;
-    player_death_ticks_remaining = PLAYER_DEATH_ANIMATION_TICKS;
+    player_death_show_animation = show_animation;
+    player_death_ticks_remaining = show_animation ? PLAYER_DEATH_ANIMATION_TICKS : 0;
 
     comic_y_vel = 0;
     comic_x_momentum = 0;
     comic_is_falling_or_jumping = 0;
 
-    play_game_sound(GameSound::PLAYER_DIE);
+    if (show_animation) {
+        play_game_sound(GameSound::PLAYER_DIE);
+    }
 }
 
 void update_player_death_sequence() {
@@ -94,6 +102,7 @@ void update_player_death_sequence() {
 
         player_is_dying = false;
         player_death_too_bad_phase = false;
+        player_death_show_animation = true;
 
         // Respawn at checkpoint after the death animation completes.
         comic_x = comic_x_checkpoint;
@@ -243,7 +252,7 @@ void handle_fall_or_jump() {
         
         // Bounds check: death if too far down
         if (comic_y >= PLAYFIELD_HEIGHT - 3) {
-            trigger_player_death();
+            trigger_player_death(false);
             return;
         }
         
