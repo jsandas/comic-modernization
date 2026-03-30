@@ -80,6 +80,11 @@ constexpr int FREQ_DEATH_4 = 582;   // 0x0800
 constexpr int FREQ_DEATH_5 = 291;   // 0x1000
 constexpr int FREQ_DEATH_6 = 194;   // 0x1800
 
+// "Too bad" sound (SOUND_TOO_BAD in original C code): 130, 146, 130, 160 Hz
+constexpr int FREQ_TOO_BAD_1 = 130;
+constexpr int FREQ_TOO_BAD_2 = 146;
+constexpr int FREQ_TOO_BAD_3 = 160;
+
 
 
 // ===== Sound Definition Structure =====
@@ -123,8 +128,8 @@ static const std::vector<FrequencyNote> SOUND_PLAYER_DIE_SEQUENCE = {
 };
 
 static const std::vector<FrequencyNote> SOUND_GAME_OVER_SEQUENCE = {
-    {NOTE_B3, 2}, {NOTE_C4, 4}, {NOTE_D4, 2}, {NOTE_E4, 6}, {NOTE_G4, 7},
-    {NOTE_FS4, 5}, {NOTE_E4, 2}, {NOTE_D4, 4}, {NOTE_E4, 15}
+    {FREQ_TOO_BAD_1, 5}, {FREQ_TOO_BAD_2, 5},
+    {FREQ_TOO_BAD_1, 5}, {FREQ_TOO_BAD_3, 10}
 };
 
 static const std::vector<FrequencyNote> SOUND_TELEPORT_SEQUENCE = {

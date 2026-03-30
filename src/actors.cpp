@@ -6,6 +6,7 @@
 
 // Global door key flag defined in main.cpp (used by doors.cpp)
 extern uint8_t comic_has_door_key;
+extern uint8_t comic_hp;
 
 // Score bytes from main.cpp for award_points()
 extern uint8_t score_bytes[3];
@@ -555,6 +556,10 @@ void ActorSystem::check_enemy_despawn(enemy_t* enemy) {
 void ActorSystem::check_enemy_player_collision(enemy_t* enemy) {
     if (!enemy) return;
 
+    if (is_player_dying()) {
+        return;
+    }
+
     int16_t x_diff = static_cast<int16_t>(static_cast<int>(enemy->x) - static_cast<int>(g_comic_x));
     int16_t y_diff = static_cast<int16_t>(static_cast<int>(enemy->y) - static_cast<int>(g_comic_y));
 
@@ -562,7 +567,14 @@ void ActorSystem::check_enemy_player_collision(enemy_t* enemy) {
     if (x_diff >= -1 && x_diff <= 1 && y_diff >= 0 && y_diff < 4) {
         // Collision! Start red spark death animation
         enemy->state = ENEMY_STATE_RED_SPARK;
-        // TODO: Handle damage to Comic (shield loss, HP loss, or death)
+
+        // Shield absorbs six hits (HP 6 -> 0); next hit at 0 HP kills Comic.
+        if (comic_hp > 0) {
+            comic_hp--;
+            play_game_sound(GameSound::PLAYER_HIT);
+        } else {
+            trigger_player_death();
+        }
     }
 }
 

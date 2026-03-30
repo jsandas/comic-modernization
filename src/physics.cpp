@@ -29,6 +29,7 @@ extern uint8_t current_stage_number;
 extern const level_t* current_level_ptr;
 extern int8_t source_door_level_number;
 extern int8_t source_door_stage_number;
+extern uint8_t comic_hp;
 
 // Game-over flag from main.cpp
 extern bool game_over_triggered;
@@ -43,6 +44,78 @@ static uint8_t tileset_last_passable = 0x3F; // Tiles > this are solid
 
 // Ceiling stick flag
 static bool ceiling_stick_flag = false;
+
+// Player death sequence state
+static bool player_is_dying = false;
+static bool player_death_too_bad_phase = false;
+static uint8_t player_death_ticks_remaining = 0;
+constexpr uint8_t PLAYER_DEATH_ANIMATION_TICKS = 8;
+constexpr uint8_t PLAYER_DEATH_TOO_BAD_TICKS = 15;
+
+bool is_player_dying() {
+    return player_is_dying;
+}
+
+void trigger_player_death() {
+    if (player_is_dying) {
+        return;
+    }
+
+    player_is_dying = true;
+    player_death_too_bad_phase = false;
+    player_death_ticks_remaining = PLAYER_DEATH_ANIMATION_TICKS;
+
+    comic_y_vel = 0;
+    comic_x_momentum = 0;
+    comic_is_falling_or_jumping = 0;
+
+    play_game_sound(GameSound::PLAYER_DIE);
+}
+
+void update_player_death_sequence() {
+    if (!player_is_dying) {
+        return;
+    }
+
+    if (player_death_ticks_remaining > 0) {
+        player_death_ticks_remaining--;
+    }
+
+    if (player_death_ticks_remaining == 0) {
+        if (!player_death_too_bad_phase) {
+            // Animation done — play "too bad" jingle and wait before respawning.
+            // This matches comic_dies() in the reference: play_sound(SOUND_TOO_BAD, 2)
+            // followed by wait_n_ticks(15) before losing a life / respawning.
+            player_death_too_bad_phase = true;
+            player_death_ticks_remaining = PLAYER_DEATH_TOO_BAD_TICKS;
+            play_game_sound(GameSound::GAME_OVER);
+            return;
+        }
+
+        player_is_dying = false;
+        player_death_too_bad_phase = false;
+
+        // Respawn at checkpoint after the death animation completes.
+        comic_x = comic_x_checkpoint;
+        comic_y = comic_y_checkpoint;
+
+        // Recenter camera on the respawned player, clamped to stage bounds.
+        camera_x = comic_x - (PLAYFIELD_WIDTH / 2);
+        if (camera_x < 0) {
+            camera_x = 0;
+        }
+        if (camera_x > MAP_WIDTH - PLAYFIELD_WIDTH) {
+            camera_x = MAP_WIDTH - PLAYFIELD_WIDTH;
+        }
+
+        comic_y_vel = 0;
+        comic_x_momentum = 0;
+        comic_is_falling_or_jumping = 1;
+        comic_jump_counter = comic_jump_power;
+        comic_hp = MAX_HP;
+        game_over_triggered = false;
+    }
+}
 
 void init_test_level() {
     // Initialize empty level
@@ -136,6 +209,10 @@ void process_jump_input() {
 }
 
 void handle_fall_or_jump() {
+    if (player_is_dying) {
+        return;
+    }
+
     if (comic_is_falling_or_jumping) {
         // STEP 1: Decrement jump counter
         if (comic_jump_counter > 0) {
@@ -166,17 +243,8 @@ void handle_fall_or_jump() {
         
         // Bounds check: death if too far down
         if (comic_y >= PLAYFIELD_HEIGHT - 3) {
-            // Trigger game-over sound once when player hits bottom
-            if (!game_over_triggered) {
-                play_game_sound(GameSound::GAME_OVER);
-                game_over_triggered = true;
-            }
-            // Reset position for now (simulates death respawn)
-            comic_y = 1;
-            comic_y_vel = 0;
-            comic_is_falling_or_jumping = 0;
-            // Allow future deaths to trigger GAME_OVER sound again
-            game_over_triggered = false;
+            trigger_player_death();
+            return;
         }
         
         // STEP 5: Apply gravity

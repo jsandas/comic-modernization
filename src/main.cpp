@@ -70,6 +70,7 @@ Animation comic_run_right;
 Animation comic_run_left;
 Animation comic_jump_right;
 Animation comic_jump_left;
+Animation comic_death;
 Animation* current_animation = nullptr;
 
 void process_door_input() {
@@ -204,6 +205,18 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    for (int i = 0; i < 8; ++i) {
+        std::string death_sprite = "comic_death_" + std::to_string(i);
+        if (!g_graphics->load_sprite(death_sprite, "")) {
+            std::cerr << "Failed to load sprite: " << death_sprite << std::endl;
+            delete g_graphics;
+            SDL_DestroyRenderer(renderer);
+            SDL_DestroyWindow(window);
+            SDL_Quit();
+            return 1;
+        }
+    }
+
     // Load fireball sprites
     if (!actor_system.load_fireball_sprites(g_graphics)) {
         std::cerr << "Warning: Could not load fireball sprites. Fireballs will not render." << std::endl;
@@ -218,6 +231,15 @@ int main(int argc, char* argv[]) {
         {"comic_running_1", "comic_running_2", "comic_running_3"}, "left", 100, true);
     comic_jump_right = g_graphics->create_animation({"comic_jumping"}, "right", 100, true);
     comic_jump_left = g_graphics->create_animation({"comic_jumping"}, "left", 100, true);
+    comic_death = g_graphics->create_animation(
+        {
+            "comic_death_0", "comic_death_1", "comic_death_2", "comic_death_3",
+            "comic_death_4", "comic_death_5", "comic_death_6", "comic_death_7"
+        },
+        "",
+        110,
+        false
+    );
 
     current_animation = &comic_idle_right;
 
@@ -340,6 +362,12 @@ int main(int argc, char* argv[]) {
             tick_accumulator -= MS_PER_TICK;
             ticks_processed++;
 
+            if (is_player_dying()) {
+                update_player_death_sequence();
+                ui_system.update();
+                continue;
+            }
+
             // Process jump input once per tick (edge-triggered)
             process_jump_input();
 
@@ -418,7 +446,9 @@ int main(int argc, char* argv[]) {
         // Update animation based on state (updates every frame for smooth animation)
         current_time = SDL_GetTicks();
         Animation* previous_animation = current_animation;
-        if (comic_is_falling_or_jumping) {
+        if (is_player_dying()) {
+            current_animation = &comic_death;
+        } else if (comic_is_falling_or_jumping) {
             current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
         } else {
             if (key_state_left || key_state_right) {

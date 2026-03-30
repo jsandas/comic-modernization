@@ -35,6 +35,9 @@ void process_jump_input();
 void handle_fall_or_jump();
 void move_left();
 void move_right();
+void trigger_player_death();
+void update_player_death_sequence();
+bool is_player_dying();
 
 // Tile system
 void init_test_level();
