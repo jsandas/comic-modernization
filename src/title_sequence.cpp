@@ -45,6 +45,8 @@ static InputBindings s_input_bindings = DEFAULT_INPUT_BINDINGS;
 
 static constexpr const char* KEY_BINDINGS_FILENAME = "KEYS.DEF";
 static constexpr const char* KEY_BINDINGS_MAGIC = "CCKB1";
+static constexpr const char* PREF_PATH_ORG = "jsandas";
+static constexpr const char* PREF_PATH_APP = "comic-modernization";
 
 // Paletted surfaces for title sequence screens (kept as-is, not converted to RGBA)
 static SDL_Surface* s_title_surface = nullptr;
@@ -873,7 +875,7 @@ static bool run_keyboard_setup_menu(SDL_Renderer* renderer, TTF_Font* font) {
     }
 }
 
-static std::string get_key_bindings_path() {
+static std::string get_base_key_bindings_path() {
     char* base_path = SDL_GetBasePath();
     if (!base_path) {
         return std::string(KEY_BINDINGS_FILENAME);
@@ -881,6 +883,17 @@ static std::string get_key_bindings_path() {
 
     std::string path = std::string(base_path) + KEY_BINDINGS_FILENAME;
     SDL_free(base_path);
+    return path;
+}
+
+static std::string get_pref_key_bindings_path() {
+    char* pref_path = SDL_GetPrefPath(PREF_PATH_ORG, PREF_PATH_APP);
+    if (!pref_path) {
+        return std::string();
+    }
+
+    std::string path = std::string(pref_path) + KEY_BINDINGS_FILENAME;
+    SDL_free(pref_path);
     return path;
 }
 
@@ -901,8 +914,30 @@ void set_input_bindings(const InputBindings& bindings) {
 }
 
 bool load_input_bindings_from_file() {
-    const std::string path = get_key_bindings_path();
-    std::ifstream input(path);
+    const std::string pref_path = get_pref_key_bindings_path();
+    const std::string base_path = get_base_key_bindings_path();
+
+    std::string path;
+    std::ifstream input;
+
+    // Prefer per-user writable storage. If no file exists there, try the
+    // legacy executable directory path for backward compatibility.
+    if (!pref_path.empty()) {
+        input.open(pref_path);
+        if (input.good()) {
+            path = pref_path;
+        } else {
+            input.close();
+        }
+    }
+
+    if (!input.good()) {
+        input.open(base_path);
+        if (input.good()) {
+            path = base_path;
+        }
+    }
+
     if (!input.good()) {
         return false;
     }
@@ -950,7 +985,13 @@ bool load_input_bindings_from_file() {
 }
 
 bool save_input_bindings_to_file() {
-    const std::string path = get_key_bindings_path();
+    const std::string path = get_pref_key_bindings_path();
+    if (path.empty()) {
+        std::cerr << "Input bindings: SDL_GetPrefPath failed (" << SDL_GetError() << ")"
+                  << std::endl;
+        return false;
+    }
+
     std::ofstream output(path, std::ios::trunc);
     if (!output.good()) {
         std::cerr << "Input bindings: could not open " << path << " for writing" << std::endl;
