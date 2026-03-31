@@ -8,11 +8,11 @@
 class GraphicsSystem;
 
 struct InputBindings {
-	SDL_Keycode move_left;
-	SDL_Keycode move_right;
-	SDL_Keycode jump;
-	SDL_Keycode fire;
-	SDL_Keycode open_door;
+    SDL_Keycode move_left;
+    SDL_Keycode move_right;
+    SDL_Keycode jump;
+    SDL_Keycode fire;
+    SDL_Keycode open_door;
     SDL_Keycode teleport;
 };
 
