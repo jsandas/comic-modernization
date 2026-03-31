@@ -97,6 +97,27 @@ void clear_gameplay_key_states() {
     key_state_fire = 0;
 }
 
+static bool key_matches_binding(SDL_Keycode key, SDL_Keycode binding) {
+    if (key == binding) {
+        return true;
+    }
+
+    // Treat left/right modifier variants as one DOS-style key class.
+    switch (binding) {
+        case SDLK_LCTRL:
+        case SDLK_RCTRL:
+            return key == SDLK_LCTRL || key == SDLK_RCTRL;
+        case SDLK_LALT:
+        case SDLK_RALT:
+            return key == SDLK_LALT || key == SDLK_RALT;
+        case SDLK_LSHIFT:
+        case SDLK_RSHIFT:
+            return key == SDLK_LSHIFT || key == SDLK_RSHIFT;
+        default:
+            return false;
+    }
+}
+
 int main(int argc, char* argv[]) {
     // Parse command-line arguments
     bool debug_mode = false;
@@ -700,19 +721,19 @@ int main(int argc, char* argv[]) {
 
                 // Process regular gameplay keys
 
-                if (key == bindings.move_left) {
+                if (key_matches_binding(key, bindings.move_left)) {
                     key_state_left = 1;
                 }
-                if (key == bindings.move_right) {
+                if (key_matches_binding(key, bindings.move_right)) {
                     key_state_right = 1;
                 }
-                if (key == bindings.jump) {
+                if (key_matches_binding(key, bindings.jump)) {
                     key_state_jump = 1;
                 }
-                if (key == bindings.fire) {
+                if (key_matches_binding(key, bindings.fire)) {
                     key_state_fire = 1;
                 }
-                if (key == bindings.open_door) {
+                if (key_matches_binding(key, bindings.open_door)) {
                     key_state_open = 1;
                 }
                 
@@ -729,19 +750,19 @@ int main(int argc, char* argv[]) {
                     continue;
                 }
 
-                if (key == bindings.move_left) {
+                if (key_matches_binding(key, bindings.move_left)) {
                     key_state_left = 0;
                 }
-                if (key == bindings.move_right) {
+                if (key_matches_binding(key, bindings.move_right)) {
                     key_state_right = 0;
                 }
-                if (key == bindings.jump) {
+                if (key_matches_binding(key, bindings.jump)) {
                     key_state_jump = 0;
                 }
-                if (key == bindings.fire) {
+                if (key_matches_binding(key, bindings.fire)) {
                     key_state_fire = 0;
                 }
-                if (key == bindings.open_door) {
+                if (key_matches_binding(key, bindings.open_door)) {
                     key_state_open = 0;
                 }
             }
