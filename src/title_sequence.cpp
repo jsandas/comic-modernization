@@ -734,6 +734,15 @@ static void set_binding_for_action(InputBindings& bindings, int action_index, SD
     }
 }
 
+static bool input_bindings_equal(const InputBindings& lhs, const InputBindings& rhs) {
+    return lhs.move_left == rhs.move_left &&
+           lhs.move_right == rhs.move_right &&
+           lhs.jump == rhs.jump &&
+           lhs.fire == rhs.fire &&
+           lhs.open_door == rhs.open_door &&
+           lhs.teleport == rhs.teleport;
+}
+
 static bool run_keyboard_setup_menu(SDL_Renderer* renderer, TTF_Font* font) {
     constexpr SDL_Color TEXT_COLOR = {170, 170, 170, 255};
     constexpr SDL_Color BACKGROUND = {0, 0, 0, 255};
@@ -743,11 +752,25 @@ static bool run_keyboard_setup_menu(SDL_Renderer* renderer, TTF_Font* font) {
     std::string status_line;
     SDL_Event e;
 
+    std::vector<RenderedTextLine> cached_rendered_lines;
+    DosTextLayout cached_layout;
+    bool cache_valid = false;
+    InputBindings cached_draft = draft;
+    int cached_action_index = -1;
+    std::string cached_status_line;
+    bool cached_confirm_mode = false;
+
+    auto clear_cached_lines = [&]() {
+        destroy_text_lines(cached_rendered_lines);
+        cache_valid = false;
+    };
+
     while (true) {
         const bool is_confirm_mode = action_index >= 6;
 
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
+                clear_cached_lines();
                 return false;
             }
 
@@ -758,6 +781,7 @@ static bool run_keyboard_setup_menu(SDL_Renderer* renderer, TTF_Font* font) {
             const SDL_Keycode key = e.key.keysym.sym;
 
             if (key == SDLK_ESCAPE) {
+                clear_cached_lines();
                 return true;
             }
 
@@ -774,6 +798,7 @@ static bool run_keyboard_setup_menu(SDL_Renderer* renderer, TTF_Font* font) {
                                                        "",
                                                        "Press any key to continue"
                                                    })) {
+                            clear_cached_lines();
                             return false;
                         }
                     } else {
@@ -785,9 +810,11 @@ static bool run_keyboard_setup_menu(SDL_Renderer* renderer, TTF_Font* font) {
                                                        "",
                                                        "Press any key to continue"
                                                    })) {
+                            clear_cached_lines();
                             return false;
                         }
                     }
+                    clear_cached_lines();
                     return true;
                 }
                 if (key == SDLK_n) {
@@ -808,24 +835,41 @@ static bool run_keyboard_setup_menu(SDL_Renderer* renderer, TTF_Font* font) {
             status_line.clear();
         }
 
-        std::vector<std::string> lines =
-            build_keyboard_setup_lines(draft, action_index, status_line, is_confirm_mode);
+        const bool should_rebuild_cache =
+            !cache_valid ||
+            cached_action_index != action_index ||
+            cached_confirm_mode != is_confirm_mode ||
+            cached_status_line != status_line ||
+            !input_bindings_equal(cached_draft, draft);
 
-        const DosTextLayout layout = compute_dos_text_layout(renderer, font);
+        if (should_rebuild_cache) {
+            std::vector<std::string> lines =
+                build_keyboard_setup_lines(draft, action_index, status_line, is_confirm_mode);
 
-        std::vector<RenderedTextLine> rendered =
-            build_text_lines(renderer, font, lines, TEXT_COLOR, layout.max_width);
-        if (rendered.empty()) {
-            return true;
+            cached_layout = compute_dos_text_layout(renderer, font);
+
+            std::vector<RenderedTextLine> rendered =
+                build_text_lines(renderer, font, lines, TEXT_COLOR, cached_layout.max_width);
+            if (rendered.empty()) {
+                clear_cached_lines();
+                return true;
+            }
+
+            clear_cached_lines();
+            cached_rendered_lines = std::move(rendered);
+            cache_valid = true;
+            cached_draft = draft;
+            cached_action_index = action_index;
+            cached_status_line = status_line;
+            cached_confirm_mode = is_confirm_mode;
         }
 
         render_text_lines_centered(
             renderer,
-            rendered,
-            layout.top,
-            layout.line_spacing,
+            cached_rendered_lines,
+            cached_layout.top,
+            cached_layout.line_spacing,
             BACKGROUND);
-        destroy_text_lines(rendered);
         SDL_Delay(16);
     }
 }
@@ -866,6 +910,9 @@ bool load_input_bindings_from_file() {
 
     std::string magic;
     std::getline(input, magic);
+    if (!magic.empty() && magic.back() == '\r') {
+        magic.pop_back();
+    }
     if (magic != KEY_BINDINGS_MAGIC) {
         std::cerr << "Input bindings: invalid format in " << path << std::endl;
         return false;
