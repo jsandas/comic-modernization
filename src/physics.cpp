@@ -135,6 +135,11 @@ void update_player_death_sequence() {
         comic_is_falling_or_jumping = 1;
         comic_jump_counter = comic_jump_power;
         comic_hp = MAX_HP;
+
+        // Clear jump key state so holding jump during death does not trigger an
+        // immediate jump on the first tick after respawn.
+        key_state_jump = 0;
+        previous_key_state_jump = 0;
         game_over_triggered = false;
     }
 }
