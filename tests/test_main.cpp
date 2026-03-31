@@ -361,83 +361,83 @@ static void test_jump_height() {
           "boots jump height should be 9 units (got " + std::to_string(boots_height) + ")");
 }
 
-    static void advance_death_sequence_until_complete(int max_ticks = 128) {
-        for (int i = 0; i < max_ticks && is_player_dying(); ++i) {
-          update_player_death_sequence();
-        }
+static void advance_death_sequence_until_complete(int max_ticks = 128) {
+    for (int i = 0; i < max_ticks && is_player_dying(); ++i) {
+        update_player_death_sequence();
+    }
+}
+
+static void test_player_death_sequence_respawn() {
+    reset_physics_state();
+    game_over_triggered = false;
+    comic_num_lives = 3;
+    comic_hp = 1;
+    comic_x = 50;
+    comic_y = 9;
+    comic_x_momentum = 3;
+    comic_y_vel = 4;
+    comic_is_falling_or_jumping = 0;
+    comic_jump_counter = 0;
+    key_state_jump = 1;
+    previous_key_state_jump = 1;
+    comic_x_checkpoint = 22;
+    comic_y_checkpoint = 12;
+
+    trigger_player_death(true);
+    check(is_player_dying(), "death: player should enter dying state after trigger");
+    check(should_show_player_death_animation(),
+        "death: animation phase should be active immediately after trigger");
+
+    int animation_ticks = 0;
+    while (is_player_dying() && should_show_player_death_animation() && animation_ticks < 64) {
+        update_player_death_sequence();
+        animation_ticks++;
     }
 
-    static void test_player_death_sequence_respawn() {
-        reset_physics_state();
-        game_over_triggered = false;
-        comic_num_lives = 3;
-        comic_hp = 1;
-        comic_x = 50;
-        comic_y = 9;
-        comic_x_momentum = 3;
-        comic_y_vel = 4;
-        comic_is_falling_or_jumping = 0;
-        comic_jump_counter = 0;
-        key_state_jump = 1;
-        previous_key_state_jump = 1;
-        comic_x_checkpoint = 22;
-        comic_y_checkpoint = 12;
+    check(animation_ticks > 0, "death: animation phase should consume at least one tick");
+    check(is_player_dying() && !should_show_player_death_animation(),
+        "death: sequence should transition into too-bad wait phase");
 
-        trigger_player_death(true);
-        check(is_player_dying(), "death: player should enter dying state after trigger");
-        check(should_show_player_death_animation(),
-            "death: animation phase should be active immediately after trigger");
+    advance_death_sequence_until_complete();
 
-        int animation_ticks = 0;
-        while (is_player_dying() && should_show_player_death_animation() && animation_ticks < 64) {
-          update_player_death_sequence();
-          animation_ticks++;
-        }
+    check(!is_player_dying(), "death: sequence should complete for respawn path");
+    check(comic_num_lives == 2, "death: lives should decrement by one on respawn path");
+    check(!game_over_triggered, "death: game_over flag should remain false when lives remain");
+    check(comic_x == comic_x_checkpoint && comic_y == comic_y_checkpoint,
+        "death: respawn path should restore checkpoint position");
+    check(comic_hp == MAX_HP, "death: respawn path should restore full HP");
+    check(comic_is_falling_or_jumping == 1,
+        "death: respawn path should place player into falling state");
+    check(comic_jump_counter == comic_jump_power,
+        "death: respawn path should reset jump counter to jump power");
+    check(key_state_jump == 0 && previous_key_state_jump == 0,
+        "death: respawn path should clear jump input edge state");
+}
 
-        check(animation_ticks > 0, "death: animation phase should consume at least one tick");
-        check(is_player_dying() && !should_show_player_death_animation(),
-            "death: sequence should transition into too-bad wait phase");
+static void test_player_death_sequence_game_over() {
+    reset_physics_state();
+    game_over_triggered = false;
+    comic_num_lives = 1;
+    comic_hp = 2;
+    comic_x = 41;
+    comic_y = 8;
+    comic_x_checkpoint = 20;
+    comic_y_checkpoint = 12;
 
-        advance_death_sequence_until_complete();
+    trigger_player_death(false);
+    check(is_player_dying(), "game_over: player should enter dying state");
+    check(!should_show_player_death_animation(),
+        "game_over: animation visibility should be off when trigger requested no animation");
 
-        check(!is_player_dying(), "death: sequence should complete for respawn path");
-        check(comic_num_lives == 2, "death: lives should decrement by one on respawn path");
-        check(!game_over_triggered, "death: game_over flag should remain false when lives remain");
-        check(comic_x == comic_x_checkpoint && comic_y == comic_y_checkpoint,
-            "death: respawn path should restore checkpoint position");
-        check(comic_hp == MAX_HP, "death: respawn path should restore full HP");
-        check(comic_is_falling_or_jumping == 1,
-            "death: respawn path should place player into falling state");
-        check(comic_jump_counter == comic_jump_power,
-            "death: respawn path should reset jump counter to jump power");
-        check(key_state_jump == 0 && previous_key_state_jump == 0,
-            "death: respawn path should clear jump input edge state");
-    }
+    advance_death_sequence_until_complete();
 
-    static void test_player_death_sequence_game_over() {
-        reset_physics_state();
-        game_over_triggered = false;
-        comic_num_lives = 1;
-        comic_hp = 2;
-        comic_x = 41;
-        comic_y = 8;
-        comic_x_checkpoint = 20;
-        comic_y_checkpoint = 12;
-
-        trigger_player_death(false);
-        check(is_player_dying(), "game_over: player should enter dying state");
-        check(!should_show_player_death_animation(),
-            "game_over: animation visibility should be off when trigger requested no animation");
-
-        advance_death_sequence_until_complete();
-
-        check(!is_player_dying(), "game_over: death sequence should finish");
-        check(comic_num_lives == 0, "game_over: lives should decrement to zero");
-        check(game_over_triggered, "game_over: zero lives should trigger game-over flag");
-        check(comic_x == 41 && comic_y == 8,
-            "game_over: zero-lives path should not respawn to checkpoint");
-        check(comic_hp == 2, "game_over: zero-lives path should not reset HP");
-    }
+    check(!is_player_dying(), "game_over: death sequence should finish");
+    check(comic_num_lives == 0, "game_over: lives should decrement to zero");
+    check(game_over_triggered, "game_over: zero lives should trigger game-over flag");
+    check(comic_x == 41 && comic_y == 8,
+        "game_over: zero-lives path should not respawn to checkpoint");
+    check(comic_hp == 2, "game_over: zero-lives path should not reset HP");
+}
 
 static void test_door_activation_alignment_x() {
     reset_door_state();
