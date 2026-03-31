@@ -339,9 +339,9 @@ int main(int argc, char* argv[]) {
     uint32_t last_tick_time = SDL_GetTicks();
     double tick_accumulator = 0.0;
 
-    // Special sequences in the DOS game use BIOS timer ticks (~18.2 Hz, ~55 ms),
-    // not the gameplay logic cadence (~9.1 Hz, ~110 ms).
-    constexpr double ANIMATION_TICK_MS = 1000.0 / 18.2065;
+    // Keep special sequences on the same cadence as gameplay logic for
+    // faithful pacing in this implementation.
+    constexpr double ANIMATION_TICK_MS = MS_PER_TICK;
     auto wait_animation_ticks = [&](int ticks) -> bool {
         const uint32_t duration_ms = static_cast<uint32_t>(ANIMATION_TICK_MS * ticks + 0.5);
         uint32_t start = SDL_GetTicks();
@@ -461,7 +461,7 @@ int main(int argc, char* argv[]) {
 
         for (size_t frame = materialize_sprites.size(); frame > 0; --frame) {
             const size_t sprite_index = frame - 1;
-            const bool show_comic = sprite_index > 6;
+            const bool show_comic = sprite_index >= 6;
             render_beam_in_frame(show_comic, materialize_sprites[sprite_index]);
             if (!wait_animation_ticks(1)) {
                 return;
