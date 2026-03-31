@@ -660,8 +660,7 @@ static std::vector<std::string> build_keyboard_setup_lines(const InputBindings& 
         "Move Right",
         "Jump",
         "Fireball",
-        "Open Door",
-        "Teleport"
+        "Open Door"
     };
 
     const std::vector<SDL_Keycode> action_keys = {
@@ -669,8 +668,7 @@ static std::vector<std::string> build_keyboard_setup_lines(const InputBindings& 
         draft.move_right,
         draft.jump,
         draft.fire,
-        draft.open_door,
-        draft.teleport
+        draft.open_door
     };
 
     std::vector<std::string> lines;
@@ -695,6 +693,9 @@ static std::vector<std::string> build_keyboard_setup_lines(const InputBindings& 
         lines.push_back(status_line);
     }
 
+    lines.push_back("");
+    lines.push_back("Teleport binding is saved but not yet active in gameplay.");
+
     return lines;
 }
 
@@ -706,11 +707,10 @@ static bool key_is_already_assigned(const InputBindings& bindings,
         bindings.move_right,
         bindings.jump,
         bindings.fire,
-        bindings.open_door,
-        bindings.teleport
+        bindings.open_door
     };
 
-    for (int i = 0; i < 6; ++i) {
+    for (int i = 0; i < 5; ++i) {
         if (i == current_action_index) {
             continue;
         }
@@ -729,7 +729,6 @@ static void set_binding_for_action(InputBindings& bindings, int action_index, SD
         case 2: bindings.jump = key; break;
         case 3: bindings.fire = key; break;
         case 4: bindings.open_door = key; break;
-        case 5: bindings.teleport = key; break;
         default: break;
     }
 }
@@ -766,7 +765,7 @@ static bool run_keyboard_setup_menu(SDL_Renderer* renderer, TTF_Font* font) {
     };
 
     while (true) {
-        const bool is_confirm_mode = action_index >= 6;
+        const bool is_confirm_mode = action_index >= 5;
 
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
