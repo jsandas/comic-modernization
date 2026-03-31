@@ -802,7 +802,7 @@ if (comic_num_treasures == 3) {
   - [x] Startup notice (initial acknowledgement screen)
   - [ ] High scores screen (leaderboard display)
   - [x] Keyboard setup menu (control configuration)
-  - [ ] Pause menu (in-game pause functionality)
+  - [x] Pause menu (in-game pause functionality)
 - [ ] Port special sequences
   - [ ] Beam-in animation (entering level/stage)
   - [ ] Beam-out animation (exiting level/stage to victory)

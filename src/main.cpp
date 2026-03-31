@@ -85,6 +85,16 @@ void process_door_input() {
     previous_key_state_open = key_state_open;
 }
 
+void clear_gameplay_key_states() {
+    key_state_jump = 0;
+    previous_key_state_jump = 0;
+    key_state_left = 0;
+    key_state_right = 0;
+    key_state_open = 0;
+    previous_key_state_open = 0;
+    key_state_fire = 0;
+}
+
 int main(int argc, char* argv[]) {
     // Parse command-line arguments
     bool debug_mode = false;
@@ -217,6 +227,12 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    if (!g_graphics->load_sprite("pause", "")) {
+        std::cerr << "Warning: Could not load pause sprite (sprite-pause.png)."
+                  << std::endl;
+    }
+    Sprite* pause_sprite = g_graphics->get_sprite("pause", "");
+
     // Load fireball sprites
     if (!actor_system.load_fireball_sprites(g_graphics)) {
         std::cerr << "Warning: Could not load fireball sprites. Fireballs will not render." << std::endl;
@@ -244,6 +260,8 @@ int main(int argc, char* argv[]) {
     current_animation = &comic_idle_right;
 
     bool quit = false;
+    bool paused = false;
+    bool pause_waiting_for_escape_release = false;
     SDL_Event e;
 
     // Initialize all level data (tile data is compiled-in as hex arrays)
@@ -311,9 +329,38 @@ int main(int argc, char* argv[]) {
             if (e.type == SDL_QUIT) {
                 quit = true;
             } else if (e.type == SDL_KEYDOWN) {
-                // Process regular gameplay keys
                 const InputBindings& bindings = get_input_bindings();
                 const SDL_Keycode key = e.key.keysym.sym;
+
+                if (paused) {
+                    if (key == SDLK_ESCAPE && e.key.repeat == 0 &&
+                        pause_waiting_for_escape_release) {
+                        continue;
+                    }
+
+                    if (pause_waiting_for_escape_release || e.key.repeat != 0) {
+                        continue;
+                    }
+
+                    if (key == SDLK_q) {
+                        quit = true;
+                    }
+
+                    paused = false;
+                    clear_gameplay_key_states();
+                    tick_accumulator = 0.0;
+                    continue;
+                }
+
+                if (key == SDLK_ESCAPE && e.key.repeat == 0) {
+                    paused = true;
+                    pause_waiting_for_escape_release = true;
+                    clear_gameplay_key_states();
+                    tick_accumulator = 0.0;
+                    continue;
+                }
+
+                // Process regular gameplay keys
 
                 if (key == bindings.move_left) {
                     key_state_left = 1;
@@ -337,6 +384,13 @@ int main(int argc, char* argv[]) {
                 const InputBindings& bindings = get_input_bindings();
                 const SDL_Keycode key = e.key.keysym.sym;
 
+                if (paused) {
+                    if (key == SDLK_ESCAPE) {
+                        pause_waiting_for_escape_release = false;
+                    }
+                    continue;
+                }
+
                 if (key == bindings.move_left) {
                     key_state_left = 0;
                 }
@@ -357,115 +411,121 @@ int main(int argc, char* argv[]) {
 
         // Process physics ticks at ~9.1 Hz (original game speed)
         // This decouples physics from rendering rate
-        int ticks_processed = 0;
-        while (tick_accumulator >= MS_PER_TICK && ticks_processed < MAX_TICKS_PER_FRAME) {
-            tick_accumulator -= MS_PER_TICK;
-            ticks_processed++;
+        if (!paused) {
+            int ticks_processed = 0;
+            while (tick_accumulator >= MS_PER_TICK && ticks_processed < MAX_TICKS_PER_FRAME) {
+                tick_accumulator -= MS_PER_TICK;
+                ticks_processed++;
 
-            if (is_player_dying()) {
-                update_player_death_sequence();
+                if (is_player_dying()) {
+                    update_player_death_sequence();
+                    ui_system.update();
+                    continue;
+                }
+
+                // Process jump input once per tick (edge-triggered)
+                process_jump_input();
+
+                // Process door input once per tick (edge-triggered)
+                process_door_input();
+
+                // Update jump power from item system (boots affect jump height)
+                comic_jump_power = static_cast<uint8_t>(actor_system.get_jump_power());
+
+                // Update physics (once per tick)
+                handle_fall_or_jump();
+
+                // Ground movement (only when not in air)
+                if (!comic_is_falling_or_jumping) {
+                    if (key_state_left) {
+                        move_left();
+                    }
+                    if (key_state_right) {
+                        move_right();
+                    }
+                }
+
+                const uint8_t* tiles = current_level_ptr
+                    ? current_level_ptr->stages[current_stage_number].tiles
+                    : nullptr;
+                actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x, key_state_fire);
                 ui_system.update();
-                continue;
-            }
-
-            // Process jump input once per tick (edge-triggered)
-            process_jump_input();
-
-            // Process door input once per tick (edge-triggered)
-            process_door_input();
-
-            // Update jump power from item system (boots affect jump height)
-            comic_jump_power = static_cast<uint8_t>(actor_system.get_jump_power());
-
-            // Update physics (once per tick)
-            handle_fall_or_jump();
-
-            // Ground movement (only when not in air)
-            if (!comic_is_falling_or_jumping) {
-                if (key_state_left) {
-                    move_left();
-                }
-                if (key_state_right) {
-                    move_right();
-                }
-            }
-
-            const uint8_t* tiles = current_level_ptr
-                ? current_level_ptr->stages[current_stage_number].tiles
-                : nullptr;
-            actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x, key_state_fire);
-            ui_system.update();
-            
-            // Lives count-up sequence: award 5 lives with 1-tick delay between each,
-            // then subtract 1 (the life currently in use)
-            if (!lives_sequence_complete) {
-                if (lives_sequence_counter > 0) {
-                    lives_sequence_delay--;
-                    if (lives_sequence_delay == 0) {
-                        // Award a life
-                        comic_num_lives++;
-                        lives_sequence_counter--;
-                        
-                        if (lives_sequence_counter > 0) {
-                            // Still more lives to award (wait 1 tick)
-                            lives_sequence_delay = 1;
-                        } else {
-                            // Awarded all 5, wait 3 ticks then subtract 1
-                            lives_sequence_delay = 3;
+                
+                // Lives count-up sequence: award 5 lives with 1-tick delay between each,
+                // then subtract 1 (the life currently in use)
+                if (!lives_sequence_complete) {
+                    if (lives_sequence_counter > 0) {
+                        lives_sequence_delay--;
+                        if (lives_sequence_delay == 0) {
+                            // Award a life
+                            comic_num_lives++;
+                            lives_sequence_counter--;
+                            
+                            if (lives_sequence_counter > 0) {
+                                // Still more lives to award (wait 1 tick)
+                                lives_sequence_delay = 1;
+                            } else {
+                                // Awarded all 5, wait 3 ticks then subtract 1
+                                lives_sequence_delay = 3;
+                            }
+                        }
+                    } else if (lives_sequence_delay > 0) {
+                        // Waiting 3 ticks after awarding all 5 lives
+                        lives_sequence_delay--;
+                        if (lives_sequence_delay == 0) {
+                            // Subtract 1 life (currently in use: 5→4)
+                            if (comic_num_lives > 0) {
+                                comic_num_lives--;
+                            }
+                            lives_sequence_complete = true;
                         }
                     }
-                } else if (lives_sequence_delay > 0) {
-                    // Waiting 3 ticks after awarding all 5 lives
-                    lives_sequence_delay--;
-                    if (lives_sequence_delay == 0) {
-                        // Subtract 1 life (currently in use: 5→4)
-                        if (comic_num_lives > 0) {
-                            comic_num_lives--;
-                        }
-                        lives_sequence_complete = true;
+                }
+                
+                // Gradually fill HP from 0 to MAX_HP at game startup
+                // Each tick, increment HP if pending increase is scheduled
+                if (comic_hp_pending_increase > 0) {
+                    comic_hp_pending_increase--;
+                    if (comic_hp < MAX_HP) {
+                        comic_hp++;
                     }
                 }
+                
+                // Fireball meter charging is handled by ActorSystem::update()
+                // (charges at 1 unit per 2 ticks when not firing)
+                
+                // Game-over is handled by physics when Comic hits the bottom of playfield
+                // (sound triggered there).  No additional check needed here.
             }
-            
-            // Gradually fill HP from 0 to MAX_HP at game startup
-            // Each tick, increment HP if pending increase is scheduled
-            if (comic_hp_pending_increase > 0) {
-                comic_hp_pending_increase--;
-                if (comic_hp < MAX_HP) {
-                    comic_hp++;
-                }
-            }
-            
-            // Fireball meter charging is handled by ActorSystem::update()
-            // (charges at 1 unit per 2 ticks when not firing)
-            
-            // Game-over is handled by physics when Comic hits the bottom of playfield
-            // (sound triggered there).  No additional check needed here.
+        } else {
+            tick_accumulator = 0.0;
         }
 
         // Update animation based on state (updates every frame for smooth animation)
-        current_time = SDL_GetTicks();
-        Animation* previous_animation = current_animation;
-        if (is_player_dying()) {
-            current_animation = should_show_player_death_animation() ? &comic_death : nullptr;
-        } else if (comic_is_falling_or_jumping) {
-            current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
-        } else {
-            if (key_state_left || key_state_right) {
-                current_animation = comic_facing ? &comic_run_right : &comic_run_left;
+        if (!paused) {
+            current_time = SDL_GetTicks();
+            Animation* previous_animation = current_animation;
+            if (is_player_dying()) {
+                current_animation = should_show_player_death_animation() ? &comic_death : nullptr;
+            } else if (comic_is_falling_or_jumping) {
+                current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
             } else {
-                current_animation = comic_facing ? &comic_idle_right : &comic_idle_left;
+                if (key_state_left || key_state_right) {
+                    current_animation = comic_facing ? &comic_run_right : &comic_run_left;
+                } else {
+                    current_animation = comic_facing ? &comic_idle_right : &comic_idle_left;
+                }
             }
-        }
 
-        // Reset animation state when switching to a new animation
-        if (current_animation && current_animation != previous_animation) {
-            current_animation->current_frame = 0;
-            current_animation->frame_start_time = current_time;
-        }
+            // Reset animation state when switching to a new animation
+            if (current_animation && current_animation != previous_animation) {
+                current_animation->current_frame = 0;
+                current_animation->frame_start_time = current_time;
+            }
 
-        if (current_animation) {
-            g_graphics->update_animation(*current_animation, current_time);
+            if (current_animation) {
+                g_graphics->update_animation(*current_animation, current_time);
+            }
         }
 
         // Clear screen with black background
@@ -592,6 +652,22 @@ int main(int argc, char* argv[]) {
         );
         SDL_RenderSetScale(renderer, 1.0f, 1.0f);
         SDL_RenderSetViewport(renderer, nullptr);
+
+        if (paused && pause_sprite) {
+            const int pause_x_ega = 40;
+            const int pause_y_ega = 64;
+            const int pause_width_ega = 128;
+            const int pause_height_ega = 48;
+
+            SDL_Rect pause_rect = {
+                gameplay_frame_rect.x + static_cast<int>(pause_x_ega * letterbox_scale),
+                gameplay_frame_rect.y + static_cast<int>(pause_y_ega * letterbox_scale),
+                static_cast<int>(pause_width_ega * letterbox_scale),
+                static_cast<int>(pause_height_ega * letterbox_scale)
+            };
+            SDL_RenderCopy(renderer, pause_sprite->texture.texture, nullptr, &pause_rect);
+        }
+
         // Present
         SDL_RenderPresent(renderer);
 
