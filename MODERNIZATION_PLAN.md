@@ -808,7 +808,7 @@ if (comic_num_treasures == 3) {
   - [x] Beam-out animation (exiting level/stage to victory)
   - [x] Death animation (player death sequence)
   - [x] Victory sequence (treasure collection celebration)
-  - [ ] Game over screen (game-over state display)
+  - [x] Game over screen (game-over state display)
 
 **Reference Code:**
 - `src/game_main.c`: UI and menu functions

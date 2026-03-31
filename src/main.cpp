@@ -55,7 +55,7 @@ uint8_t comic_y_checkpoint = 12;  // Y position to respawn at
 uint8_t comic_x_checkpoint = 14;  // X position to respawn at
 
 // Game state
-bool game_over_triggered = false;  // Flag to track if game-over sound has been played
+bool game_over_triggered = false;  // Set when life depletion should transition to game-over sequence
 
 // Global system pointers (for access from other modules)
 ActorSystem* g_actor_system = nullptr;  // Actor system pointer (for cheat access)
@@ -249,6 +249,12 @@ int main(int argc, char* argv[]) {
     }
     Sprite* pause_sprite = g_graphics->get_sprite("pause", "");
 
+    if (!g_graphics->load_sprite("game_over", "")) {
+        std::cerr << "Warning: Could not load game-over sprite (sprite-game_over.png)."
+                  << std::endl;
+    }
+    Sprite* game_over_sprite = g_graphics->get_sprite("game_over", "");
+
     // Load fireball sprites
     if (!actor_system.load_fireball_sprites(g_graphics)) {
         std::cerr << "Warning: Could not load fireball sprites. Fireballs will not render." << std::endl;
@@ -333,10 +339,13 @@ int main(int argc, char* argv[]) {
     uint32_t last_tick_time = SDL_GetTicks();
     double tick_accumulator = 0.0;
 
-    constexpr int BEAM_IN_TICK_MS = 55;
-    auto wait_beam_in_tick = [&](int duration_ms) -> bool {
+    // Special sequences in the DOS game use BIOS timer ticks (~18.2 Hz, ~55 ms),
+    // not the gameplay logic cadence (~9.1 Hz, ~110 ms).
+    constexpr double ANIMATION_TICK_MS = 1000.0 / 18.2065;
+    auto wait_animation_ticks = [&](int ticks) -> bool {
+        const uint32_t duration_ms = static_cast<uint32_t>(ANIMATION_TICK_MS * ticks + 0.5);
         uint32_t start = SDL_GetTicks();
-        while (SDL_GetTicks() - start < static_cast<uint32_t>(duration_ms)) {
+        while (SDL_GetTicks() - start < duration_ms) {
             while (SDL_PollEvent(&e) != 0) {
                 if (e.type == SDL_QUIT) {
                     quit = true;
@@ -445,18 +454,23 @@ int main(int argc, char* argv[]) {
 
         play_game_sound(GameSound::MATERIALIZE);
 
+        render_beam_in_frame(true, nullptr);
+        if (!wait_animation_ticks(1)) {
+            return;
+        }
+
         for (size_t frame = materialize_sprites.size(); frame > 0; --frame) {
             const size_t sprite_index = frame - 1;
             const bool show_comic = sprite_index > 6;
             render_beam_in_frame(show_comic, materialize_sprites[sprite_index]);
-            if (!wait_beam_in_tick(BEAM_IN_TICK_MS)) {
+            if (!wait_animation_ticks(1)) {
                 return;
             }
         }
 
         if (!quit) {
             render_beam_in_frame(false, nullptr);
-            wait_beam_in_tick(BEAM_IN_TICK_MS);
+            wait_animation_ticks(6);
         }
     };
 
@@ -524,12 +538,12 @@ int main(int argc, char* argv[]) {
 
         clear_gameplay_key_states();
 
-        // Base victory bonus: 20,000 points as ten 2,000-point tally steps.
-        for (int step = 0; step < 10 && !quit; ++step) {
+        // Base victory bonus: 20,000 points as twenty 1,000-point tally steps.
+        for (int step = 0; step < 20 && !quit; ++step) {
             play_game_sound(GameSound::ITEM_COLLECT);
-            award_points(20);
+            award_points(10);
             render_beam_in_frame(false, nullptr);
-            wait_beam_in_tick(BEAM_IN_TICK_MS);
+            wait_animation_ticks(1);
         }
 
         // Remaining lives bonus: 10,000 points per life, then decrement one life icon.
@@ -538,12 +552,12 @@ int main(int argc, char* argv[]) {
                 play_game_sound(GameSound::ITEM_COLLECT);
                 award_points(10);
                 render_beam_in_frame(false, nullptr);
-                wait_beam_in_tick(BEAM_IN_TICK_MS);
+                wait_animation_ticks(1);
             }
 
             comic_num_lives--;
             render_beam_in_frame(false, nullptr);
-            wait_beam_in_tick(BEAM_IN_TICK_MS * 3);
+            wait_animation_ticks(3);
         }
 
         play_game_music(GameMusic::TITLE);
@@ -551,7 +565,7 @@ int main(int argc, char* argv[]) {
         SDL_Texture* victory_texture = load_fullscreen_texture("sys002.ega.png");
         if (victory_texture && !quit) {
             render_fullscreen_texture(victory_texture);
-            wait_beam_in_tick(BEAM_IN_TICK_MS * 20);
+            wait_animation_ticks(20);
             wait_for_new_keypress();
         }
 
@@ -571,10 +585,51 @@ int main(int argc, char* argv[]) {
         }
     };
 
+    auto play_game_over_sequence = [&]() {
+        clear_gameplay_key_states();
+        paused = false;
+        pause_waiting_for_escape_release = false;
+
+        render_beam_in_frame(false, nullptr);
+
+        if (game_over_sprite && !quit) {
+            SDL_Rect gameplay_frame_rect = g_graphics->compute_letterbox_rect(renderer);
+            const float letterbox_scale = static_cast<float>(gameplay_frame_rect.w) / EGA_WIDTH;
+
+            const int game_over_x_ega = 40;
+            const int game_over_y_ega = 64;
+            const int game_over_width_ega = 128;
+            const int game_over_height_ega = 48;
+
+            SDL_Rect game_over_rect = {
+                gameplay_frame_rect.x + static_cast<int>(game_over_x_ega * letterbox_scale),
+                gameplay_frame_rect.y + static_cast<int>(game_over_y_ega * letterbox_scale),
+                static_cast<int>(game_over_width_ega * letterbox_scale),
+                static_cast<int>(game_over_height_ega * letterbox_scale)
+            };
+            SDL_RenderCopy(renderer, game_over_sprite->texture.texture, nullptr, &game_over_rect);
+            SDL_RenderPresent(renderer);
+        }
+
+        if (!quit) {
+            wait_animation_ticks(1);
+            wait_for_new_keypress();
+        }
+
+        SDL_Texture* high_scores_texture = load_fullscreen_texture("sys005.ega.png");
+        if (high_scores_texture && !quit) {
+            render_fullscreen_texture(high_scores_texture);
+            wait_for_new_keypress();
+        }
+        if (high_scores_texture) {
+            SDL_DestroyTexture(high_scores_texture);
+        }
+    };
+
     if (materialize_sprites_loaded && !quit) {
         for (int frame = 0; frame < 15; ++frame) {
             render_beam_in_frame(false, nullptr);
-            if (!wait_beam_in_tick(BEAM_IN_TICK_MS)) {
+            if (!wait_animation_ticks(1)) {
                 break;
             }
         }
@@ -585,7 +640,7 @@ int main(int argc, char* argv[]) {
             for (size_t frame = 0; frame < materialize_sprites.size(); ++frame) {
                 bool show_comic = frame > 6;
                 render_beam_in_frame(show_comic, materialize_sprites[frame]);
-                if (!wait_beam_in_tick(BEAM_IN_TICK_MS)) {
+                if (!wait_animation_ticks(1)) {
                     break;
                 }
             }
@@ -593,7 +648,7 @@ int main(int argc, char* argv[]) {
 
         if (!quit) {
             render_beam_in_frame(true, nullptr);
-            wait_beam_in_tick(BEAM_IN_TICK_MS);
+            wait_animation_ticks(1);
         }
 
         clear_gameplay_key_states();
@@ -703,6 +758,12 @@ int main(int argc, char* argv[]) {
                 if (is_player_dying()) {
                     update_player_death_sequence();
                     ui_system.update();
+
+                    if (game_over_triggered) {
+                        play_game_over_sequence();
+                        quit = true;
+                        break;
+                    }
                     continue;
                 }
 
@@ -793,6 +854,10 @@ int main(int argc, char* argv[]) {
             }
         } else {
             tick_accumulator = 0.0;
+        }
+
+        if (quit) {
+            break;
         }
 
         // Update animation based on state (updates every frame for smooth animation)

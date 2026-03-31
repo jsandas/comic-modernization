@@ -86,6 +86,7 @@ ActorSystem* g_actor_system = nullptr;
 
 // Game-over flag used by physics module (shared with main.cpp)
 bool game_over_triggered = false;
+uint8_t comic_num_lives = 0;
 
 // Player shield/HP state used by actor collision logic
 uint8_t comic_hp = MAX_HP;

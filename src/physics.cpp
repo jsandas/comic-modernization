@@ -30,6 +30,7 @@ extern const level_t* current_level_ptr;
 extern int8_t source_door_level_number;
 extern int8_t source_door_stage_number;
 extern uint8_t comic_hp;
+extern uint8_t comic_num_lives;
 
 // Game-over flag from main.cpp
 extern bool game_over_triggered;
@@ -97,6 +98,18 @@ void update_player_death_sequence() {
             player_death_too_bad_phase = true;
             player_death_ticks_remaining = PLAYER_DEATH_TOO_BAD_TICKS;
             play_game_sound(GameSound::GAME_OVER);
+            return;
+        }
+
+        if (comic_num_lives > 0) {
+            comic_num_lives--;
+        }
+
+        if (comic_num_lives == 0) {
+            player_is_dying = false;
+            player_death_too_bad_phase = false;
+            player_death_show_animation = true;
+            game_over_triggered = true;
             return;
         }
 
