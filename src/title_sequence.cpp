@@ -744,6 +744,40 @@ static bool input_bindings_equal(const InputBindings& lhs, const InputBindings& 
            lhs.teleport == rhs.teleport;
 }
 
+static bool validate_input_bindings(const InputBindings& bindings, std::string* error_message) {
+    const SDL_Keycode keys[] = {
+        bindings.move_left,
+        bindings.move_right,
+        bindings.jump,
+        bindings.fire,
+        bindings.open_door,
+        bindings.teleport
+    };
+
+    for (const SDL_Keycode key : keys) {
+        if (key == SDLK_UNKNOWN) {
+            if (error_message) {
+                *error_message = "contains unknown keycode";
+            }
+            return false;
+        }
+    }
+
+    constexpr size_t NUM_BINDINGS = sizeof(keys) / sizeof(keys[0]);
+    for (size_t i = 0; i < NUM_BINDINGS; ++i) {
+        for (size_t j = i + 1; j < NUM_BINDINGS; ++j) {
+            if (keys[i] == keys[j]) {
+                if (error_message) {
+                    *error_message = "contains duplicate key assignments";
+                }
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 static bool run_keyboard_setup_menu(SDL_Renderer* renderer, TTF_Font* font) {
     constexpr SDL_Color TEXT_COLOR = {170, 170, 170, 255};
     constexpr SDL_Color BACKGROUND = {0, 0, 0, 255};
@@ -979,6 +1013,13 @@ bool load_input_bindings_from_file() {
         static_cast<SDL_Keycode>(open_door),
         static_cast<SDL_Keycode>(teleport)
     };
+
+    std::string validation_error;
+    if (!validate_input_bindings(loaded, &validation_error)) {
+        std::cerr << "Input bindings: invalid mapping in " << path
+                  << " (" << validation_error << ")" << std::endl;
+        return false;
+    }
 
     set_input_bindings(loaded);
     return true;
