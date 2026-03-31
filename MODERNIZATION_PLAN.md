@@ -804,10 +804,10 @@ if (comic_num_treasures == 3) {
   - [x] Keyboard setup menu (control configuration)
   - [x] Pause menu (in-game pause functionality)
 - [ ] Port special sequences
-  - [ ] Beam-in animation (entering level/stage)
-  - [ ] Beam-out animation (exiting level/stage to victory)
-  - [ ] Death animation (player death sequence)
-  - [ ] Victory sequence (treasure collection celebration)
+  - [x] Beam-in animation (entering level/stage)
+  - [x] Beam-out animation (exiting level/stage to victory)
+  - [x] Death animation (player death sequence)
+  - [x] Victory sequence (treasure collection celebration)
   - [ ] Game over screen (game-over state display)
 
 **Reference Code:**

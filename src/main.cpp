@@ -1,6 +1,8 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <iostream>
 #include <cstring>
+#include <array>
 #include "../include/physics.h"
 #include "../include/graphics.h"
 #include "../include/level_loader.h"
@@ -227,6 +229,20 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    std::array<Sprite*, 12> materialize_sprites = {};
+    bool materialize_sprites_loaded = true;
+    for (size_t i = 0; i < materialize_sprites.size(); ++i) {
+        std::string materialize_name = "materialize_" + std::to_string(i);
+        if (!g_graphics->load_sprite(materialize_name, "")) {
+            std::cerr << "Warning: Could not load beam-in sprite: " << materialize_name << std::endl;
+            materialize_sprites_loaded = false;
+        }
+        materialize_sprites[i] = g_graphics->get_sprite(materialize_name, "");
+        if (!materialize_sprites[i]) {
+            materialize_sprites_loaded = false;
+        }
+    }
+
     if (!g_graphics->load_sprite("pause", "")) {
         std::cerr << "Warning: Could not load pause sprite (sprite-pause.png)."
                   << std::endl;
@@ -262,6 +278,7 @@ int main(int argc, char* argv[]) {
     bool quit = false;
     bool paused = false;
     bool pause_waiting_for_escape_release = false;
+    bool beam_out_sequence_played = false;
     SDL_Event e;
 
     // Initialize all level data (tile data is compiled-in as hex arrays)
@@ -315,6 +332,272 @@ int main(int argc, char* argv[]) {
     constexpr double MAX_ACCUMULATED_MS = MS_PER_TICK * MAX_TICKS_PER_FRAME;
     uint32_t last_tick_time = SDL_GetTicks();
     double tick_accumulator = 0.0;
+
+    constexpr int BEAM_IN_TICK_MS = 55;
+    auto wait_beam_in_tick = [&](int duration_ms) -> bool {
+        uint32_t start = SDL_GetTicks();
+        while (SDL_GetTicks() - start < static_cast<uint32_t>(duration_ms)) {
+            while (SDL_PollEvent(&e) != 0) {
+                if (e.type == SDL_QUIT) {
+                    quit = true;
+                    return false;
+                }
+            }
+            SDL_Delay(1);
+        }
+        return true;
+    };
+
+    auto render_beam_in_frame = [&](bool show_comic, Sprite* materialize_sprite) {
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+
+        SDL_Rect gameplay_frame_rect = g_graphics->compute_letterbox_rect(renderer);
+
+        SDL_Texture* hud_texture = get_hud_texture();
+        if (hud_texture) {
+            SDL_RenderCopy(renderer, hud_texture, nullptr, &gameplay_frame_rect);
+        }
+
+        const float letterbox_scale = static_cast<float>(gameplay_frame_rect.w) / EGA_WIDTH;
+        const int render_scale = (letterbox_scale < 0.125f)
+            ? 1
+            : static_cast<int>(8.0f * letterbox_scale + 0.5f);
+
+        SDL_Rect playfield_viewport;
+        playfield_viewport.x = gameplay_frame_rect.x + static_cast<int>(8 * letterbox_scale);
+        playfield_viewport.y = gameplay_frame_rect.y + static_cast<int>(8 * letterbox_scale);
+        playfield_viewport.w = static_cast<int>(192 * letterbox_scale);
+        playfield_viewport.h = static_cast<int>(160 * letterbox_scale);
+        SDL_RenderSetViewport(renderer, &playfield_viewport);
+
+        const int OFFSCREEN_MARGIN_UNITS = 2;
+        const int min_visible_x = camera_x - OFFSCREEN_MARGIN_UNITS;
+        const int max_visible_x = camera_x + PLAYFIELD_WIDTH + OFFSCREEN_MARGIN_UNITS;
+
+        for (int ty = 0; ty < MAP_HEIGHT_TILES; ty++) {
+            for (int tx = 0; tx < MAP_WIDTH_TILES; tx++) {
+                int world_x = tx * 2;
+                if (world_x + 2 > min_visible_x && world_x < max_visible_x) {
+                    uint8_t tile = get_tile_at(tx * 2, ty * 2);
+                    int screen_x = (world_x - camera_x) * render_scale;
+                    int screen_y = ty * 2 * render_scale;
+                    g_graphics->render_tile(screen_x, screen_y, cached_tileset, tile, render_scale);
+                }
+            }
+        }
+
+        actor_system.render_item(g_graphics, camera_x, render_scale);
+
+        const int comic_screen_x = (comic_x - camera_x) * render_scale + render_scale;
+        const int comic_screen_y = comic_y * render_scale + render_scale * 2;
+        const int comic_width = render_scale * 2;
+        const int comic_height = render_scale * 4;
+
+        if (show_comic) {
+            AnimationFrame* frame = g_graphics->get_current_frame(*current_animation);
+            if (frame) {
+                g_graphics->render_sprite_centered_scaled(
+                    comic_screen_x,
+                    comic_screen_y,
+                    frame->sprite,
+                    comic_width,
+                    comic_height);
+            }
+        }
+
+        if (materialize_sprite) {
+            g_graphics->render_sprite_centered_scaled(
+                comic_screen_x,
+                comic_screen_y,
+                *materialize_sprite,
+                comic_width,
+                comic_height);
+        }
+
+        SDL_RenderSetViewport(renderer, &gameplay_frame_rect);
+        SDL_RenderSetScale(renderer, letterbox_scale, letterbox_scale);
+        ui_system.render_hud(
+            score_bytes,
+            comic_num_lives,
+            comic_hp,
+            actor_system.fireball_meter,
+            actor_system.comic_firepower,
+            actor_system.comic_has_corkscrew != 0,
+            comic_has_door_key != 0,
+            actor_system.comic_has_teleport_wand != 0,
+            actor_system.comic_has_lantern != 0,
+            actor_system.comic_has_gems != 0,
+            actor_system.comic_has_crown != 0,
+            actor_system.comic_has_gold != 0,
+            comic_jump_power
+        );
+        SDL_RenderSetScale(renderer, 1.0f, 1.0f);
+        SDL_RenderSetViewport(renderer, nullptr);
+
+        SDL_RenderPresent(renderer);
+    };
+
+    auto play_beam_out_sequence = [&]() {
+        if (!materialize_sprites_loaded || quit) {
+            return;
+        }
+
+        play_game_sound(GameSound::MATERIALIZE);
+
+        for (size_t frame = materialize_sprites.size(); frame > 0; --frame) {
+            const size_t sprite_index = frame - 1;
+            const bool show_comic = sprite_index > 6;
+            render_beam_in_frame(show_comic, materialize_sprites[sprite_index]);
+            if (!wait_beam_in_tick(BEAM_IN_TICK_MS)) {
+                return;
+            }
+        }
+
+        if (!quit) {
+            render_beam_in_frame(false, nullptr);
+            wait_beam_in_tick(BEAM_IN_TICK_MS);
+        }
+    };
+
+    auto render_fullscreen_texture = [&](SDL_Texture* texture) {
+        if (!texture) {
+            return;
+        }
+
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+        SDL_Rect dst = g_graphics->compute_letterbox_rect(renderer);
+        SDL_RenderCopy(renderer, texture, nullptr, &dst);
+        SDL_RenderPresent(renderer);
+    };
+
+    auto load_fullscreen_texture = [&](const char* filename) -> SDL_Texture* {
+        const std::string path = g_graphics->get_asset_path(filename);
+        SDL_Surface* surface = IMG_Load(path.c_str());
+        if (!surface) {
+            std::cerr << "Victory sequence: failed to load " << filename
+                      << " (" << IMG_GetError() << ")" << std::endl;
+            return nullptr;
+        }
+
+        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+        SDL_FreeSurface(surface);
+        if (!texture) {
+            std::cerr << "Victory sequence: failed to create texture for " << filename
+                      << " (" << SDL_GetError() << ")" << std::endl;
+            return nullptr;
+        }
+        return texture;
+    };
+
+    auto wait_for_new_keypress = [&]() -> bool {
+        // Drain queued input so the player must press a fresh key, matching DOS flow.
+        while (SDL_PollEvent(&e) != 0) {
+            if (e.type == SDL_QUIT) {
+                quit = true;
+                return false;
+            }
+        }
+
+        while (!quit) {
+            while (SDL_PollEvent(&e) != 0) {
+                if (e.type == SDL_QUIT) {
+                    quit = true;
+                    return false;
+                }
+                if (e.type == SDL_KEYDOWN && e.key.repeat == 0) {
+                    return true;
+                }
+            }
+            SDL_Delay(1);
+        }
+
+        return false;
+    };
+
+    auto play_victory_sequence = [&]() {
+        play_beam_out_sequence();
+        if (quit) {
+            return;
+        }
+
+        clear_gameplay_key_states();
+
+        // Base victory bonus: 20,000 points as ten 2,000-point tally steps.
+        for (int step = 0; step < 10 && !quit; ++step) {
+            play_game_sound(GameSound::ITEM_COLLECT);
+            award_points(20);
+            render_beam_in_frame(false, nullptr);
+            wait_beam_in_tick(BEAM_IN_TICK_MS);
+        }
+
+        // Remaining lives bonus: 10,000 points per life, then decrement one life icon.
+        while (comic_num_lives > 0 && !quit) {
+            for (int step = 0; step < 10 && !quit; ++step) {
+                play_game_sound(GameSound::ITEM_COLLECT);
+                award_points(10);
+                render_beam_in_frame(false, nullptr);
+                wait_beam_in_tick(BEAM_IN_TICK_MS);
+            }
+
+            comic_num_lives--;
+            render_beam_in_frame(false, nullptr);
+            wait_beam_in_tick(BEAM_IN_TICK_MS * 3);
+        }
+
+        play_game_music(GameMusic::TITLE);
+
+        SDL_Texture* victory_texture = load_fullscreen_texture("sys002.ega.png");
+        if (victory_texture && !quit) {
+            render_fullscreen_texture(victory_texture);
+            wait_beam_in_tick(BEAM_IN_TICK_MS * 20);
+            wait_for_new_keypress();
+        }
+
+        stop_game_music();
+
+        SDL_Texture* high_scores_texture = load_fullscreen_texture("sys005.ega.png");
+        if (high_scores_texture && !quit) {
+            render_fullscreen_texture(high_scores_texture);
+            wait_for_new_keypress();
+        }
+
+        if (victory_texture) {
+            SDL_DestroyTexture(victory_texture);
+        }
+        if (high_scores_texture) {
+            SDL_DestroyTexture(high_scores_texture);
+        }
+    };
+
+    if (materialize_sprites_loaded && !quit) {
+        for (int frame = 0; frame < 15; ++frame) {
+            render_beam_in_frame(false, nullptr);
+            if (!wait_beam_in_tick(BEAM_IN_TICK_MS)) {
+                break;
+            }
+        }
+
+        if (!quit) {
+            play_game_sound(GameSound::MATERIALIZE);
+
+            for (size_t frame = 0; frame < materialize_sprites.size(); ++frame) {
+                bool show_comic = frame > 6;
+                render_beam_in_frame(show_comic, materialize_sprites[frame]);
+                if (!wait_beam_in_tick(BEAM_IN_TICK_MS)) {
+                    break;
+                }
+            }
+        }
+
+        if (!quit) {
+            render_beam_in_frame(true, nullptr);
+            wait_beam_in_tick(BEAM_IN_TICK_MS);
+        }
+
+        clear_gameplay_key_states();
+    }
 
     while (!quit) {
         uint32_t current_time = SDL_GetTicks();
@@ -450,6 +733,17 @@ int main(int argc, char* argv[]) {
                     : nullptr;
                 actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x, key_state_fire);
                 ui_system.update();
+
+                if (!beam_out_sequence_played && actor_system.comic_num_treasures >= 3) {
+                    beam_out_sequence_played = true;
+                    clear_gameplay_key_states();
+                    tick_accumulator = 0.0;
+                    play_victory_sequence();
+
+                    // Match original flow: game_end_sequence terminates after high scores.
+                    quit = true;
+                    break;
+                }
                 
                 // Lives count-up sequence: award 5 lives with 1-tick delay between each,
                 // then subtract 1 (the life currently in use)
