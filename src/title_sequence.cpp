@@ -721,6 +721,12 @@ static bool key_is_already_assigned(const InputBindings& bindings,
         }
     }
 
+    // Teleport is persisted even though gameplay does not consume it yet.
+    // Reserve it here so saved mappings stay valid on next startup load.
+    if (bindings.teleport == key) {
+        return true;
+    }
+
     return false;
 }
 
