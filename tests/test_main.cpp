@@ -768,66 +768,74 @@ static void reset_score_bytes() {
 }
 
 static void test_award_points_no_carry() {
-    // award_points(3) adds 3 units into score_bytes[1] (= 300 displayed points)
+    // award_points(3) adds 3 units into score_bytes[0] (= 300 displayed points)
     reset_score_bytes();
     award_points(3);
-    check(score_bytes[0] == 0, "award_points: score_bytes[0] should not be modified");
-    check(score_bytes[1] == 3, "award_points: 3 units should add 3 to score_bytes[1]");
+    check(score_bytes[0] == 3, "award_points: 3 units should add 3 to score_bytes[0]");
+    check(score_bytes[1] == 0, "award_points: no carry into score_bytes[1] expected");
     check(score_bytes[2] == 0, "award_points: no carry into score_bytes[2] expected");
 }
 
-static void test_award_points_score_bytes0_untouched() {
-    // score_bytes[0] must never be modified by award_points
+static void test_award_points_accumulates_in_byte0() {
+    // score_bytes[0] is the primary accumulation byte.
     reset_score_bytes();
     score_bytes[0] = 42;
     award_points(5);
-    check(score_bytes[0] == 42, "award_points: score_bytes[0] must remain unchanged");
-    check(score_bytes[1] == 5,  "award_points: 5 units should add 5 to score_bytes[1]");
+    check(score_bytes[0] == 47, "award_points: 5 units should add to score_bytes[0]");
+    check(score_bytes[1] == 0,  "award_points: no carry into score_bytes[1] expected");
 }
 
-static void test_award_points_carry_into_byte2() {
-    // score_bytes[1] = 90, award_points(20): sum = 110, carry = 1
+static void test_award_points_carry_into_byte1() {
+    // score_bytes[0] = 90, award_points(20): sum = 110, carry = 1
     reset_score_bytes();
-    score_bytes[1] = 90;
+    score_bytes[0] = 90;
     award_points(20);
-    check(score_bytes[1] == 10, "award_points: score_bytes[1] should be 10 after wrap");
-    check(score_bytes[2] == 1,  "award_points: carry of 1 should propagate into score_bytes[2]");
+    check(score_bytes[0] == 10, "award_points: score_bytes[0] should be 10 after wrap");
+    check(score_bytes[1] == 1,  "award_points: carry of 1 should propagate into score_bytes[1]");
+    check(score_bytes[2] == 0,  "award_points: no carry into score_bytes[2] expected");
 }
 
 static void test_award_points_full_carry_amount() {
-    // award_points(200) from zero: carry = 2 (not just 1)
+    // award_points(200) from zero: carry = 2 into score_bytes[1]
     reset_score_bytes();
     award_points(200);
-    check(score_bytes[1] == 0, "award_points: 200 mod 100 should leave score_bytes[1] = 0");
-    check(score_bytes[2] == 2, "award_points: full carry of 2 should reach score_bytes[2]");
+    check(score_bytes[0] == 0, "award_points: 200 mod 100 should leave score_bytes[0] = 0");
+    check(score_bytes[1] == 2, "award_points: full carry of 2 should reach score_bytes[1]");
+    check(score_bytes[2] == 0, "award_points: no carry into score_bytes[2] expected");
 }
 
 static void test_award_points_large_value_above_255() {
-    // Values > 255 must not be truncated (old bug: points & 0xFF)
-    // award_points(300): sum = 300, carry = 3, score_bytes[2] = 3
+    // Values > 255 must not be truncated.
+    // award_points(300): sum = 300, carry = 3, score_bytes[1] = 3
     reset_score_bytes();
     award_points(300);
-    check(score_bytes[1] == 0, "award_points: 300 mod 100 should leave score_bytes[1] = 0");
-    check(score_bytes[2] == 3, "award_points: carry of 3 should reach score_bytes[2] (no 8-bit truncation)");
+    check(score_bytes[0] == 0, "award_points: 300 mod 100 should leave score_bytes[0] = 0");
+    check(score_bytes[1] == 3, "award_points: carry of 3 should reach score_bytes[1] (no 8-bit truncation)");
+    check(score_bytes[2] == 0, "award_points: no carry into score_bytes[2] expected");
 }
 
 static void test_award_points_max_score_saturation() {
-    // With score_bytes[2] already at 99 any carry should clamp, not overflow
+    // Overflow beyond score_bytes[2] should saturate the entire score to 99:99:99.
     reset_score_bytes();
-    score_bytes[1] = 50;
+    score_bytes[0] = 50;
+    score_bytes[1] = 99;
     score_bytes[2] = 99;
-    award_points(60);  // sum=110, carry=1 → high = 99+1 = 100 → clamp to 99
-    check(score_bytes[1] == 10, "award_points: score_bytes[1] should wrap to 10");
+    award_points(60);  // would overflow top byte; saturate to max
+    check(score_bytes[0] == 99, "award_points: score_bytes[0] should saturate at 99");
+    check(score_bytes[1] == 99, "award_points: score_bytes[1] should saturate at 99");
     check(score_bytes[2] == 99, "award_points: score_bytes[2] should saturate at 99");
 }
 
 static void test_award_points_large_carry_saturation() {
-    // Large carry against a full byte[2] must also stay at 99
+    // Large carry against a full top byte must saturate to max score.
     reset_score_bytes();
+    score_bytes[0] = 99;
+    score_bytes[1] = 99;
     score_bytes[2] = 99;
-    award_points(300);  // carry=3, high=102 → clamp to 99
-    check(score_bytes[2] == 99,
-          "award_points: large carry into full score_bytes[2] should clamp to 99");
+    award_points(300);
+    check(score_bytes[0] == 99, "award_points: score_bytes[0] should remain saturated at 99");
+    check(score_bytes[1] == 99, "award_points: score_bytes[1] should remain saturated at 99");
+    check(score_bytes[2] == 99, "award_points: score_bytes[2] should remain saturated at 99");
 }
 
 // ============================================================================
@@ -1837,8 +1845,8 @@ static const std::vector<TestCase>& test_registry() {
         {"actor_behavior_bounce_movement", test_actor_behavior_bounce_movement},
         {"actor_restraint_throttling", test_actor_restraint_throttling},
         {"award_points_no_carry", test_award_points_no_carry},
-        {"award_points_score_bytes0_untouched", test_award_points_score_bytes0_untouched},
-        {"award_points_carry_into_byte2", test_award_points_carry_into_byte2},
+        {"award_points_accumulates_in_byte0", test_award_points_accumulates_in_byte0},
+        {"award_points_carry_into_byte1", test_award_points_carry_into_byte1},
         {"award_points_full_carry_amount", test_award_points_full_carry_amount},
         {"award_points_large_value_above_255", test_award_points_large_value_above_255},
         {"award_points_max_score_saturation", test_award_points_max_score_saturation},

@@ -241,7 +241,7 @@ protected:
 
 /* Award points to the player's score.
  * Each unit represents 100 displayed points; points are added into
- * score_bytes[1] with full carry propagation into score_bytes[2]. */
+ * score_bytes[0] with full carry propagation into score_bytes[1]/[2]. */
 void award_points(uint16_t points);
 
 #endif /* ACTORS_H */

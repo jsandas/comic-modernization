@@ -22,23 +22,38 @@ extern uint8_t score_bytes[3];
  * Total score = byte[0] + (byte[1] * 100) + (byte[2] * 10000), max 999,999
  * 
  * Each unit of input represents 100 displayed points, mapping directly into
- * score_bytes[1] (the 100s/1000s byte). score_bytes[0] is not affected.
+ * score_bytes[0] (the least-significant base-100 byte).
  * Example: award_points(3) adds 300 points
  *          award_points(20) adds 2000 points
  */
 void award_points(uint16_t points) {
-    // points units each represent 100 displayed points, so they map directly
-    // into score_bytes[1] (the hundreds/thousands byte). score_bytes[0] is unchanged.
-    uint16_t sum = static_cast<uint16_t>(score_bytes[1]) + points;
-    if (sum >= 100) {
-        uint16_t carry = sum / 100;
-        score_bytes[1] = static_cast<uint8_t>(sum % 100);
-        // Propagate full carry into byte[2], clamping at 99 (max score 999,999)
-        uint16_t high = static_cast<uint16_t>(score_bytes[2]) + carry;
-        score_bytes[2] = (high >= 100) ? static_cast<uint8_t>(99) : static_cast<uint8_t>(high);
-    } else {
-        score_bytes[1] = static_cast<uint8_t>(sum);
+    // Points map to the least-significant base-100 byte and carry upward.
+    uint16_t sum0 = static_cast<uint16_t>(score_bytes[0]) + points;
+    score_bytes[0] = static_cast<uint8_t>(sum0 % 100);
+
+    uint16_t carry = sum0 / 100;
+    if (carry == 0) {
+        return;
     }
+
+    uint16_t sum1 = static_cast<uint16_t>(score_bytes[1]) + carry;
+    score_bytes[1] = static_cast<uint8_t>(sum1 % 100);
+
+    carry = sum1 / 100;
+    if (carry == 0) {
+        return;
+    }
+
+    uint16_t high = static_cast<uint16_t>(score_bytes[2]) + carry;
+    if (high >= 100) {
+        // Saturate to max representable score.
+        score_bytes[0] = 99;
+        score_bytes[1] = 99;
+        score_bytes[2] = 99;
+        return;
+    }
+
+    score_bytes[2] = static_cast<uint8_t>(high);
 }
 
 /**
