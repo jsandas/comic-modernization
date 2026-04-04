@@ -709,9 +709,24 @@ static std::vector<std::string> build_keyboard_setup_lines(const InputBindings& 
     return lines;
 }
 
+static SDL_Keycode canonicalize_binding_key(SDL_Keycode key) {
+    switch (key) {
+        case SDLK_RCTRL:
+            return SDLK_LCTRL;
+        case SDLK_RALT:
+            return SDLK_LALT;
+        case SDLK_RSHIFT:
+            return SDLK_LSHIFT;
+        default:
+            return key;
+    }
+}
+
 static bool key_is_already_assigned(const InputBindings& bindings,
                                     SDL_Keycode key,
                                     int current_action_index) {
+    const SDL_Keycode canonical_key = canonicalize_binding_key(key);
+
     const SDL_Keycode keys[] = {
         bindings.move_left,
         bindings.move_right,
@@ -724,14 +739,14 @@ static bool key_is_already_assigned(const InputBindings& bindings,
         if (i == current_action_index) {
             continue;
         }
-        if (keys[i] == key) {
+        if (canonicalize_binding_key(keys[i]) == canonical_key) {
             return true;
         }
     }
 
     // Teleport is persisted even though gameplay does not consume it yet.
     // Reserve it here so saved mappings stay valid on next startup load.
-    if (bindings.teleport == key) {
+    if (canonicalize_binding_key(bindings.teleport) == canonical_key) {
         return true;
     }
 
