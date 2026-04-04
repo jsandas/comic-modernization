@@ -142,30 +142,54 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    SDL_Window* window = SDL_CreateWindow("Captain Comic", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_SHOWN);
+    SDL_Window* window = nullptr;
+    SDL_Renderer* renderer = nullptr;
+
+    auto cleanup_and_exit = [&](int code) {
+        g_actor_system = nullptr;
+
+        if (g_cheats) {
+            delete g_cheats;
+            g_cheats = nullptr;
+        }
+
+        cleanup_title_sequence();
+
+        if (g_graphics) {
+            delete g_graphics;
+            g_graphics = nullptr;
+        }
+
+        shutdown_audio_system();
+
+        if (renderer) {
+            SDL_DestroyRenderer(renderer);
+        }
+        if (window) {
+            SDL_DestroyWindow(window);
+        }
+
+        SDL_Quit();
+        return code;
+    };
+
+    window = SDL_CreateWindow("Captain Comic", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_SHOWN);
     if (window == nullptr) {
         std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
-        SDL_Quit();
-        return 1;
+        return cleanup_and_exit(1);
     }
 
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (renderer == nullptr) {
         std::cerr << "Renderer could not be created! SDL_Error: " << SDL_GetError() << std::endl;
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
+        return cleanup_and_exit(1);
     }
 
     // Initialize graphics system
     g_graphics = new GraphicsSystem(renderer);
     if (!g_graphics->initialize()) {
         std::cerr << "Graphics system initialization failed!" << std::endl;
-        delete g_graphics;
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
+        return cleanup_and_exit(1);
     }
 
     if (!initialize_audio_system()) {
@@ -179,24 +203,12 @@ int main(int argc, char* argv[]) {
     // Both are skipped with --skip-title for faster iteration during development.
     if (!skip_title) {
         if (!run_startup_notice(renderer, g_graphics)) {
-            cleanup_title_sequence();
-            delete g_graphics;
-            shutdown_audio_system();
-            SDL_DestroyRenderer(renderer);
-            SDL_DestroyWindow(window);
-            SDL_Quit();
-            return 0;
+            return cleanup_and_exit(0);
         }
 
         if (!run_title_sequence(renderer, g_graphics)) {
             // User quit during title sequence
-            cleanup_title_sequence();
-            delete g_graphics;
-            shutdown_audio_system();
-            SDL_DestroyRenderer(renderer);
-            SDL_DestroyWindow(window);
-            SDL_Quit();
-            return 0;
+            return cleanup_and_exit(0);
         }
     }
 
@@ -229,11 +241,7 @@ int main(int argc, char* argv[]) {
         for (const char* dir : directions) {
             if (!g_graphics->load_sprite(sprite, dir)) {
                 std::cerr << "Failed to load sprite: " << sprite << " (" << dir << ")" << std::endl;
-                delete g_graphics;
-                SDL_DestroyRenderer(renderer);
-                SDL_DestroyWindow(window);
-                SDL_Quit();
-                return 1;
+                return cleanup_and_exit(1);
             }
         }
     }
@@ -242,11 +250,7 @@ int main(int argc, char* argv[]) {
         std::string death_sprite = "comic_death_" + std::to_string(i);
         if (!g_graphics->load_sprite(death_sprite, "")) {
             std::cerr << "Failed to load sprite: " << death_sprite << std::endl;
-            delete g_graphics;
-            SDL_DestroyRenderer(renderer);
-            SDL_DestroyWindow(window);
-            SDL_Quit();
-            return 1;
+            return cleanup_and_exit(1);
         }
     }
 
@@ -1053,14 +1057,5 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Cleanup
-    g_actor_system = nullptr;  // Clear pointer before actor_system goes out of scope
-    delete g_cheats;
-    cleanup_title_sequence();
-    delete g_graphics;
-    shutdown_audio_system();
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-    return 0;
+    return cleanup_and_exit(0);
 }
