@@ -798,12 +798,12 @@ if (comic_num_treasures == 3) {
 ---
 
 **Remaining Tasks (Phase 7.3+):**
-- [ ] Implement menus from game_main.c
+- [x] Implement menus from game_main.c
   - [x] Startup notice (initial acknowledgement screen)
-  - [ ] High scores screen (leaderboard display)
+  - [x] High scores screen (leaderboard display)
   - [x] Keyboard setup menu (control configuration)
   - [x] Pause menu (in-game pause functionality)
-- [ ] Port special sequences
+- [x] Port special sequences
   - [x] Beam-in animation (entering level/stage)
   - [x] Beam-out animation (exiting level/stage to victory)
   - [x] Death animation (player death sequence)
@@ -831,11 +831,11 @@ if (comic_num_treasures == 3) {
   - ✅ HP meter (6 cells) reflects player health
   - ✅ Fireball meter (6 cells) shows charge with half/full states
   - ✅ Inventory items (9 items) appear when collected with animations
-- [ ] All menus are functional and match original
-- [ ] Startup notice and high scores screens work
-- [ ] Pause menu functions properly
-- [ ] Beam-in/beam-out animations play correctly
-- [ ] Death and victory sequences work
+- ✅ All menus are functional and match original
+- ✅ Startup notice and high scores screens work
+- ✅ Pause menu functions properly
+- ✅ Beam-in/beam-out animations play correctly
+- ✅ Death and victory sequences work
 - [ ] Game state transitions are smooth
 
 ---
