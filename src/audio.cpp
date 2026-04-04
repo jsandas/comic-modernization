@@ -80,6 +80,34 @@ constexpr int FREQ_DEATH_4 = 582;   // 0x0800
 constexpr int FREQ_DEATH_5 = 291;   // 0x1000
 constexpr int FREQ_DEATH_6 = 194;   // 0x1800
 
+// "Too bad" sound (SOUND_TOO_BAD in original C code): 130, 146, 130, 160 Hz
+constexpr int FREQ_TOO_BAD_1 = 130;
+constexpr int FREQ_TOO_BAD_2 = 146;
+constexpr int FREQ_TOO_BAD_3 = 160;
+
+// Materialize sound frequency sweep
+constexpr int FREQ_MATERIALIZE_94 = 94;
+constexpr int FREQ_MATERIALIZE_95 = 95;
+constexpr int FREQ_MATERIALIZE_96 = 96;
+constexpr int FREQ_MATERIALIZE_97 = 97;
+constexpr int FREQ_MATERIALIZE_98 = 98;
+constexpr int FREQ_MATERIALIZE_99 = 99;
+constexpr int FREQ_MATERIALIZE_100 = 100;
+constexpr int FREQ_MATERIALIZE_105 = 105;
+constexpr int FREQ_MATERIALIZE_110 = 110;
+constexpr int FREQ_MATERIALIZE_125 = 125;
+constexpr int FREQ_MATERIALIZE_150 = 150;
+constexpr int FREQ_MATERIALIZE_200 = 200;
+constexpr int FREQ_MATERIALIZE_210 = 210;
+constexpr int FREQ_MATERIALIZE_220 = 220;
+constexpr int FREQ_MATERIALIZE_230 = 230;
+constexpr int FREQ_MATERIALIZE_240 = 240;
+constexpr int FREQ_MATERIALIZE_250 = 250;
+constexpr int FREQ_MATERIALIZE_300 = 300;
+constexpr int FREQ_MATERIALIZE_400 = 400;
+constexpr int FREQ_MATERIALIZE_600 = 600;
+constexpr int FREQ_MATERIALIZE_900 = 900;
+
 
 
 // ===== Sound Definition Structure =====
@@ -123,8 +151,19 @@ static const std::vector<FrequencyNote> SOUND_PLAYER_DIE_SEQUENCE = {
 };
 
 static const std::vector<FrequencyNote> SOUND_GAME_OVER_SEQUENCE = {
-    {NOTE_B3, 2}, {NOTE_C4, 4}, {NOTE_D4, 2}, {NOTE_E4, 6}, {NOTE_G4, 7},
-    {NOTE_FS4, 5}, {NOTE_E4, 2}, {NOTE_D4, 4}, {NOTE_E4, 15}
+    {FREQ_TOO_BAD_1, 5}, {FREQ_TOO_BAD_2, 5},
+    {FREQ_TOO_BAD_1, 5}, {FREQ_TOO_BAD_3, 10}
+};
+
+static const std::vector<FrequencyNote> SOUND_MATERIALIZE_SEQUENCE = {
+    {FREQ_MATERIALIZE_200, 1}, {FREQ_MATERIALIZE_220, 1}, {FREQ_MATERIALIZE_210, 1},
+    {FREQ_MATERIALIZE_230, 1}, {FREQ_MATERIALIZE_220, 1}, {FREQ_MATERIALIZE_240, 1},
+    {FREQ_MATERIALIZE_900, 1}, {FREQ_MATERIALIZE_600, 1}, {FREQ_MATERIALIZE_400, 1},
+    {FREQ_MATERIALIZE_300, 1}, {FREQ_MATERIALIZE_250, 1}, {FREQ_MATERIALIZE_200, 1},
+    {FREQ_MATERIALIZE_150, 1}, {FREQ_MATERIALIZE_125, 1}, {FREQ_MATERIALIZE_110, 1},
+    {FREQ_MATERIALIZE_105, 1}, {FREQ_MATERIALIZE_100, 1}, {FREQ_MATERIALIZE_99, 1},
+    {FREQ_MATERIALIZE_98, 1}, {FREQ_MATERIALIZE_97, 1}, {FREQ_MATERIALIZE_96, 1},
+    {FREQ_MATERIALIZE_95, 1}, {FREQ_MATERIALIZE_94, 1}
 };
 
 static const std::vector<FrequencyNote> SOUND_TELEPORT_SEQUENCE = {
@@ -187,6 +226,7 @@ constexpr std::array<uint8_t, static_cast<size_t>(GameSound::COUNT)> SOUND_PRIOR
     8,   // PLAYER_HIT
     9,   // PLAYER_DIE
     2,   // GAME_OVER
+    4,   // MATERIALIZE
     7,   // TELEPORT
 }};
 
@@ -309,6 +349,8 @@ static const std::vector<FrequencyNote>* get_sound_sequence(GameSound sound) {
             return &SOUND_PLAYER_DIE_SEQUENCE;
         case GameSound::GAME_OVER:
             return &SOUND_GAME_OVER_SEQUENCE;
+        case GameSound::MATERIALIZE:
+            return &SOUND_MATERIALIZE_SEQUENCE;
         case GameSound::TELEPORT:
             return &SOUND_TELEPORT_SEQUENCE;
         default:

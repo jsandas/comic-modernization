@@ -1,6 +1,8 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <iostream>
 #include <cstring>
+#include <array>
 #include "../include/physics.h"
 #include "../include/graphics.h"
 #include "../include/level_loader.h"
@@ -53,7 +55,7 @@ uint8_t comic_y_checkpoint = 12;  // Y position to respawn at
 uint8_t comic_x_checkpoint = 14;  // X position to respawn at
 
 // Game state
-bool game_over_triggered = false;  // Flag to track if game-over sound has been played
+bool game_over_triggered = false;  // Set when life depletion should transition to game-over sequence
 
 // Global system pointers (for access from other modules)
 ActorSystem* g_actor_system = nullptr;  // Actor system pointer (for cheat access)
@@ -70,6 +72,7 @@ Animation comic_run_right;
 Animation comic_run_left;
 Animation comic_jump_right;
 Animation comic_jump_left;
+Animation comic_death;
 Animation* current_animation = nullptr;
 
 void process_door_input() {
@@ -82,6 +85,37 @@ void process_door_input() {
     }
     
     previous_key_state_open = key_state_open;
+}
+
+void clear_gameplay_key_states() {
+    key_state_jump = 0;
+    previous_key_state_jump = 0;
+    key_state_left = 0;
+    key_state_right = 0;
+    key_state_open = 0;
+    previous_key_state_open = 0;
+    key_state_fire = 0;
+}
+
+static bool key_matches_binding(SDL_Keycode key, SDL_Keycode binding) {
+    if (key == binding) {
+        return true;
+    }
+
+    // Treat left/right modifier variants as one DOS-style key class.
+    switch (binding) {
+        case SDLK_LCTRL:
+        case SDLK_RCTRL:
+            return key == SDLK_LCTRL || key == SDLK_RCTRL;
+        case SDLK_LALT:
+        case SDLK_RALT:
+            return key == SDLK_LALT || key == SDLK_RALT;
+        case SDLK_LSHIFT:
+        case SDLK_RSHIFT:
+            return key == SDLK_LSHIFT || key == SDLK_RSHIFT;
+        default:
+            return false;
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -108,48 +142,73 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    SDL_Window* window = SDL_CreateWindow("Captain Comic", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_SHOWN);
+    SDL_Window* window = nullptr;
+    SDL_Renderer* renderer = nullptr;
+
+    auto cleanup_and_exit = [&](int code) {
+        g_actor_system = nullptr;
+
+        if (g_cheats) {
+            delete g_cheats;
+            g_cheats = nullptr;
+        }
+
+        cleanup_title_sequence();
+
+        if (g_graphics) {
+            delete g_graphics;
+            g_graphics = nullptr;
+        }
+
+        shutdown_audio_system();
+
+        if (renderer) {
+            SDL_DestroyRenderer(renderer);
+        }
+        if (window) {
+            SDL_DestroyWindow(window);
+        }
+
+        SDL_Quit();
+        return code;
+    };
+
+    window = SDL_CreateWindow("Captain Comic", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 640, 480, SDL_WINDOW_SHOWN);
     if (window == nullptr) {
         std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
-        SDL_Quit();
-        return 1;
+        return cleanup_and_exit(1);
     }
 
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (renderer == nullptr) {
         std::cerr << "Renderer could not be created! SDL_Error: " << SDL_GetError() << std::endl;
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
+        return cleanup_and_exit(1);
     }
 
     // Initialize graphics system
     g_graphics = new GraphicsSystem(renderer);
     if (!g_graphics->initialize()) {
         std::cerr << "Graphics system initialization failed!" << std::endl;
-        delete g_graphics;
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        return 1;
+        return cleanup_and_exit(1);
     }
 
     if (!initialize_audio_system()) {
         std::cerr << "Warning: Audio system initialization failed. Continuing without sound." << std::endl;
     }
 
-    // Run title sequence (title screen, story, items screen)
-    // Skipped with --skip-title flag for faster iteration during development
+    // Load persisted key bindings if KEYS.DEF is present.
+    load_input_bindings_from_file();
+
+    // Run startup notice and title sequence.
+    // Both are skipped with --skip-title for faster iteration during development.
     if (!skip_title) {
+        if (!run_startup_notice(renderer, g_graphics)) {
+            return cleanup_and_exit(0);
+        }
+
         if (!run_title_sequence(renderer, g_graphics)) {
             // User quit during title sequence
-            cleanup_title_sequence();
-            delete g_graphics;
-            shutdown_audio_system();
-            SDL_DestroyRenderer(renderer);
-            SDL_DestroyWindow(window);
-            SDL_Quit();
-            return 0;
+            return cleanup_and_exit(0);
         }
     }
 
@@ -182,14 +241,44 @@ int main(int argc, char* argv[]) {
         for (const char* dir : directions) {
             if (!g_graphics->load_sprite(sprite, dir)) {
                 std::cerr << "Failed to load sprite: " << sprite << " (" << dir << ")" << std::endl;
-                delete g_graphics;
-                SDL_DestroyRenderer(renderer);
-                SDL_DestroyWindow(window);
-                SDL_Quit();
-                return 1;
+                return cleanup_and_exit(1);
             }
         }
     }
+
+    for (int i = 0; i < 8; ++i) {
+        std::string death_sprite = "comic_death_" + std::to_string(i);
+        if (!g_graphics->load_sprite(death_sprite, "")) {
+            std::cerr << "Failed to load sprite: " << death_sprite << std::endl;
+            return cleanup_and_exit(1);
+        }
+    }
+
+    std::array<Sprite*, 12> materialize_sprites = {};
+    bool materialize_sprites_loaded = true;
+    for (size_t i = 0; i < materialize_sprites.size(); ++i) {
+        std::string materialize_name = "materialize_" + std::to_string(i);
+        if (!g_graphics->load_sprite(materialize_name, "")) {
+            std::cerr << "Warning: Could not load beam-in sprite: " << materialize_name << std::endl;
+            materialize_sprites_loaded = false;
+        }
+        materialize_sprites[i] = g_graphics->get_sprite(materialize_name, "");
+        if (!materialize_sprites[i]) {
+            materialize_sprites_loaded = false;
+        }
+    }
+
+    if (!g_graphics->load_sprite("pause", "")) {
+        std::cerr << "Warning: Could not load pause sprite (sprite-pause.png)."
+                  << std::endl;
+    }
+    Sprite* pause_sprite = g_graphics->get_sprite("pause", "");
+
+    if (!g_graphics->load_sprite("game_over", "")) {
+        std::cerr << "Warning: Could not load game-over sprite (sprite-game_over.png)."
+                  << std::endl;
+    }
+    Sprite* game_over_sprite = g_graphics->get_sprite("game_over", "");
 
     // Load fireball sprites
     if (!actor_system.load_fireball_sprites(g_graphics)) {
@@ -205,10 +294,22 @@ int main(int argc, char* argv[]) {
         {"comic_running_1", "comic_running_2", "comic_running_3"}, "left", 100, true);
     comic_jump_right = g_graphics->create_animation({"comic_jumping"}, "right", 100, true);
     comic_jump_left = g_graphics->create_animation({"comic_jumping"}, "left", 100, true);
+    comic_death = g_graphics->create_animation(
+        {
+            "comic_death_0", "comic_death_1", "comic_death_2", "comic_death_3",
+            "comic_death_4", "comic_death_5", "comic_death_6", "comic_death_7"
+        },
+        "",
+        110,
+        false
+    );
 
     current_animation = &comic_idle_right;
 
     bool quit = false;
+    bool paused = false;
+    bool pause_waiting_for_escape_release = false;
+    bool beam_out_sequence_played = false;
     SDL_Event e;
 
     // Initialize all level data (tile data is compiled-in as hex arrays)
@@ -263,6 +364,315 @@ int main(int argc, char* argv[]) {
     uint32_t last_tick_time = SDL_GetTicks();
     double tick_accumulator = 0.0;
 
+    // Keep special sequences on the same cadence as gameplay logic for
+    // faithful pacing in this implementation.
+    constexpr double ANIMATION_TICK_MS = MS_PER_TICK;
+    auto wait_animation_ticks = [&](int ticks) -> bool {
+        const uint32_t duration_ms = static_cast<uint32_t>(ANIMATION_TICK_MS * ticks + 0.5);
+        uint32_t start = SDL_GetTicks();
+        while (SDL_GetTicks() - start < duration_ms) {
+            while (SDL_PollEvent(&e) != 0) {
+                if (e.type == SDL_QUIT) {
+                    quit = true;
+                    return false;
+                }
+            }
+            SDL_Delay(1);
+        }
+        return true;
+    };
+
+    auto render_beam_in_frame = [&](bool show_comic, Sprite* materialize_sprite) {
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+
+        SDL_Rect gameplay_frame_rect = g_graphics->compute_letterbox_rect(renderer);
+
+        SDL_Texture* hud_texture = get_hud_texture();
+        if (hud_texture) {
+            SDL_RenderCopy(renderer, hud_texture, nullptr, &gameplay_frame_rect);
+        }
+
+        const float letterbox_scale = static_cast<float>(gameplay_frame_rect.w) / EGA_WIDTH;
+        const int render_scale = (letterbox_scale < 0.125f)
+            ? 1
+            : static_cast<int>(8.0f * letterbox_scale + 0.5f);
+
+        SDL_Rect playfield_viewport;
+        playfield_viewport.x = gameplay_frame_rect.x + static_cast<int>(8 * letterbox_scale);
+        playfield_viewport.y = gameplay_frame_rect.y + static_cast<int>(8 * letterbox_scale);
+        playfield_viewport.w = static_cast<int>(192 * letterbox_scale);
+        playfield_viewport.h = static_cast<int>(160 * letterbox_scale);
+        SDL_RenderSetViewport(renderer, &playfield_viewport);
+
+        const int OFFSCREEN_MARGIN_UNITS = 2;
+        const int min_visible_x = camera_x - OFFSCREEN_MARGIN_UNITS;
+        const int max_visible_x = camera_x + PLAYFIELD_WIDTH + OFFSCREEN_MARGIN_UNITS;
+
+        for (int ty = 0; ty < MAP_HEIGHT_TILES; ty++) {
+            for (int tx = 0; tx < MAP_WIDTH_TILES; tx++) {
+                int world_x = tx * 2;
+                if (world_x + 2 > min_visible_x && world_x < max_visible_x) {
+                    uint8_t tile = get_tile_at(tx * 2, ty * 2);
+                    int screen_x = (world_x - camera_x) * render_scale;
+                    int screen_y = ty * 2 * render_scale;
+                    g_graphics->render_tile(screen_x, screen_y, cached_tileset, tile, render_scale);
+                }
+            }
+        }
+
+        actor_system.render_item(g_graphics, camera_x, render_scale);
+
+        const int comic_screen_x = (comic_x - camera_x) * render_scale + render_scale;
+        const int comic_screen_y = comic_y * render_scale + render_scale * 2;
+        const int comic_width = render_scale * 2;
+        const int comic_height = render_scale * 4;
+
+        if (show_comic) {
+            AnimationFrame* frame = g_graphics->get_current_frame(*current_animation);
+            if (frame) {
+                g_graphics->render_sprite_centered_scaled(
+                    comic_screen_x,
+                    comic_screen_y,
+                    frame->sprite,
+                    comic_width,
+                    comic_height);
+            }
+        }
+
+        if (materialize_sprite) {
+            g_graphics->render_sprite_centered_scaled(
+                comic_screen_x,
+                comic_screen_y,
+                *materialize_sprite,
+                comic_width,
+                comic_height);
+        }
+
+        SDL_RenderSetViewport(renderer, &gameplay_frame_rect);
+        SDL_RenderSetScale(renderer, letterbox_scale, letterbox_scale);
+        ui_system.render_hud(
+            score_bytes,
+            comic_num_lives,
+            comic_hp,
+            actor_system.fireball_meter,
+            actor_system.comic_firepower,
+            actor_system.comic_has_corkscrew != 0,
+            comic_has_door_key != 0,
+            actor_system.comic_has_teleport_wand != 0,
+            actor_system.comic_has_lantern != 0,
+            actor_system.comic_has_gems != 0,
+            actor_system.comic_has_crown != 0,
+            actor_system.comic_has_gold != 0,
+            comic_jump_power
+        );
+        SDL_RenderSetScale(renderer, 1.0f, 1.0f);
+        SDL_RenderSetViewport(renderer, nullptr);
+
+        SDL_RenderPresent(renderer);
+    };
+
+    auto play_beam_out_sequence = [&]() {
+        if (!materialize_sprites_loaded || quit) {
+            return;
+        }
+
+        play_game_sound(GameSound::MATERIALIZE);
+
+        render_beam_in_frame(true, nullptr);
+        if (!wait_animation_ticks(1)) {
+            return;
+        }
+
+        for (size_t frame = materialize_sprites.size(); frame > 0; --frame) {
+            const size_t sprite_index = frame - 1;
+            const bool show_comic = sprite_index >= 6;
+            render_beam_in_frame(show_comic, materialize_sprites[sprite_index]);
+            if (!wait_animation_ticks(1)) {
+                return;
+            }
+        }
+
+        if (!quit) {
+            render_beam_in_frame(false, nullptr);
+            wait_animation_ticks(6);
+        }
+    };
+
+    auto render_fullscreen_texture = [&](SDL_Texture* texture) {
+        if (!texture) {
+            return;
+        }
+
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
+        SDL_Rect dst = g_graphics->compute_letterbox_rect(renderer);
+        SDL_RenderCopy(renderer, texture, nullptr, &dst);
+        SDL_RenderPresent(renderer);
+    };
+
+    auto load_fullscreen_texture = [&](const char* filename) -> SDL_Texture* {
+        const std::string path = g_graphics->get_asset_path(filename);
+        SDL_Surface* surface = IMG_Load(path.c_str());
+        if (!surface) {
+            std::cerr << "Victory sequence: failed to load " << filename
+                      << " (" << IMG_GetError() << ")" << std::endl;
+            return nullptr;
+        }
+
+        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+        SDL_FreeSurface(surface);
+        if (!texture) {
+            std::cerr << "Victory sequence: failed to create texture for " << filename
+                      << " (" << SDL_GetError() << ")" << std::endl;
+            return nullptr;
+        }
+        return texture;
+    };
+
+    auto wait_for_new_keypress = [&]() -> bool {
+        // Drain queued input so the player must press a fresh key, matching DOS flow.
+        while (SDL_PollEvent(&e) != 0) {
+            if (e.type == SDL_QUIT) {
+                quit = true;
+                return false;
+            }
+        }
+
+        while (!quit) {
+            while (SDL_PollEvent(&e) != 0) {
+                if (e.type == SDL_QUIT) {
+                    quit = true;
+                    return false;
+                }
+                if (e.type == SDL_KEYDOWN && e.key.repeat == 0) {
+                    return true;
+                }
+            }
+            SDL_Delay(1);
+        }
+
+        return false;
+    };
+
+    auto play_victory_sequence = [&]() {
+        play_beam_out_sequence();
+        if (quit) {
+            return;
+        }
+
+        clear_gameplay_key_states();
+
+        // Base victory bonus: 20,000 points as twenty 1,000-point tally steps.
+        for (int step = 0; step < 20 && !quit; ++step) {
+            play_game_sound(GameSound::ITEM_COLLECT);
+            award_points(1000);
+            render_beam_in_frame(false, nullptr);
+            wait_animation_ticks(1);
+        }
+
+        // Remaining lives bonus: 10,000 points per life, then decrement one life icon.
+        while (comic_num_lives > 0 && !quit) {
+            for (int step = 0; step < 10 && !quit; ++step) {
+                play_game_sound(GameSound::ITEM_COLLECT);
+                award_points(1000);
+                render_beam_in_frame(false, nullptr);
+                wait_animation_ticks(1);
+            }
+
+            comic_num_lives--;
+            render_beam_in_frame(false, nullptr);
+            wait_animation_ticks(3);
+        }
+
+        play_game_music(GameMusic::TITLE);
+
+        SDL_Texture* victory_texture = load_fullscreen_texture("sys002.ega.png");
+        if (victory_texture && !quit) {
+            render_fullscreen_texture(victory_texture);
+            wait_animation_ticks(20);
+            wait_for_new_keypress();
+        }
+
+        stop_game_music();
+
+        if (!quit) {
+            if (!run_high_scores_screen(renderer, g_graphics, score_bytes)) {
+                quit = true;
+            }
+        }
+
+        if (victory_texture) {
+            SDL_DestroyTexture(victory_texture);
+        }
+    };
+
+    auto play_game_over_sequence = [&]() {
+        clear_gameplay_key_states();
+        paused = false;
+        pause_waiting_for_escape_release = false;
+
+        render_beam_in_frame(false, nullptr);
+
+        if (game_over_sprite && !quit) {
+            SDL_Rect gameplay_frame_rect = g_graphics->compute_letterbox_rect(renderer);
+            const float letterbox_scale = static_cast<float>(gameplay_frame_rect.w) / EGA_WIDTH;
+
+            const int game_over_x_ega = 40;
+            const int game_over_y_ega = 64;
+            const int game_over_width_ega = 128;
+            const int game_over_height_ega = 48;
+
+            SDL_Rect game_over_rect = {
+                gameplay_frame_rect.x + static_cast<int>(game_over_x_ega * letterbox_scale),
+                gameplay_frame_rect.y + static_cast<int>(game_over_y_ega * letterbox_scale),
+                static_cast<int>(game_over_width_ega * letterbox_scale),
+                static_cast<int>(game_over_height_ega * letterbox_scale)
+            };
+            SDL_RenderCopy(renderer, game_over_sprite->texture.texture, nullptr, &game_over_rect);
+            SDL_RenderPresent(renderer);
+        }
+
+        if (!quit) {
+            wait_animation_ticks(1);
+            wait_for_new_keypress();
+        }
+
+        if (!quit) {
+            if (!run_high_scores_screen(renderer, g_graphics, score_bytes)) {
+                quit = true;
+            }
+        }
+    };
+
+    if (materialize_sprites_loaded && !quit) {
+        for (int frame = 0; frame < 15; ++frame) {
+            render_beam_in_frame(false, nullptr);
+            if (!wait_animation_ticks(1)) {
+                break;
+            }
+        }
+
+        if (!quit) {
+            play_game_sound(GameSound::MATERIALIZE);
+
+            for (size_t frame = 0; frame < materialize_sprites.size(); ++frame) {
+                bool show_comic = frame >= 6;
+                render_beam_in_frame(show_comic, materialize_sprites[frame]);
+                if (!wait_animation_ticks(1)) {
+                    break;
+                }
+            }
+        }
+
+        if (!quit) {
+            render_beam_in_frame(true, nullptr);
+            wait_animation_ticks(1);
+        }
+
+        clear_gameplay_key_states();
+    }
+
     while (!quit) {
         uint32_t current_time = SDL_GetTicks();
         uint32_t delta_time = current_time - last_tick_time;
@@ -276,134 +686,224 @@ int main(int argc, char* argv[]) {
             if (e.type == SDL_QUIT) {
                 quit = true;
             } else if (e.type == SDL_KEYDOWN) {
+                const InputBindings& bindings = get_input_bindings();
+                const SDL_Keycode key = e.key.keysym.sym;
+
+                if (paused) {
+                    if (key == SDLK_ESCAPE && e.key.repeat == 0 &&
+                        pause_waiting_for_escape_release) {
+                        continue;
+                    }
+
+                    if (pause_waiting_for_escape_release || e.key.repeat != 0) {
+                        continue;
+                    }
+
+                    if (key == SDLK_q) {
+                        quit = true;
+                    }
+
+                    paused = false;
+                    clear_gameplay_key_states();
+                    tick_accumulator = 0.0;
+                    continue;
+                }
+
+                if (key == SDLK_ESCAPE && e.key.repeat == 0) {
+                    paused = true;
+                    pause_waiting_for_escape_release = true;
+                    clear_gameplay_key_states();
+                    tick_accumulator = 0.0;
+                    continue;
+                }
+
                 // Process regular gameplay keys
-                switch (e.key.keysym.sym) {
-                    case SDLK_LEFT: key_state_left = 1; break;
-                    case SDLK_RIGHT: key_state_right = 1; break;
-                    case SDLK_SPACE: key_state_jump = 1; break;
-                    case SDLK_LCTRL:
-                    case SDLK_RCTRL: key_state_fire = 1; break;
+
+                if (key_matches_binding(key, bindings.move_left)) {
+                    key_state_left = 1;
+                }
+                if (key_matches_binding(key, bindings.move_right)) {
+                    key_state_right = 1;
+                }
+                if (key_matches_binding(key, bindings.jump)) {
+                    key_state_jump = 1;
+                }
+                if (key_matches_binding(key, bindings.fire)) {
+                    key_state_fire = 1;
+                }
+                if (key_matches_binding(key, bindings.open_door)) {
+                    key_state_open = 1;
                 }
                 
                 // Process cheat keys (only active if --debug flag set)
                 g_cheats->process_input(e.key.keysym.sym);
             } else if (e.type == SDL_KEYUP) {
-                switch (e.key.keysym.sym) {
-                    case SDLK_LEFT: key_state_left = 0; break;
-                    case SDLK_RIGHT: key_state_right = 0; break;
-                    case SDLK_SPACE: key_state_jump = 0; break;
-                    case SDLK_LCTRL:
-                    case SDLK_RCTRL: key_state_fire = 0; break;
+                const InputBindings& bindings = get_input_bindings();
+                const SDL_Keycode key = e.key.keysym.sym;
+
+                if (paused) {
+                    if (key == SDLK_ESCAPE) {
+                        pause_waiting_for_escape_release = false;
+                    }
+                    continue;
+                }
+
+                if (key_matches_binding(key, bindings.move_left)) {
+                    key_state_left = 0;
+                }
+                if (key_matches_binding(key, bindings.move_right)) {
+                    key_state_right = 0;
+                }
+                if (key_matches_binding(key, bindings.jump)) {
+                    key_state_jump = 0;
+                }
+                if (key_matches_binding(key, bindings.fire)) {
+                    key_state_fire = 0;
+                }
+                if (key_matches_binding(key, bindings.open_door)) {
+                    key_state_open = 0;
                 }
             }
         }
-
-        // Update Alt key state using modifier mask (supports either left or right Alt)
-        key_state_open = (SDL_GetModState() & KMOD_ALT) ? 1 : 0;
 
         // Process physics ticks at ~9.1 Hz (original game speed)
         // This decouples physics from rendering rate
-        int ticks_processed = 0;
-        while (tick_accumulator >= MS_PER_TICK && ticks_processed < MAX_TICKS_PER_FRAME) {
-            tick_accumulator -= MS_PER_TICK;
-            ticks_processed++;
+        if (!paused) {
+            int ticks_processed = 0;
+            while (tick_accumulator >= MS_PER_TICK && ticks_processed < MAX_TICKS_PER_FRAME) {
+                tick_accumulator -= MS_PER_TICK;
+                ticks_processed++;
 
-            // Process jump input once per tick (edge-triggered)
-            process_jump_input();
+                if (is_player_dying()) {
+                    update_player_death_sequence();
+                    ui_system.update();
 
-            // Process door input once per tick (edge-triggered)
-            process_door_input();
-
-            // Update jump power from item system (boots affect jump height)
-            comic_jump_power = static_cast<uint8_t>(actor_system.get_jump_power());
-
-            // Update physics (once per tick)
-            handle_fall_or_jump();
-
-            // Ground movement (only when not in air)
-            if (!comic_is_falling_or_jumping) {
-                if (key_state_left) {
-                    move_left();
-                }
-                if (key_state_right) {
-                    move_right();
-                }
-            }
-
-            const uint8_t* tiles = current_level_ptr
-                ? current_level_ptr->stages[current_stage_number].tiles
-                : nullptr;
-            actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x, key_state_fire);
-            ui_system.update();
-            
-            // Lives count-up sequence: award 5 lives with 1-tick delay between each,
-            // then subtract 1 (the life currently in use)
-            if (!lives_sequence_complete) {
-                if (lives_sequence_counter > 0) {
-                    lives_sequence_delay--;
-                    if (lives_sequence_delay == 0) {
-                        // Award a life
-                        comic_num_lives++;
-                        lives_sequence_counter--;
-                        
-                        if (lives_sequence_counter > 0) {
-                            // Still more lives to award (wait 1 tick)
-                            lives_sequence_delay = 1;
-                        } else {
-                            // Awarded all 5, wait 3 ticks then subtract 1
-                            lives_sequence_delay = 3;
-                        }
+                    if (game_over_triggered) {
+                        play_game_over_sequence();
+                        quit = true;
+                        break;
                     }
-                } else if (lives_sequence_delay > 0) {
-                    // Waiting 3 ticks after awarding all 5 lives
-                    lives_sequence_delay--;
-                    if (lives_sequence_delay == 0) {
-                        // Subtract 1 life (currently in use: 5→4)
-                        if (comic_num_lives > 0) {
-                            comic_num_lives--;
-                        }
-                        lives_sequence_complete = true;
+                    continue;
+                }
+
+                // Process jump input once per tick (edge-triggered)
+                process_jump_input();
+
+                // Process door input once per tick (edge-triggered)
+                process_door_input();
+
+                // Update jump power from item system (boots affect jump height)
+                comic_jump_power = static_cast<uint8_t>(actor_system.get_jump_power());
+
+                // Update physics (once per tick)
+                handle_fall_or_jump();
+
+                // Ground movement (only when not in air)
+                if (!comic_is_falling_or_jumping) {
+                    if (key_state_left) {
+                        move_left();
+                    }
+                    if (key_state_right) {
+                        move_right();
                     }
                 }
-            }
-            
-            // Gradually fill HP from 0 to MAX_HP at game startup
-            // Each tick, increment HP if pending increase is scheduled
-            if (comic_hp_pending_increase > 0) {
-                comic_hp_pending_increase--;
-                if (comic_hp < MAX_HP) {
-                    comic_hp++;
+
+                const uint8_t* tiles = current_level_ptr
+                    ? current_level_ptr->stages[current_stage_number].tiles
+                    : nullptr;
+                actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x, key_state_fire);
+                ui_system.update();
+
+                if (!beam_out_sequence_played && actor_system.comic_num_treasures >= 3) {
+                    beam_out_sequence_played = true;
+                    clear_gameplay_key_states();
+                    tick_accumulator = 0.0;
+                    play_victory_sequence();
+
+                    // Match original flow: game_end_sequence terminates after high scores.
+                    quit = true;
+                    break;
                 }
+                
+                // Lives count-up sequence: award 5 lives with 1-tick delay between each,
+                // then subtract 1 (the life currently in use)
+                if (!lives_sequence_complete) {
+                    if (lives_sequence_counter > 0) {
+                        lives_sequence_delay--;
+                        if (lives_sequence_delay == 0) {
+                            // Award a life
+                            comic_num_lives++;
+                            lives_sequence_counter--;
+                            
+                            if (lives_sequence_counter > 0) {
+                                // Still more lives to award (wait 1 tick)
+                                lives_sequence_delay = 1;
+                            } else {
+                                // Awarded all 5, wait 3 ticks then subtract 1
+                                lives_sequence_delay = 3;
+                            }
+                        }
+                    } else if (lives_sequence_delay > 0) {
+                        // Waiting 3 ticks after awarding all 5 lives
+                        lives_sequence_delay--;
+                        if (lives_sequence_delay == 0) {
+                            // Subtract 1 life (currently in use: 5→4)
+                            if (comic_num_lives > 0) {
+                                comic_num_lives--;
+                            }
+                            lives_sequence_complete = true;
+                        }
+                    }
+                }
+                
+                // Gradually fill HP from 0 to MAX_HP at game startup
+                // Each tick, increment HP if pending increase is scheduled
+                if (comic_hp_pending_increase > 0) {
+                    comic_hp_pending_increase--;
+                    if (comic_hp < MAX_HP) {
+                        comic_hp++;
+                    }
+                }
+                
+                // Fireball meter charging is handled by ActorSystem::update()
+                // (charges at 1 unit per 2 ticks when not firing)
+                
+                // Game-over is handled by physics when Comic hits the bottom of playfield
+                // (sound triggered there).  No additional check needed here.
             }
-            
-            // Fireball meter charging is handled by ActorSystem::update()
-            // (charges at 1 unit per 2 ticks when not firing)
-            
-            // Game-over is handled by physics when Comic hits the bottom of playfield
-            // (sound triggered there).  No additional check needed here.
+        } else {
+            tick_accumulator = 0.0;
+        }
+
+        if (quit) {
+            break;
         }
 
         // Update animation based on state (updates every frame for smooth animation)
-        current_time = SDL_GetTicks();
-        Animation* previous_animation = current_animation;
-        if (comic_is_falling_or_jumping) {
-            current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
-        } else {
-            if (key_state_left || key_state_right) {
-                current_animation = comic_facing ? &comic_run_right : &comic_run_left;
+        if (!paused) {
+            current_time = SDL_GetTicks();
+            Animation* previous_animation = current_animation;
+            if (is_player_dying()) {
+                current_animation = should_show_player_death_animation() ? &comic_death : nullptr;
+            } else if (comic_is_falling_or_jumping) {
+                current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
             } else {
-                current_animation = comic_facing ? &comic_idle_right : &comic_idle_left;
+                if (key_state_left || key_state_right) {
+                    current_animation = comic_facing ? &comic_run_right : &comic_run_left;
+                } else {
+                    current_animation = comic_facing ? &comic_idle_right : &comic_idle_left;
+                }
             }
-        }
 
-        // Reset animation state when switching to a new animation
-        if (current_animation && current_animation != previous_animation) {
-            current_animation->current_frame = 0;
-            current_animation->frame_start_time = current_time;
-        }
+            // Reset animation state when switching to a new animation
+            if (current_animation && current_animation != previous_animation) {
+                current_animation->current_frame = 0;
+                current_animation->frame_start_time = current_time;
+            }
 
-        if (current_animation) {
-            g_graphics->update_animation(*current_animation, current_time);
+            if (current_animation) {
+                g_graphics->update_animation(*current_animation, current_time);
+            }
         }
 
         // Clear screen with black background
@@ -530,6 +1030,22 @@ int main(int argc, char* argv[]) {
         );
         SDL_RenderSetScale(renderer, 1.0f, 1.0f);
         SDL_RenderSetViewport(renderer, nullptr);
+
+        if (paused && pause_sprite) {
+            const int pause_x_ega = 40;
+            const int pause_y_ega = 64;
+            const int pause_width_ega = 128;
+            const int pause_height_ega = 48;
+
+            SDL_Rect pause_rect = {
+                gameplay_frame_rect.x + static_cast<int>(pause_x_ega * letterbox_scale),
+                gameplay_frame_rect.y + static_cast<int>(pause_y_ega * letterbox_scale),
+                static_cast<int>(pause_width_ega * letterbox_scale),
+                static_cast<int>(pause_height_ega * letterbox_scale)
+            };
+            SDL_RenderCopy(renderer, pause_sprite->texture.texture, nullptr, &pause_rect);
+        }
+
         // Present
         SDL_RenderPresent(renderer);
 
@@ -541,14 +1057,5 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Cleanup
-    g_actor_system = nullptr;  // Clear pointer before actor_system goes out of scope
-    delete g_cheats;
-    cleanup_title_sequence();
-    delete g_graphics;
-    shutdown_audio_system();
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-    return 0;
+    return cleanup_and_exit(0);
 }

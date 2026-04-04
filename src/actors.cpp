@@ -6,6 +6,7 @@
 
 // Global door key flag defined in main.cpp (used by doors.cpp)
 extern uint8_t comic_has_door_key;
+extern uint8_t comic_hp;
 
 // Score bytes from main.cpp for award_points()
 extern uint8_t score_bytes[3];
@@ -20,24 +21,37 @@ extern uint8_t score_bytes[3];
  *   score_bytes[2] = ten-thousands/hundred-thousands (0-99)
  * Total score = byte[0] + (byte[1] * 100) + (byte[2] * 10000), max 999,999
  * 
- * Each unit of input represents 100 displayed points, mapping directly into
- * score_bytes[1] (the 100s/1000s byte). score_bytes[0] is not affected.
- * Example: award_points(3) adds 300 points
- *          award_points(20) adds 2000 points
+ * Input points are literal displayed points.
+ * Example: award_points(300) adds 300 points.
  */
 void award_points(uint16_t points) {
-    // points units each represent 100 displayed points, so they map directly
-    // into score_bytes[1] (the hundreds/thousands byte). score_bytes[0] is unchanged.
-    uint16_t sum = static_cast<uint16_t>(score_bytes[1]) + points;
-    if (sum >= 100) {
-        uint16_t carry = sum / 100;
-        score_bytes[1] = static_cast<uint8_t>(sum % 100);
-        // Propagate full carry into byte[2], clamping at 99 (max score 999,999)
-        uint16_t high = static_cast<uint16_t>(score_bytes[2]) + carry;
-        score_bytes[2] = (high >= 100) ? static_cast<uint8_t>(99) : static_cast<uint8_t>(high);
-    } else {
-        score_bytes[1] = static_cast<uint8_t>(sum);
+    // Points map to the least-significant base-100 byte and carry upward.
+    uint16_t sum0 = static_cast<uint16_t>(score_bytes[0]) + points;
+    score_bytes[0] = static_cast<uint8_t>(sum0 % 100);
+
+    uint16_t carry = sum0 / 100;
+    if (carry == 0) {
+        return;
     }
+
+    uint16_t sum1 = static_cast<uint16_t>(score_bytes[1]) + carry;
+    score_bytes[1] = static_cast<uint8_t>(sum1 % 100);
+
+    carry = sum1 / 100;
+    if (carry == 0) {
+        return;
+    }
+
+    uint16_t high = static_cast<uint16_t>(score_bytes[2]) + carry;
+    if (high >= 100) {
+        // Saturate to max representable score.
+        score_bytes[0] = 99;
+        score_bytes[1] = 99;
+        score_bytes[2] = 99;
+        return;
+    }
+
+    score_bytes[2] = static_cast<uint8_t>(high);
 }
 
 /**
@@ -162,8 +176,11 @@ void ActorSystem::setup_enemies_for_stage(
 
         // Check if slot is used
         if ((record.behavior & ~ENEMY_BEHAVIOR_FAST) >= ENEMY_BEHAVIOR_UNUSED) {
+            enemy.behavior = ENEMY_BEHAVIOR_UNUSED;
             enemy.state = ENEMY_STATE_DESPAWNED;
             enemy.spawn_timer_and_animation = 100;
+            enemy.sprite_descriptor = nullptr;
+            enemy.num_animation_frames = 0;
             enemy.animation_data = nullptr;
             continue;
         }
@@ -356,6 +373,11 @@ void ActorSystem::update(
             update_enemy_animation(&enemy);
             handle_single_enemy(i);
             check_enemy_despawn(&enemy);
+
+            if (enemy.state != ENEMY_STATE_SPAWNED) {
+                continue;
+            }
+
             check_enemy_player_collision(&enemy);
         }
     }
@@ -555,6 +577,14 @@ void ActorSystem::check_enemy_despawn(enemy_t* enemy) {
 void ActorSystem::check_enemy_player_collision(enemy_t* enemy) {
     if (!enemy) return;
 
+    if (enemy->state != ENEMY_STATE_SPAWNED) {
+        return;
+    }
+
+    if (is_player_dying()) {
+        return;
+    }
+
     int16_t x_diff = static_cast<int16_t>(static_cast<int>(enemy->x) - static_cast<int>(g_comic_x));
     int16_t y_diff = static_cast<int16_t>(static_cast<int>(enemy->y) - static_cast<int>(g_comic_y));
 
@@ -562,7 +592,14 @@ void ActorSystem::check_enemy_player_collision(enemy_t* enemy) {
     if (x_diff >= -1 && x_diff <= 1 && y_diff >= 0 && y_diff < 4) {
         // Collision! Start red spark death animation
         enemy->state = ENEMY_STATE_RED_SPARK;
-        // TODO: Handle damage to Comic (shield loss, HP loss, or death)
+
+        // Shield absorbs six hits (HP 6 -> 0); next hit at 0 HP kills Comic.
+        if (comic_hp > 0) {
+            comic_hp--;
+            play_game_sound(GameSound::PLAYER_HIT);
+        } else {
+            trigger_player_death();
+        }
     }
 }
 
@@ -1307,7 +1344,7 @@ void ActorSystem::handle_fireballs() {
             enemy.state = ENEMY_STATE_WHITE_SPARK;
             fb.x = FIREBALL_DEAD;
             fb.y = FIREBALL_DEAD;
-            award_points(3);  // Award 300 points for killing an enemy with a fireball
+            award_points(300);  // Award 300 points for killing an enemy with a fireball
             play_game_sound(GameSound::ENEMY_HIT);
             break; // Fireball consumed; check next fireball
         }
@@ -1472,7 +1509,7 @@ void ActorSystem::collect_item() {
     // Mark as collected
     items_collected[current_level_index][current_stage_index] = 1;
 
-    // TODO: Award points (2000 = 20 × 100)
+    // TODO: Award points (2000)
     play_game_sound(GameSound::ITEM_COLLECT);
 
     // Apply item effect

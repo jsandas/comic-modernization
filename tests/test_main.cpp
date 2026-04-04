@@ -12,6 +12,7 @@
 #include "../include/doors.h"
 #include "../include/actors.h"
 #include "../include/audio.h"
+#include "../include/title_sequence.h"
 #include "../include/ui_system.h"
 
 #if defined(HAVE_SDL2_MIXER)
@@ -86,6 +87,10 @@ ActorSystem* g_actor_system = nullptr;
 
 // Game-over flag used by physics module (shared with main.cpp)
 bool game_over_triggered = false;
+uint8_t comic_num_lives = 0;
+
+// Player shield/HP state used by actor collision logic
+uint8_t comic_hp = MAX_HP;
 
 // Score bytes (used by award_points()) - base-100 encoding
 uint8_t score_bytes[3] = {0, 0, 0};
@@ -355,6 +360,121 @@ static void test_jump_height() {
           "default jump height should be 7 units (got " + std::to_string(default_height) + ")");
     check(boots_height == 9,
           "boots jump height should be 9 units (got " + std::to_string(boots_height) + ")");
+}
+
+static void advance_death_sequence_until_complete(int max_ticks = 128) {
+    for (int i = 0; i < max_ticks && is_player_dying(); ++i) {
+        update_player_death_sequence();
+    }
+}
+
+static void test_player_death_sequence_respawn() {
+    reset_physics_state();
+    game_over_triggered = false;
+    comic_num_lives = 3;
+    comic_hp = 1;
+    comic_x = 50;
+    comic_y = 9;
+    comic_x_momentum = 3;
+    comic_y_vel = 4;
+    comic_is_falling_or_jumping = 0;
+    comic_jump_counter = 0;
+    key_state_jump = 1;
+    previous_key_state_jump = 1;
+    comic_x_checkpoint = 22;
+    comic_y_checkpoint = 12;
+
+    trigger_player_death(true);
+    check(is_player_dying(), "death: player should enter dying state after trigger");
+    check(should_show_player_death_animation(),
+        "death: animation phase should be active immediately after trigger");
+
+    int animation_ticks = 0;
+    while (is_player_dying() && should_show_player_death_animation() && animation_ticks < 64) {
+        update_player_death_sequence();
+        animation_ticks++;
+    }
+
+    check(animation_ticks > 0, "death: animation phase should consume at least one tick");
+    check(is_player_dying() && !should_show_player_death_animation(),
+        "death: sequence should transition into too-bad wait phase");
+
+    advance_death_sequence_until_complete();
+
+    check(!is_player_dying(), "death: sequence should complete for respawn path");
+    check(comic_num_lives == 2, "death: lives should decrement by one on respawn path");
+    check(!game_over_triggered, "death: game_over flag should remain false when lives remain");
+    check(comic_x == comic_x_checkpoint && comic_y == comic_y_checkpoint,
+        "death: respawn path should restore checkpoint position");
+    check(comic_hp == MAX_HP, "death: respawn path should restore full HP");
+    check(comic_is_falling_or_jumping == 1,
+        "death: respawn path should place player into falling state");
+    check(comic_jump_counter == comic_jump_power,
+        "death: respawn path should reset jump counter to jump power");
+    check(key_state_jump == 0 && previous_key_state_jump == 0,
+        "death: respawn path should clear jump input edge state");
+}
+
+static void test_player_death_sequence_game_over() {
+    reset_physics_state();
+    game_over_triggered = false;
+    comic_num_lives = 1;
+    comic_hp = 2;
+    comic_x = 41;
+    comic_y = 8;
+    comic_x_checkpoint = 20;
+    comic_y_checkpoint = 12;
+
+    trigger_player_death(false);
+    check(is_player_dying(), "game_over: player should enter dying state");
+    check(!should_show_player_death_animation(),
+        "game_over: animation visibility should be off when trigger requested no animation");
+
+    advance_death_sequence_until_complete();
+
+    check(!is_player_dying(), "game_over: death sequence should finish");
+    check(comic_num_lives == 0, "game_over: lives should decrement to zero");
+    check(game_over_triggered, "game_over: zero lives should trigger game-over flag");
+    check(comic_x == 41 && comic_y == 8,
+        "game_over: zero-lives path should not respawn to checkpoint");
+    check(comic_hp == 2, "game_over: zero-lives path should not reset HP");
+}
+
+static void test_high_score_bytes_conversion() {
+    // Zero score
+    const uint8_t s0[3] = {0, 0, 0};
+    check(score_bytes_to_uint32(s0) == 0u,
+          "high_score: zero score should be 0");
+
+    // Maximum score: bytes[2]=99, bytes[1]=99, bytes[0]=99 → 99*10000 + 99*100 + 99 = 999999
+    const uint8_t s1[3] = {99, 99, 99};
+    check(score_bytes_to_uint32(s1) == 999999u,
+          "high_score: max score {99,99,99} should be 999999");
+
+    // Only byte[0] set: 50
+    const uint8_t s2[3] = {50, 0, 0};
+    check(score_bytes_to_uint32(s2) == 50u,
+          "high_score: bytes={50,0,0} should be 50");
+
+    // Only byte[1] set: 50*100 = 5000
+    const uint8_t s3[3] = {0, 50, 0};
+    check(score_bytes_to_uint32(s3) == 5000u,
+          "high_score: bytes={0,50,0} should be 5000");
+
+    // Only byte[2] set: 10*10000 = 100000
+    const uint8_t s4[3] = {0, 0, 10};
+    check(score_bytes_to_uint32(s4) == 100000u,
+          "high_score: bytes={0,0,10} should be 100000");
+
+    // Mixed: 5*10000 + 10*100 + 20 = 51020
+    const uint8_t s5[3] = {20, 10, 5};
+    check(score_bytes_to_uint32(s5) == 51020u,
+          "high_score: bytes={20,10,5} should be 51020");
+
+    // Sample score with only middle byte populated.
+    const uint8_t s6[3] = {0, 2, 0};
+    check(score_bytes_to_uint32(s6) == 200u,
+          "high_score: bytes={0,2,0} should be 200");
 }
 
 static void test_door_activation_alignment_x() {
@@ -765,66 +885,75 @@ static void reset_score_bytes() {
 }
 
 static void test_award_points_no_carry() {
-    // award_points(3) adds 3 units into score_bytes[1] (= 300 displayed points)
+    // award_points(3) adds three displayed points.
     reset_score_bytes();
     award_points(3);
-    check(score_bytes[0] == 0, "award_points: score_bytes[0] should not be modified");
-    check(score_bytes[1] == 3, "award_points: 3 units should add 3 to score_bytes[1]");
+    check(score_bytes[0] == 3, "award_points: 3 points should add 3 to score_bytes[0]");
+    check(score_bytes[1] == 0, "award_points: no carry into score_bytes[1] expected");
     check(score_bytes[2] == 0, "award_points: no carry into score_bytes[2] expected");
 }
 
-static void test_award_points_score_bytes0_untouched() {
-    // score_bytes[0] must never be modified by award_points
+static void test_award_points_accumulates_in_byte0() {
+    // score_bytes[0] is the primary accumulation byte for award_points().
     reset_score_bytes();
     score_bytes[0] = 42;
     award_points(5);
-    check(score_bytes[0] == 42, "award_points: score_bytes[0] must remain unchanged");
-    check(score_bytes[1] == 5,  "award_points: 5 units should add 5 to score_bytes[1]");
+    check(score_bytes[0] == 47, "award_points: 5 points should add to score_bytes[0]");
+    check(score_bytes[1] == 0,  "award_points: no carry into score_bytes[1] expected");
+    check(score_bytes[2] == 0,  "award_points: no carry into score_bytes[2] expected");
 }
 
-static void test_award_points_carry_into_byte2() {
-    // score_bytes[1] = 90, award_points(20): sum = 110, carry = 1
+static void test_award_points_carry_into_byte1() {
+    // score_bytes[0] = 90, award_points(20): sum = 110, carry = 1 into byte[1]
     reset_score_bytes();
-    score_bytes[1] = 90;
+    score_bytes[0] = 90;
     award_points(20);
-    check(score_bytes[1] == 10, "award_points: score_bytes[1] should be 10 after wrap");
-    check(score_bytes[2] == 1,  "award_points: carry of 1 should propagate into score_bytes[2]");
+    check(score_bytes[0] == 10, "award_points: score_bytes[0] should wrap to 10");
+    check(score_bytes[1] == 1,  "award_points: carry of 1 should propagate into score_bytes[1]");
+    check(score_bytes[2] == 0,  "award_points: no carry into score_bytes[2] expected");
 }
 
 static void test_award_points_full_carry_amount() {
-    // award_points(200) from zero: carry = 2 (not just 1)
+    // award_points(200) from zero: carry = 2 into score_bytes[1]
     reset_score_bytes();
     award_points(200);
-    check(score_bytes[1] == 0, "award_points: 200 mod 100 should leave score_bytes[1] = 0");
-    check(score_bytes[2] == 2, "award_points: full carry of 2 should reach score_bytes[2]");
+    check(score_bytes[0] == 0, "award_points: 200 mod 100 should leave score_bytes[0] = 0");
+    check(score_bytes[1] == 2, "award_points: full carry of 2 should reach score_bytes[1]");
+    check(score_bytes[2] == 0, "award_points: no carry into score_bytes[2] expected");
 }
 
 static void test_award_points_large_value_above_255() {
-    // Values > 255 must not be truncated (old bug: points & 0xFF)
-    // award_points(300): sum = 300, carry = 3, score_bytes[2] = 3
+    // Values > 255 must not be truncated.
+    // award_points(300): sum = 300, carry = 3, score_bytes[1] = 3
     reset_score_bytes();
     award_points(300);
-    check(score_bytes[1] == 0, "award_points: 300 mod 100 should leave score_bytes[1] = 0");
-    check(score_bytes[2] == 3, "award_points: carry of 3 should reach score_bytes[2] (no 8-bit truncation)");
+    check(score_bytes[0] == 0, "award_points: 300 mod 100 should leave score_bytes[0] = 0");
+    check(score_bytes[1] == 3, "award_points: carry of 3 should reach score_bytes[1] (no 8-bit truncation)");
+    check(score_bytes[2] == 0, "award_points: no carry into score_bytes[2] expected");
 }
 
 static void test_award_points_max_score_saturation() {
-    // With score_bytes[2] already at 99 any carry should clamp, not overflow
+    // Overflow beyond score_bytes[2] should saturate the entire score to 99:99:99.
     reset_score_bytes();
-    score_bytes[1] = 50;
+    score_bytes[0] = 50;
+    score_bytes[1] = 99;
     score_bytes[2] = 99;
-    award_points(60);  // sum=110, carry=1 → high = 99+1 = 100 → clamp to 99
-    check(score_bytes[1] == 10, "award_points: score_bytes[1] should wrap to 10");
+    award_points(60);  // would overflow top byte; saturate to max
+    check(score_bytes[0] == 99, "award_points: score_bytes[0] should saturate at 99");
+    check(score_bytes[1] == 99, "award_points: score_bytes[1] should saturate at 99");
     check(score_bytes[2] == 99, "award_points: score_bytes[2] should saturate at 99");
 }
 
 static void test_award_points_large_carry_saturation() {
-    // Large carry against a full byte[2] must also stay at 99
+    // Large carry against a full top byte must saturate to max score.
     reset_score_bytes();
+    score_bytes[0] = 99;
+    score_bytes[1] = 99;
     score_bytes[2] = 99;
-    award_points(300);  // carry=3, high=102 → clamp to 99
-    check(score_bytes[2] == 99,
-          "award_points: large carry into full score_bytes[2] should clamp to 99");
+    award_points(300);
+    check(score_bytes[0] == 99, "award_points: score_bytes[0] should remain saturated at 99");
+    check(score_bytes[1] == 99, "award_points: score_bytes[1] should remain saturated at 99");
+    check(score_bytes[2] == 99, "award_points: score_bytes[2] should remain saturated at 99");
 }
 
 // ============================================================================
@@ -1811,6 +1940,9 @@ static const std::vector<TestCase>& test_registry() {
         {"jump_edge_trigger", test_jump_edge_trigger},
         {"jump_recharge", test_jump_recharge},
         {"jump_height", test_jump_height},
+        {"player_death_sequence_respawn", test_player_death_sequence_respawn},
+        {"player_death_sequence_game_over", test_player_death_sequence_game_over},
+        {"high_score_bytes_conversion", test_high_score_bytes_conversion},
         {"door_activation_alignment_x", test_door_activation_alignment_x},
         {"door_activation_alignment_y", test_door_activation_alignment_y},
         {"door_key_requirement", test_door_key_requirement},
@@ -1834,8 +1966,8 @@ static const std::vector<TestCase>& test_registry() {
         {"actor_behavior_bounce_movement", test_actor_behavior_bounce_movement},
         {"actor_restraint_throttling", test_actor_restraint_throttling},
         {"award_points_no_carry", test_award_points_no_carry},
-        {"award_points_score_bytes0_untouched", test_award_points_score_bytes0_untouched},
-        {"award_points_carry_into_byte2", test_award_points_carry_into_byte2},
+        {"award_points_accumulates_in_byte0", test_award_points_accumulates_in_byte0},
+        {"award_points_carry_into_byte1", test_award_points_carry_into_byte1},
         {"award_points_full_carry_amount", test_award_points_full_carry_amount},
         {"award_points_large_value_above_255", test_award_points_large_value_above_255},
         {"award_points_max_score_saturation", test_award_points_max_score_saturation},
