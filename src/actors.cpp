@@ -22,24 +22,16 @@ extern uint8_t score_bytes[3];
  * Total score = byte[0] + (byte[1] * 100) + (byte[2] * 10000), max 999,999
  * 
  * Each unit of input represents 100 displayed points, mapping directly into
- * score_bytes[0] (the least-significant base-100 byte).
+ * score_bytes[1] (the hundreds/thousands base-100 byte).
  * Example: award_points(3) adds 300 points
  *          award_points(20) adds 2000 points
  */
 void award_points(uint16_t points) {
-    // Points map to the least-significant base-100 byte and carry upward.
-    uint16_t sum0 = static_cast<uint16_t>(score_bytes[0]) + points;
-    score_bytes[0] = static_cast<uint8_t>(sum0 % 100);
-
-    uint16_t carry = sum0 / 100;
-    if (carry == 0) {
-        return;
-    }
-
-    uint16_t sum1 = static_cast<uint16_t>(score_bytes[1]) + carry;
+    // Points are 100-point units and accumulate in the middle base-100 byte.
+    uint16_t sum1 = static_cast<uint16_t>(score_bytes[1]) + points;
     score_bytes[1] = static_cast<uint8_t>(sum1 % 100);
 
-    carry = sum1 / 100;
+    uint16_t carry = sum1 / 100;
     if (carry == 0) {
         return;
     }

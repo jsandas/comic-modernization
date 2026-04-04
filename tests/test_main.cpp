@@ -474,8 +474,7 @@ static void test_high_score_bytes_conversion() {
     check(score_bytes_to_uint32(s5) == 51020u,
           "high_score: bytes={20,10,5} should be 51020");
 
-    // Typical end-game score: awarded 20 base + some lives bonus
-    // award_points(10) × 20 = byte[1]=2 → 200 points displayed as 000200
+    // Sample score with only middle byte populated.
     const uint8_t s6[3] = {0, 2, 0};
     check(score_bytes_to_uint32(s6) == 200u,
           "high_score: bytes={0,2,0} should be 200");
@@ -889,50 +888,51 @@ static void reset_score_bytes() {
 }
 
 static void test_award_points_no_carry() {
-    // award_points(3) adds 3 units into score_bytes[0] (= 300 displayed points)
+    // award_points(3) adds 3 units into score_bytes[1] (= 300 displayed points)
     reset_score_bytes();
     award_points(3);
-    check(score_bytes[0] == 3, "award_points: 3 units should add 3 to score_bytes[0]");
-    check(score_bytes[1] == 0, "award_points: no carry into score_bytes[1] expected");
+    check(score_bytes[0] == 0, "award_points: score_bytes[0] should remain unchanged");
+    check(score_bytes[1] == 3, "award_points: 3 units should add 3 to score_bytes[1]");
     check(score_bytes[2] == 0, "award_points: no carry into score_bytes[2] expected");
 }
 
-static void test_award_points_accumulates_in_byte0() {
-    // score_bytes[0] is the primary accumulation byte.
+static void test_award_points_accumulates_in_byte1() {
+    // score_bytes[1] is the primary accumulation byte for award_points().
     reset_score_bytes();
-    score_bytes[0] = 42;
+    score_bytes[1] = 42;
     award_points(5);
-    check(score_bytes[0] == 47, "award_points: 5 units should add to score_bytes[0]");
-    check(score_bytes[1] == 0,  "award_points: no carry into score_bytes[1] expected");
-}
-
-static void test_award_points_carry_into_byte1() {
-    // score_bytes[0] = 90, award_points(20): sum = 110, carry = 1
-    reset_score_bytes();
-    score_bytes[0] = 90;
-    award_points(20);
-    check(score_bytes[0] == 10, "award_points: score_bytes[0] should be 10 after wrap");
-    check(score_bytes[1] == 1,  "award_points: carry of 1 should propagate into score_bytes[1]");
+    check(score_bytes[0] == 0,  "award_points: score_bytes[0] should remain unchanged");
+    check(score_bytes[1] == 47, "award_points: 5 units should add to score_bytes[1]");
     check(score_bytes[2] == 0,  "award_points: no carry into score_bytes[2] expected");
 }
 
+static void test_award_points_carry_into_byte2() {
+    // score_bytes[1] = 90, award_points(20): sum = 110, carry = 1 into byte[2]
+    reset_score_bytes();
+    score_bytes[1] = 90;
+    award_points(20);
+    check(score_bytes[0] == 0,  "award_points: score_bytes[0] should remain unchanged");
+    check(score_bytes[1] == 10, "award_points: score_bytes[1] should wrap to 10");
+    check(score_bytes[2] == 1,  "award_points: carry of 1 should propagate into score_bytes[2]");
+}
+
 static void test_award_points_full_carry_amount() {
-    // award_points(200) from zero: carry = 2 into score_bytes[1]
+    // award_points(200) from zero: carry = 2 into score_bytes[2]
     reset_score_bytes();
     award_points(200);
     check(score_bytes[0] == 0, "award_points: 200 mod 100 should leave score_bytes[0] = 0");
-    check(score_bytes[1] == 2, "award_points: full carry of 2 should reach score_bytes[1]");
-    check(score_bytes[2] == 0, "award_points: no carry into score_bytes[2] expected");
+    check(score_bytes[1] == 0, "award_points: 200 mod 100 should leave score_bytes[1] = 0");
+    check(score_bytes[2] == 2, "award_points: full carry of 2 should reach score_bytes[2]");
 }
 
 static void test_award_points_large_value_above_255() {
     // Values > 255 must not be truncated.
-    // award_points(300): sum = 300, carry = 3, score_bytes[1] = 3
+    // award_points(300): sum = 300, carry = 3, score_bytes[2] = 3
     reset_score_bytes();
     award_points(300);
     check(score_bytes[0] == 0, "award_points: 300 mod 100 should leave score_bytes[0] = 0");
-    check(score_bytes[1] == 3, "award_points: carry of 3 should reach score_bytes[1] (no 8-bit truncation)");
-    check(score_bytes[2] == 0, "award_points: no carry into score_bytes[2] expected");
+    check(score_bytes[1] == 0, "award_points: 300 mod 100 should leave score_bytes[1] = 0");
+    check(score_bytes[2] == 3, "award_points: carry of 3 should reach score_bytes[2] (no 8-bit truncation)");
 }
 
 static void test_award_points_max_score_saturation() {
@@ -1969,8 +1969,8 @@ static const std::vector<TestCase>& test_registry() {
         {"actor_behavior_bounce_movement", test_actor_behavior_bounce_movement},
         {"actor_restraint_throttling", test_actor_restraint_throttling},
         {"award_points_no_carry", test_award_points_no_carry},
-        {"award_points_accumulates_in_byte0", test_award_points_accumulates_in_byte0},
-        {"award_points_carry_into_byte1", test_award_points_carry_into_byte1},
+        {"award_points_accumulates_in_byte1", test_award_points_accumulates_in_byte1},
+        {"award_points_carry_into_byte2", test_award_points_carry_into_byte2},
         {"award_points_full_carry_amount", test_award_points_full_carry_amount},
         {"award_points_large_value_above_255", test_award_points_large_value_above_255},
         {"award_points_max_score_saturation", test_award_points_max_score_saturation},
