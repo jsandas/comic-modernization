@@ -592,17 +592,14 @@ int main(int argc, char* argv[]) {
 
         stop_game_music();
 
-        SDL_Texture* high_scores_texture = load_fullscreen_texture("sys005.ega.png");
-        if (high_scores_texture && !quit) {
-            render_fullscreen_texture(high_scores_texture);
-            wait_for_new_keypress();
+        if (!quit) {
+            if (!run_high_scores_screen(renderer, g_graphics, score_bytes)) {
+                quit = true;
+            }
         }
 
         if (victory_texture) {
             SDL_DestroyTexture(victory_texture);
-        }
-        if (high_scores_texture) {
-            SDL_DestroyTexture(high_scores_texture);
         }
     };
 
@@ -637,13 +634,10 @@ int main(int argc, char* argv[]) {
             wait_for_new_keypress();
         }
 
-        SDL_Texture* high_scores_texture = load_fullscreen_texture("sys005.ega.png");
-        if (high_scores_texture && !quit) {
-            render_fullscreen_texture(high_scores_texture);
-            wait_for_new_keypress();
-        }
-        if (high_scores_texture) {
-            SDL_DestroyTexture(high_scores_texture);
+        if (!quit) {
+            if (!run_high_scores_screen(renderer, g_graphics, score_bytes)) {
+                quit = true;
+            }
         }
     };
 

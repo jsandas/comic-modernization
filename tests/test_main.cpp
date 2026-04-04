@@ -439,6 +439,48 @@ static void test_player_death_sequence_game_over() {
     check(comic_hp == 2, "game_over: zero-lives path should not reset HP");
 }
 
+// score_bytes_to_uint32 is declared here for link-time access from title_sequence.cpp.
+// It is not static so the linker can resolve it from the test binary.
+extern uint32_t score_bytes_to_uint32(const uint8_t score_bytes[3]);
+
+static void test_high_score_bytes_conversion() {
+    // Zero score
+    const uint8_t s0[3] = {0, 0, 0};
+    check(score_bytes_to_uint32(s0) == 0u,
+          "high_score: zero score should be 0");
+
+    // Maximum score: bytes[2]=99, bytes[1]=99, bytes[0]=99 → 99*10000 + 99*100 + 99 = 999999
+    const uint8_t s1[3] = {99, 99, 99};
+    check(score_bytes_to_uint32(s1) == 999999u,
+          "high_score: max score {99,99,99} should be 999999");
+
+    // Only byte[0] set: 50
+    const uint8_t s2[3] = {50, 0, 0};
+    check(score_bytes_to_uint32(s2) == 50u,
+          "high_score: bytes={50,0,0} should be 50");
+
+    // Only byte[1] set: 50*100 = 5000
+    const uint8_t s3[3] = {0, 50, 0};
+    check(score_bytes_to_uint32(s3) == 5000u,
+          "high_score: bytes={0,50,0} should be 5000");
+
+    // Only byte[2] set: 10*10000 = 100000
+    const uint8_t s4[3] = {0, 0, 10};
+    check(score_bytes_to_uint32(s4) == 100000u,
+          "high_score: bytes={0,0,10} should be 100000");
+
+    // Mixed: 5*10000 + 10*100 + 20 = 51020
+    const uint8_t s5[3] = {20, 10, 5};
+    check(score_bytes_to_uint32(s5) == 51020u,
+          "high_score: bytes={20,10,5} should be 51020");
+
+    // Typical end-game score: awarded 20 base + some lives bonus
+    // award_points(10) × 20 = byte[1]=2 → 200 points displayed as 000200
+    const uint8_t s6[3] = {0, 2, 0};
+    check(score_bytes_to_uint32(s6) == 200u,
+          "high_score: bytes={0,2,0} should be 200");
+}
+
 static void test_door_activation_alignment_x() {
     reset_door_state();
     level_t* level = create_test_level_with_door(10, 8, 1, 1);
@@ -1903,6 +1945,7 @@ static const std::vector<TestCase>& test_registry() {
         {"jump_height", test_jump_height},
         {"player_death_sequence_respawn", test_player_death_sequence_respawn},
         {"player_death_sequence_game_over", test_player_death_sequence_game_over},
+        {"high_score_bytes_conversion", test_high_score_bytes_conversion},
         {"door_activation_alignment_x", test_door_activation_alignment_x},
         {"door_activation_alignment_y", test_door_activation_alignment_y},
         {"door_key_requirement", test_door_key_requirement},
