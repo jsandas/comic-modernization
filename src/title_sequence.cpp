@@ -1142,50 +1142,55 @@ static std::vector<std::string> build_high_scores_lines(
     return lines;
 }
 
-// Render one frame of the high scores screen.
-// Clears the renderer, draws the background texture (if any), then overlays
-// a semi-transparent block of text, and calls SDL_RenderPresent.
-static void render_high_scores_frame(SDL_Renderer* renderer,
-                                     SDL_Texture* bg_texture,
-                                     TTF_Font* font,
-                                     const std::vector<std::string>& lines)
-{
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
+struct HighScoreRenderedLine {
+    SDL_Texture* tex = nullptr;
+    int w = 0;
+    int h = 0;
+};
 
-    if (bg_texture) {
-        const SDL_Rect dst = GraphicsSystem::compute_letterbox_rect(renderer);
-        SDL_RenderCopy(renderer, bg_texture, nullptr, &dst);
-    }
-
-    if (!font) {
-        SDL_RenderPresent(renderer);
-        return;
-    }
-
-    constexpr SDL_Color COLOR_NORMAL  = {200, 200, 200, 255};
-    constexpr SDL_Color COLOR_TITLE   = {255, 255,   0, 255};
-    constexpr SDL_Color COLOR_NEW     = {255, 200,   0, 255};
-
-    int output_w = 0, output_h = 0;
-    SDL_GetRendererOutputSize(renderer, &output_w, &output_h);
-    const int max_line_width = std::min(output_w - 40, 640);
-
-    // Build per-line textures and measure total extent.
-    struct RenderedLine {
-        SDL_Texture* tex = nullptr;
-        int w = 0;
-        int h = 0;
-    };
-
-    constexpr int LINE_GAP = 2;
-    std::vector<RenderedLine> rendered;
-    rendered.reserve(lines.size());
+struct HighScoreTextCache {
+    std::vector<std::string> lines;
+    std::vector<HighScoreRenderedLine> rendered;
+    int max_line_width = 0;
     int total_h = 0;
     int max_w = 0;
 
+    void clear() {
+        for (HighScoreRenderedLine& line : rendered) {
+            if (line.tex) {
+                SDL_DestroyTexture(line.tex);
+                line.tex = nullptr;
+            }
+        }
+        rendered.clear();
+        lines.clear();
+        max_line_width = 0;
+        total_h = 0;
+        max_w = 0;
+    }
+
+    ~HighScoreTextCache() {
+        clear();
+    }
+};
+
+static void build_high_score_text_cache(SDL_Renderer* renderer,
+                                        TTF_Font* font,
+                                        const std::vector<std::string>& lines,
+                                        int max_line_width,
+                                        HighScoreTextCache& cache) {
+    constexpr SDL_Color COLOR_NORMAL  = {200, 200, 200, 255};
+    constexpr SDL_Color COLOR_TITLE   = {255, 255,   0, 255};
+    constexpr SDL_Color COLOR_NEW     = {255, 200,   0, 255};
+    constexpr int LINE_GAP = 2;
+
+    cache.clear();
+    cache.lines = lines;
+    cache.max_line_width = max_line_width;
+    cache.rendered.reserve(lines.size());
+
     for (size_t i = 0; i < lines.size(); ++i) {
-        RenderedLine rl;
+        HighScoreRenderedLine rl;
         if (lines[i].empty()) {
             rl.h = TTF_FontLineSkip(font) / 2;
         } else {
@@ -1204,10 +1209,49 @@ static void render_high_scores_frame(SDL_Renderer* renderer,
                 SDL_FreeSurface(surf);
             }
         }
-        total_h += rl.h + LINE_GAP;
-        max_w = std::max(max_w, rl.w);
-        rendered.push_back(rl);
+        cache.total_h += rl.h + LINE_GAP;
+        cache.max_w = std::max(cache.max_w, rl.w);
+        cache.rendered.push_back(rl);
     }
+}
+
+// Render one frame of the high scores screen.
+// Clears the renderer, draws the background texture (if any), then overlays
+// a semi-transparent block of text, and calls SDL_RenderPresent.
+static void render_high_scores_frame(SDL_Renderer* renderer,
+                                     SDL_Texture* bg_texture,
+                                     TTF_Font* font,
+                                     const std::vector<std::string>& lines,
+                                     HighScoreTextCache* text_cache = nullptr)
+{
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+
+    if (bg_texture) {
+        const SDL_Rect dst = GraphicsSystem::compute_letterbox_rect(renderer);
+        SDL_RenderCopy(renderer, bg_texture, nullptr, &dst);
+    }
+
+    if (!font) {
+        SDL_RenderPresent(renderer);
+        return;
+    }
+
+    int output_w = 0, output_h = 0;
+    SDL_GetRendererOutputSize(renderer, &output_w, &output_h);
+    const int max_line_width = std::min(output_w - 40, 640);
+
+    HighScoreTextCache local_cache;
+    HighScoreTextCache* cache = text_cache ? text_cache : &local_cache;
+    if (cache->rendered.empty() ||
+        cache->max_line_width != max_line_width ||
+        cache->lines != lines) {
+        build_high_score_text_cache(renderer, font, lines, max_line_width, *cache);
+    }
+
+    constexpr int LINE_GAP = 2;
+    const int total_h = cache->total_h;
+    const int max_w = cache->max_w;
 
     // Draw semi-transparent background box for readability.
     constexpr int PADDING = 12;
@@ -1232,12 +1276,11 @@ static void render_high_scores_frame(SDL_Renderer* renderer,
 
     // Blit each text line, centered horizontally.
     int y = top_y;
-    for (const RenderedLine& rl : rendered) {
+    for (const HighScoreRenderedLine& rl : cache->rendered) {
         if (rl.tex) {
             SDL_Rect dst = {(output_w - rl.w) / 2, y, rl.w, rl.h};
             if (dst.x < 0) dst.x = 0;
             SDL_RenderCopy(renderer, rl.tex, nullptr, &dst);
-            SDL_DestroyTexture(rl.tex);
         }
         y += rl.h + LINE_GAP;
     }
@@ -1262,6 +1305,7 @@ static NameCaptureResult capture_name_input(SDL_Renderer* renderer,
 {
     NameCaptureResult result;
     std::string name;
+    HighScoreTextCache text_cache;
     SDL_StartTextInput();
     SDL_Event e;
     bool done = false;
@@ -1307,7 +1351,7 @@ static NameCaptureResult capture_name_input(SDL_Renderer* renderer,
         const std::string cursor = name.empty() ? "_" : name + "_";
         const std::vector<std::string> display_lines =
             build_high_scores_lines(preview, rank, true, cursor);
-        render_high_scores_frame(renderer, bg_texture, font, display_lines);
+        render_high_scores_frame(renderer, bg_texture, font, display_lines, &text_cache);
         SDL_Delay(16);
     }
 
@@ -1774,6 +1818,7 @@ bool run_high_scores_screen(SDL_Renderer* renderer, GraphicsSystem* graphics,
     const int display_rank = qualifies ? rank : -1;
     const std::vector<std::string> display_lines =
         build_high_scores_lines(scores, display_rank, false, player_name);
+    HighScoreTextCache text_cache;
 
     SDL_Event e;
     bool user_quit = false;
@@ -1792,7 +1837,7 @@ bool run_high_scores_screen(SDL_Renderer* renderer, GraphicsSystem* graphics,
             if (e.type == SDL_KEYDOWN && e.key.repeat == 0) { any_key = true; break; }
         }
         if (!any_key && !user_quit) {
-            render_high_scores_frame(renderer, bg_texture, font, display_lines);
+            render_high_scores_frame(renderer, bg_texture, font, display_lines, &text_cache);
             SDL_Delay(16);
         }
     }
