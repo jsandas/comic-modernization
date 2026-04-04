@@ -653,7 +653,7 @@ int main(int argc, char* argv[]) {
             play_game_sound(GameSound::MATERIALIZE);
 
             for (size_t frame = 0; frame < materialize_sprites.size(); ++frame) {
-                bool show_comic = frame > 6;
+                bool show_comic = frame >= 6;
                 render_beam_in_frame(show_comic, materialize_sprites[frame]);
                 if (!wait_animation_ticks(1)) {
                     break;
