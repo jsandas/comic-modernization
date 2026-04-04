@@ -12,6 +12,7 @@
 #include "../include/doors.h"
 #include "../include/actors.h"
 #include "../include/audio.h"
+#include "../include/title_sequence.h"
 #include "../include/ui_system.h"
 
 #if defined(HAVE_SDL2_MIXER)
@@ -438,10 +439,6 @@ static void test_player_death_sequence_game_over() {
         "game_over: zero-lives path should not respawn to checkpoint");
     check(comic_hp == 2, "game_over: zero-lives path should not reset HP");
 }
-
-// score_bytes_to_uint32 is declared here for link-time access from title_sequence.cpp.
-// It is not static so the linker can resolve it from the test binary.
-extern uint32_t score_bytes_to_uint32(const uint8_t score_bytes[3]);
 
 static void test_high_score_bytes_conversion() {
     // Zero score
