@@ -794,8 +794,9 @@ static bool validate_input_bindings(const InputBindings& bindings, std::string* 
 
     constexpr size_t NUM_BINDINGS = sizeof(keys) / sizeof(keys[0]);
     for (size_t i = 0; i < NUM_BINDINGS; ++i) {
+        const SDL_Keycode canonical_i = canonicalize_binding_key(keys[i]);
         for (size_t j = i + 1; j < NUM_BINDINGS; ++j) {
-            if (keys[i] == keys[j]) {
+            if (canonical_i == canonicalize_binding_key(keys[j])) {
                 if (error_message) {
                     *error_message = "contains duplicate key assignments";
                 }
