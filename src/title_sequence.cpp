@@ -1229,16 +1229,22 @@ static void render_high_scores_frame(SDL_Renderer* renderer,
     SDL_RenderPresent(renderer);
 }
 
+struct NameCaptureResult {
+    std::string name;
+    bool user_quit = false;
+};
+
 // Prompt the player to type their name (up to MAX_NAME_LENGTH printable ASCII chars).
 // Renders the score preview with the name being typed each frame.
-// Returns the confirmed name, or "-" on Esc or empty input.
-static std::string capture_name_input(SDL_Renderer* renderer,
-                                      SDL_Texture* bg_texture,
-                                      TTF_Font* font,
-                                      const std::vector<HighScoreEntry>& scores,
-                                      int rank,
-                                      uint32_t player_score)
+// Returns the confirmed name, "-" on Esc/empty input, and flags user_quit on SDL_QUIT.
+static NameCaptureResult capture_name_input(SDL_Renderer* renderer,
+                                            SDL_Texture* bg_texture,
+                                            TTF_Font* font,
+                                            const std::vector<HighScoreEntry>& scores,
+                                            int rank,
+                                            uint32_t player_score)
 {
+    NameCaptureResult result;
     std::string name;
     SDL_StartTextInput();
     SDL_Event e;
@@ -1247,6 +1253,7 @@ static std::string capture_name_input(SDL_Renderer* renderer,
     while (!done) {
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
+                result.user_quit = true;
                 done = true;
                 break;
             }
@@ -1289,10 +1296,15 @@ static std::string capture_name_input(SDL_Renderer* renderer,
     }
 
     SDL_StopTextInput();
+    if (result.user_quit) {
+        return result;
+    }
+
     if (name.empty()) {
         name = "-";
     }
-    return name;
+    result.name = name;
+    return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -1718,8 +1730,18 @@ bool run_high_scores_screen(SDL_Renderer* renderer, GraphicsSystem* graphics,
     // Prompt for name if the score makes the leaderboard.
     std::string player_name;
     if (qualifies && font) {
-        player_name = capture_name_input(renderer, bg_texture, font,
-                                         scores, rank, player_score);
+        const NameCaptureResult capture_result =
+            capture_name_input(renderer, bg_texture, font, scores, rank, player_score);
+
+        if (capture_result.user_quit) {
+            if (bg_texture) {
+                SDL_DestroyTexture(bg_texture);
+            }
+            TTF_CloseFont(font);
+            return false;
+        }
+
+        player_name = capture_result.name;
 
         // Insert the new entry and save.
         HighScoreEntry entry{player_name, player_score};
