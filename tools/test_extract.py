@@ -207,5 +207,19 @@ class ExtractAssetsTest(unittest.TestCase):
         missing = set(names) - found
         self.assertFalse(missing, f"Expected sprite entries missing: {sorted(missing)}")
 
+    def test_spark_sprite_entry_geometry(self):
+        spark_names = [
+            "white_spark_0", "white_spark_1", "white_spark_2",
+            "red_spark_0", "red_spark_1", "red_spark_2",
+        ]
+        by_name = {entry["name"]: entry for entry in self.extract_mod.SPRITE_ENTRIES}
+
+        for name in spark_names:
+            self.assertIn(name, by_name, f"Missing sprite entry: {name}")
+            entry = by_name[name]
+            self.assertEqual(entry["width"], 16, f"{name} width should be 16")
+            self.assertEqual(entry["height"], 16, f"{name} height should be 16")
+            self.assertTrue(entry["mask"], f"{name} should use mask data")
+
 if __name__ == "__main__":
     unittest.main()

@@ -117,6 +117,9 @@ public:
     /* Load fireball sprites from assets (call once after GraphicsSystem is ready) */
     bool load_fireball_sprites(GraphicsSystem* graphics_system);
 
+    /* Load enemy spark effect sprites (white/red, 3 frames each). */
+    bool load_effect_sprites(GraphicsSystem* graphics_system);
+
     /* Render all active fireballs */
     void render_fireballs(GraphicsSystem* graphics_system, int camera_x, int render_scale) const;
 
@@ -179,6 +182,9 @@ protected:
 
     /* Loaded fireball sprite frames (indexed 0/1, set by load_fireball_sprites) */
     Sprite* fireball_sprite[FIREBALL_NUM_FRAMES];
+
+    /* Enemy spark effects: [0]=white, [1]=red; 3 animation frames each. */
+    Sprite* spark_sprites[2][3];
 
     /* Fireball meter timing counter (cycles 2→1→2→1 each tick) */
     uint8_t fireball_meter_counter;

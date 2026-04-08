@@ -97,6 +97,11 @@ ActorSystem::ActorSystem()
     }
     fireball_sprite[0] = nullptr;
     fireball_sprite[1] = nullptr;
+    for (auto& spark_set : spark_sprites) {
+        for (auto& spark_frame : spark_set) {
+            spark_frame = nullptr;
+        }
+    }
     for (auto& fb : fireballs) {
         fb.x = FIREBALL_DEAD;
         fb.y = FIREBALL_DEAD;
@@ -252,7 +257,7 @@ void ActorSystem::render_enemies(GraphicsSystem* graphics_system, int camera_x, 
     }
 
     for (const auto& enemy : enemies) {
-        if (enemy.state != ENEMY_STATE_SPAWNED) {
+        if (enemy.state == ENEMY_STATE_DESPAWNED) {
             continue;
         }
 
@@ -289,30 +294,93 @@ void ActorSystem::render_enemies(GraphicsSystem* graphics_system, int camera_x, 
             flip_h = (enemy.facing == ENEMY_FACING_RIGHT);
         }
 
-        if (!frame_info || !frame_info->texture) {
+        const int enemy_screen_x = (static_cast<int>(enemy.x) - camera_x) * render_scale + render_scale;
+        const int enemy_screen_y = static_cast<int>(enemy.y) * render_scale + render_scale;
+
+        auto render_enemy_base = [&]() {
+            if (!frame_info || !frame_info->texture) {
+                return;
+            }
+
+            const int render_width = frame_info->width * scale_factor;
+            const int render_height = frame_info->height * scale_factor;
+
+            Sprite sprite;
+            sprite.texture = *frame_info;
+            sprite.width = frame_info->width;
+            sprite.height = frame_info->height;
+
+            graphics_system->render_sprite_centered_scaled(
+                enemy_screen_x,
+                enemy_screen_y,
+                sprite,
+                render_width,
+                render_height,
+                flip_h
+            );
+        };
+
+        if (enemy.state == ENEMY_STATE_SPAWNED) {
+            render_enemy_base();
             continue;
         }
 
-        int enemy_screen_x = (static_cast<int>(enemy.x) - camera_x) * render_scale + render_scale;
-        int enemy_screen_y = static_cast<int>(enemy.y) * render_scale + render_scale;
+        // Dying enemy states: white spark (2..6) or red spark (8..12).
+        if (enemy.state >= ENEMY_STATE_WHITE_SPARK) {
+            uint8_t normalized_state = enemy.state;
+            if (enemy.state >= ENEMY_STATE_RED_SPARK) {
+                normalized_state = static_cast<uint8_t>(
+                    enemy.state - (ENEMY_STATE_RED_SPARK - ENEMY_STATE_WHITE_SPARK));
+            }
 
-        int render_width = frame_info->width * scale_factor;
-        int render_height = frame_info->height * scale_factor;
+            // Match original layering: draw enemy below spark for first 3 spark frames.
+            if (normalized_state <= ENEMY_STATE_WHITE_SPARK + 2) {
+                render_enemy_base();
+            }
 
-        Sprite sprite;
-        sprite.texture = *frame_info;
-        sprite.width = frame_info->width;
-        sprite.height = frame_info->height;
+            const uint8_t spark_set = (enemy.state >= ENEMY_STATE_RED_SPARK) ? 1 : 0;
+            const uint8_t spark_base = (spark_set == 0) ? ENEMY_STATE_WHITE_SPARK : ENEMY_STATE_RED_SPARK;
+            const uint8_t spark_frame = static_cast<uint8_t>((enemy.state - spark_base) % 3);
 
-        graphics_system->render_sprite_centered_scaled(
-            enemy_screen_x,
-            enemy_screen_y,
-            sprite,
-            render_width,
-            render_height,
-            flip_h
-        );
+            const Sprite* spark_sprite = spark_sprites[spark_set][spark_frame];
+            if (!spark_sprite || !spark_sprite->texture.texture) {
+                continue;
+            }
+
+            graphics_system->render_sprite_centered_scaled(
+                enemy_screen_x,
+                enemy_screen_y,
+                *spark_sprite,
+                render_scale * 2,
+                render_scale * 2
+            );
+        }
     }
+}
+
+bool ActorSystem::load_effect_sprites(GraphicsSystem* graphics_system) {
+    if (!graphics_system) {
+        return false;
+    }
+
+    bool ok = true;
+    const char* names[2] = {"white_spark", "red_spark"};
+    for (int set = 0; set < 2; ++set) {
+        for (int frame = 0; frame < 3; ++frame) {
+            const std::string dir = std::to_string(frame);
+            if (!graphics_system->load_sprite(names[set], dir)) {
+                std::cerr << "Failed to load spark sprite " << names[set]
+                          << "_" << frame << std::endl;
+                ok = false;
+            }
+            spark_sprites[set][frame] = graphics_system->get_sprite(names[set], dir);
+            if (!spark_sprites[set][frame]) {
+                ok = false;
+            }
+        }
+    }
+
+    return ok;
 }
 
 /**

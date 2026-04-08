@@ -445,6 +445,10 @@ int main(int argc, char* argv[]) {
         std::cerr << "Warning: Could not load fireball sprites. Fireballs will not render." << std::endl;
     }
 
+    if (!actor_system.load_effect_sprites(g_graphics)) {
+        std::cerr << "Warning: Could not load one or more enemy spark sprites." << std::endl;
+    }
+
     // Create animations
     comic_idle_right = g_graphics->create_animation({"comic_standing"}, "right", 100, true);
     comic_idle_left = g_graphics->create_animation({"comic_standing"}, "left", 100, true);
