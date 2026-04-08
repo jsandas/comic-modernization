@@ -45,3 +45,5 @@ build
 original
 
 tools/generate_tiles
+
+__pycache__
