@@ -22,6 +22,7 @@ uint8_t comic_facing = 1; // 1 right, 0 left
 uint8_t comic_animation = 0;
 uint8_t comic_is_falling_or_jumping = 1;
 uint8_t comic_jump_counter = 0;
+bool is_ledge_fall = false;  // true when falling due to walking off edge (not a jump)
 uint8_t comic_jump_power = JUMP_POWER_DEFAULT;
 uint8_t key_state_jump = 0;
 uint8_t previous_key_state_jump = 0;
@@ -983,7 +984,17 @@ int main(int argc, char* argv[]) {
                 comic_jump_power = static_cast<uint8_t>(actor_system.get_jump_power());
 
                 // Update physics (once per tick)
+                const uint8_t was_falling_or_jumping = comic_is_falling_or_jumping;
                 handle_fall_or_jump();
+
+                // If physics transitioned from grounded to airborne using the
+                // no-floor path, suppress jump art for this render frame.
+                if (!was_falling_or_jumping && comic_is_falling_or_jumping &&
+                    comic_jump_counter == 1 && comic_y_vel == 8) {
+                    is_ledge_fall = true;
+                } else if (was_falling_or_jumping && !comic_is_falling_or_jumping) {
+                    is_ledge_fall = false;
+                }
 
                 // Ground movement (only when not in air)
                 if (!comic_is_falling_or_jumping) {
@@ -992,6 +1003,38 @@ int main(int argc, char* argv[]) {
                     }
                     if (key_state_right) {
                         move_right();
+                    }
+
+                    // Match original game-loop floor check ordering: after
+                    // horizontal movement, detect missing floor and begin
+                    // falling immediately (no extra standing tick).
+                    if (!comic_is_falling_or_jumping) {
+                        const uint8_t foot_y = static_cast<uint8_t>(comic_y + 4);
+                        uint8_t foot_tile = get_tile_at(static_cast<uint8_t>(comic_x), foot_y);
+                        bool foot_solid = is_tile_solid(foot_tile);
+
+                        if (!foot_solid && (comic_x & 1)) {
+                            foot_tile = get_tile_at(static_cast<uint8_t>(comic_x + 1), foot_y);
+                            foot_solid = is_tile_solid(foot_tile);
+                        }
+
+                        if (!foot_solid) {
+                            comic_y_vel = 8;
+
+                            if (comic_x_momentum > 0) {
+                                comic_x_momentum = 2;
+                            } else if (comic_x_momentum < 0) {
+                                comic_x_momentum = -2;
+                            } else if (key_state_right && !key_state_left) {
+                                comic_x_momentum = 2;
+                            } else if (key_state_left && !key_state_right) {
+                                comic_x_momentum = -2;
+                            }
+
+                            comic_is_falling_or_jumping = 1;
+                            comic_jump_counter = 1;
+                            is_ledge_fall = true;
+                        }
                     }
                 }
 
@@ -1079,7 +1122,7 @@ int main(int argc, char* argv[]) {
             Animation* previous_animation = current_animation;
             if (is_player_dying()) {
                 current_animation = should_show_player_death_animation() ? &comic_death : nullptr;
-            } else if (comic_is_falling_or_jumping) {
+            } else if (comic_is_falling_or_jumping && !is_ledge_fall) {
                 current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
             } else {
                 if (key_state_left || key_state_right) {

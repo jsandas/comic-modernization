@@ -365,8 +365,16 @@ void handle_fall_or_jump() {
         }
         
         if (!foot_solid) {
-            // No ground, start falling
+            // Match original edge-walk behavior: immediately enter falling with
+            // an initial downward speed (1 unit/tick) and depleted jump counter.
+            comic_y_vel = 8;
+            if (comic_x_momentum > 0) {
+                comic_x_momentum = 2;
+            } else if (comic_x_momentum < 0) {
+                comic_x_momentum = -2;
+            }
             comic_is_falling_or_jumping = 1;
+            comic_jump_counter = 1;
         }
     }
 }
