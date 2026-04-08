@@ -841,29 +841,34 @@ if (comic_num_treasures == 3) {
 ---
 
 ### Phase 8: Game Loop Integration
-**Status:** Not Started
+**Status:** In Progress
 **Completion Date:** TBD
 **Goal:** Complete game flow and state management
 
 **Tasks:**
 - [ ] Port main game loop from game_main.c
-  - [ ] Tick-based timing (60 Hz)
-  - [ ] Input processing order
-  - [ ] Physics update
-  - [ ] Actor update
-  - [ ] Rendering
+  - [x] Tick-based timing (engine uses DOS-faithful ~9.1 Hz logic ticks + 60 FPS render cap)
+  - [x] Input processing order
+  - [x] Physics update
+  - [x] Actor update
+  - [x] Rendering
 - [ ] Implement game states
-  - [ ] Menu state
-  - [ ] Playing state
-  - [ ] Paused state
-  - [ ] Game over state
-  - [ ] Victory state
+  - [x] Menu state
+  - [x] Playing state
+  - [x] Paused state
+  - [x] Game over state
+  - [x] Victory state
+
+**Implementation Progress Notes:**
+- Main loop now uses an explicit runtime `GameState` enum (`Playing`, `Paused`, `Victory`, `GameOver`, `Exiting`) in `src/main.cpp`.
+- Pause/resume and terminal flow (victory/game-over sequence handoff) now transition through `GameState` instead of only boolean flags.
+- Teleportation (edge-trigger input, safe-landing search, camera motion, and FX rendering) is integrated into the tick pipeline.
 - [ ] Port special mechanics
-  - [ ] Teleportation
-  - [ ] Door system
-  - [ ] Stage boundaries
-  - [ ] Fall death
-  - [ ] Life loss
+  - [x] Teleportation
+  - [x] Door system
+  - [x] Stage boundaries
+  - [x] Fall death
+  - [x] Life loss
 
 **Reference Code:**
 - `src/game_main.c`: Lines 3725-3960 (game_loop function)

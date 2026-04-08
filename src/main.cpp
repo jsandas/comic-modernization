@@ -30,6 +30,8 @@ uint8_t key_state_right = 0;
 uint8_t key_state_open = 0;  // Open key for doors
 uint8_t previous_key_state_open = 0;  // Track previous state for edge-triggered activation
 uint8_t key_state_fire = 0;  // Fire key (Left Ctrl)
+uint8_t key_state_teleport = 0;  // Teleport key (CapsLock-style binding)
+uint8_t previous_key_state_teleport = 0;  // Track previous teleport key state for edge trigger
 int camera_x = 0;
 
 // Item collection state
@@ -56,6 +58,24 @@ uint8_t comic_x_checkpoint = 14;  // X position to respawn at
 
 // Game state
 bool game_over_triggered = false;  // Set when life depletion should transition to game-over sequence
+
+enum class GameState {
+    Playing,
+    Paused,
+    Victory,
+    GameOver,
+    Exiting
+};
+
+// Teleport state
+bool comic_is_teleporting = false;
+uint8_t teleport_animation = 0;
+uint8_t teleport_source_x = 0;
+uint8_t teleport_source_y = 0;
+uint8_t teleport_destination_x = 0;
+uint8_t teleport_destination_y = 0;
+uint8_t teleport_camera_counter = 0;
+int8_t teleport_camera_vel = 0;
 
 // Global system pointers (for access from other modules)
 ActorSystem* g_actor_system = nullptr;  // Actor system pointer (for cheat access)
@@ -95,6 +115,132 @@ void clear_gameplay_key_states() {
     key_state_open = 0;
     previous_key_state_open = 0;
     key_state_fire = 0;
+    key_state_teleport = 0;
+    previous_key_state_teleport = 0;
+}
+
+void begin_teleport() {
+    constexpr uint8_t TELEPORT_DISTANCE = 6;
+
+    uint8_t dest_x = static_cast<uint8_t>(comic_x);
+    uint8_t dest_y = static_cast<uint8_t>(comic_y);
+    const int camera_rel_x = static_cast<int>(comic_x) - camera_x;
+
+    teleport_camera_counter = 0;
+
+    if (comic_facing == COMIC_FACING_LEFT) {
+        teleport_camera_vel = -1;
+
+        if (camera_rel_x >= TELEPORT_DISTANCE) {
+            dest_x = static_cast<uint8_t>(dest_x - TELEPORT_DISTANCE);
+
+            const int dest_camera_rel = camera_rel_x - TELEPORT_DISTANCE;
+            if (dest_camera_rel < (PLAYFIELD_WIDTH / 2 - 2)) {
+                const int camera_movement = (PLAYFIELD_WIDTH / 2 - 2) - dest_camera_rel;
+                teleport_camera_counter = static_cast<uint8_t>(
+                    std::min(camera_x, camera_movement));
+            }
+        }
+    } else {
+        teleport_camera_vel = 1;
+
+        if (camera_rel_x < (PLAYFIELD_WIDTH - TELEPORT_DISTANCE - 1)) {
+            dest_x = static_cast<uint8_t>(dest_x + TELEPORT_DISTANCE);
+
+            const int dest_camera_rel = camera_rel_x + TELEPORT_DISTANCE;
+            if (dest_camera_rel > (PLAYFIELD_WIDTH / 2)) {
+                const int max_camera_x = MAP_WIDTH - PLAYFIELD_WIDTH;
+                const int camera_movement = dest_camera_rel - (PLAYFIELD_WIDTH / 2);
+                if (camera_x + camera_movement <= max_camera_x) {
+                    teleport_camera_counter = static_cast<uint8_t>(camera_movement);
+                } else {
+                    teleport_camera_counter = static_cast<uint8_t>(max_camera_x - camera_x);
+                }
+            }
+        }
+    }
+
+    // Round destination to an even tile boundary and search down the column
+    // for a solid tile with two empty tiles above (safe landing).
+    dest_x &= 0xFE;
+
+    bool solid_found = false;
+    uint8_t search_y = static_cast<uint8_t>(PLAYFIELD_HEIGHT - 2);
+
+    while (search_y > 0 && !solid_found) {
+        if (is_tile_solid(get_tile_at(dest_x, search_y))) {
+            uint8_t nonsolid_count = 0;
+            uint8_t probe_y = search_y;
+
+            while (probe_y > 0) {
+                probe_y = static_cast<uint8_t>(probe_y - 2);
+
+                if (is_tile_solid(get_tile_at(dest_x, probe_y))) {
+                    break;
+                }
+
+                nonsolid_count++;
+                if (nonsolid_count >= 2) {
+                    dest_y = probe_y;
+                    solid_found = true;
+                    break;
+                }
+            }
+        }
+
+        if (!solid_found) {
+            search_y = static_cast<uint8_t>(search_y - 2);
+        }
+    }
+
+    if (!solid_found) {
+        dest_x = static_cast<uint8_t>(comic_x);
+        dest_y = static_cast<uint8_t>(comic_y);
+        teleport_camera_counter = 0;
+    }
+
+    teleport_animation = 0;
+    teleport_source_x = static_cast<uint8_t>(comic_x);
+    teleport_source_y = static_cast<uint8_t>(comic_y);
+    teleport_destination_x = dest_x;
+    teleport_destination_y = dest_y;
+    comic_is_teleporting = true;
+
+    play_game_sound(GameSound::TELEPORT);
+}
+
+void process_teleport_input(bool comic_has_teleport_wand) {
+    if (key_state_teleport && !previous_key_state_teleport && comic_has_teleport_wand) {
+        begin_teleport();
+    }
+
+    previous_key_state_teleport = key_state_teleport;
+}
+
+void handle_teleport_tick() {
+    if (!comic_is_teleporting) {
+        return;
+    }
+
+    if (teleport_camera_counter > 0) {
+        const int max_camera_x = MAP_WIDTH - PLAYFIELD_WIDTH;
+        const int moved_camera_x = camera_x + teleport_camera_vel;
+        camera_x = std::clamp(moved_camera_x, 0, max_camera_x);
+        teleport_camera_counter--;
+    }
+
+    // Match original behavior: player position changes at frame 3.
+    if (teleport_animation == 3) {
+        comic_x = teleport_destination_x;
+        comic_y = teleport_destination_y;
+        comic_x_checkpoint = static_cast<uint8_t>(comic_x);
+        comic_y_checkpoint = static_cast<uint8_t>(comic_y);
+    }
+
+    teleport_animation++;
+    if (teleport_animation >= 6) {
+        comic_is_teleporting = false;
+    }
 }
 
 static bool key_matches_binding(SDL_Keycode key, SDL_Keycode binding) {
@@ -268,6 +414,20 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    if (!g_graphics->load_sprite("teleport_0", "") ||
+        !g_graphics->load_sprite("teleport_1", "") ||
+        !g_graphics->load_sprite("teleport_2", "")) {
+        std::cerr << "Warning: Could not load one or more teleport sprites." << std::endl;
+    }
+
+    std::array<Sprite*, 5> teleport_sprites = {
+        g_graphics->get_sprite("teleport_0", ""),
+        g_graphics->get_sprite("teleport_1", ""),
+        g_graphics->get_sprite("teleport_2", ""),
+        g_graphics->get_sprite("teleport_1", ""),
+        g_graphics->get_sprite("teleport_0", "")
+    };
+
     if (!g_graphics->load_sprite("pause", "")) {
         std::cerr << "Warning: Could not load pause sprite (sprite-pause.png)."
                   << std::endl;
@@ -307,7 +467,7 @@ int main(int argc, char* argv[]) {
     current_animation = &comic_idle_right;
 
     bool quit = false;
-    bool paused = false;
+    GameState game_state = GameState::Playing;
     bool pause_waiting_for_escape_release = false;
     bool beam_out_sequence_played = false;
     SDL_Event e;
@@ -609,7 +769,7 @@ int main(int argc, char* argv[]) {
 
     auto play_game_over_sequence = [&]() {
         clear_gameplay_key_states();
-        paused = false;
+        game_state = GameState::Playing;
         pause_waiting_for_escape_release = false;
 
         render_beam_in_frame(false, nullptr);
@@ -689,7 +849,7 @@ int main(int argc, char* argv[]) {
                 const InputBindings& bindings = get_input_bindings();
                 const SDL_Keycode key = e.key.keysym.sym;
 
-                if (paused) {
+                if (game_state == GameState::Paused) {
                     if (key == SDLK_ESCAPE && e.key.repeat == 0 &&
                         pause_waiting_for_escape_release) {
                         continue;
@@ -703,14 +863,14 @@ int main(int argc, char* argv[]) {
                         quit = true;
                     }
 
-                    paused = false;
+                    game_state = GameState::Playing;
                     clear_gameplay_key_states();
                     tick_accumulator = 0.0;
                     continue;
                 }
 
                 if (key == SDLK_ESCAPE && e.key.repeat == 0) {
-                    paused = true;
+                    game_state = GameState::Paused;
                     pause_waiting_for_escape_release = true;
                     clear_gameplay_key_states();
                     tick_accumulator = 0.0;
@@ -734,6 +894,9 @@ int main(int argc, char* argv[]) {
                 if (key_matches_binding(key, bindings.open_door)) {
                     key_state_open = 1;
                 }
+                if (key_matches_binding(key, bindings.teleport)) {
+                    key_state_teleport = 1;
+                }
                 
                 // Process cheat keys (only active if --debug flag set)
                 g_cheats->process_input(e.key.keysym.sym);
@@ -741,7 +904,7 @@ int main(int argc, char* argv[]) {
                 const InputBindings& bindings = get_input_bindings();
                 const SDL_Keycode key = e.key.keysym.sym;
 
-                if (paused) {
+                if (game_state == GameState::Paused) {
                     if (key == SDLK_ESCAPE) {
                         pause_waiting_for_escape_release = false;
                     }
@@ -763,12 +926,15 @@ int main(int argc, char* argv[]) {
                 if (key_matches_binding(key, bindings.open_door)) {
                     key_state_open = 0;
                 }
+                if (key_matches_binding(key, bindings.teleport)) {
+                    key_state_teleport = 0;
+                }
             }
         }
 
         // Process physics ticks at ~9.1 Hz (original game speed)
         // This decouples physics from rendering rate
-        if (!paused) {
+        if (game_state == GameState::Playing) {
             int ticks_processed = 0;
             while (tick_accumulator >= MS_PER_TICK && ticks_processed < MAX_TICKS_PER_FRAME) {
                 tick_accumulator -= MS_PER_TICK;
@@ -779,8 +945,7 @@ int main(int argc, char* argv[]) {
                     ui_system.update();
 
                     if (game_over_triggered) {
-                        play_game_over_sequence();
-                        quit = true;
+                        game_state = GameState::GameOver;
                         break;
                     }
                     continue;
@@ -791,6 +956,24 @@ int main(int argc, char* argv[]) {
 
                 // Process door input once per tick (edge-triggered)
                 process_door_input();
+
+                // Process teleport input once per tick (edge-triggered)
+                if (!comic_is_falling_or_jumping && !comic_is_teleporting) {
+                    process_teleport_input(actor_system.comic_has_teleport_wand != 0);
+                } else {
+                    previous_key_state_teleport = key_state_teleport;
+                }
+
+                if (comic_is_teleporting) {
+                    handle_teleport_tick();
+
+                    const uint8_t* tiles = current_level_ptr
+                        ? current_level_ptr->stages[current_stage_number].tiles
+                        : nullptr;
+                    actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x, key_state_fire);
+                    ui_system.update();
+                    continue;
+                }
 
                 // Update jump power from item system (boots affect jump height)
                 comic_jump_power = static_cast<uint8_t>(actor_system.get_jump_power());
@@ -818,10 +1001,7 @@ int main(int argc, char* argv[]) {
                     beam_out_sequence_played = true;
                     clear_gameplay_key_states();
                     tick_accumulator = 0.0;
-                    play_victory_sequence();
-
-                    // Match original flow: game_end_sequence terminates after high scores.
-                    quit = true;
+                    game_state = GameState::Victory;
                     break;
                 }
                 
@@ -875,12 +1055,22 @@ int main(int argc, char* argv[]) {
             tick_accumulator = 0.0;
         }
 
+        if (game_state == GameState::Victory) {
+            play_victory_sequence();
+            game_state = GameState::Exiting;
+            quit = true;
+        } else if (game_state == GameState::GameOver) {
+            play_game_over_sequence();
+            game_state = GameState::Exiting;
+            quit = true;
+        }
+
         if (quit) {
             break;
         }
 
         // Update animation based on state (updates every frame for smooth animation)
-        if (!paused) {
+        if (game_state == GameState::Playing) {
             current_time = SDL_GetTicks();
             Animation* previous_animation = current_animation;
             if (is_player_dying()) {
@@ -1000,6 +1190,38 @@ int main(int argc, char* argv[]) {
                 g_graphics->render_sprite_centered_scaled(screen_x, screen_y, frame->sprite, player_width, player_height);
             }
         }
+
+        if (comic_is_teleporting) {
+            const uint8_t source_frame = teleport_animation;
+            if (source_frame < teleport_sprites.size() && teleport_sprites[source_frame]) {
+                int source_screen_x = (static_cast<int>(teleport_source_x) - camera_x) * render_scale + render_scale;
+                int source_screen_y = static_cast<int>(teleport_source_y) * render_scale + render_scale * 2;
+                g_graphics->render_sprite_centered_scaled(
+                    source_screen_x,
+                    source_screen_y,
+                    *teleport_sprites[source_frame],
+                    render_scale * 2,
+                    render_scale * 4
+                );
+            }
+
+            if (teleport_animation >= 1) {
+                const uint8_t dest_frame = static_cast<uint8_t>(teleport_animation - 1);
+                if (dest_frame < teleport_sprites.size() && teleport_sprites[dest_frame]) {
+                    int destination_screen_x =
+                        (static_cast<int>(teleport_destination_x) - camera_x) * render_scale + render_scale;
+                    int destination_screen_y =
+                        static_cast<int>(teleport_destination_y) * render_scale + render_scale * 2;
+                    g_graphics->render_sprite_centered_scaled(
+                        destination_screen_x,
+                        destination_screen_y,
+                        *teleport_sprites[dest_frame],
+                        render_scale * 2,
+                        render_scale * 4
+                    );
+                }
+            }
+        }
         
         // Restore full renderer viewport before rendering debug overlay.
         SDL_RenderSetViewport(renderer, nullptr);
@@ -1031,7 +1253,7 @@ int main(int argc, char* argv[]) {
         SDL_RenderSetScale(renderer, 1.0f, 1.0f);
         SDL_RenderSetViewport(renderer, nullptr);
 
-        if (paused && pause_sprite) {
+        if (game_state == GameState::Paused && pause_sprite) {
             const int pause_x_ega = 40;
             const int pause_y_ega = 64;
             const int pause_width_ega = 128;
