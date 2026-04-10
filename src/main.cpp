@@ -731,7 +731,7 @@ int main(int argc, char* argv[]) {
         // Base victory bonus: 20,000 points as twenty 1,000-point tally steps.
         for (int step = 0; step < 20 && !quit; ++step) {
             play_game_sound(GameSound::ITEM_COLLECT);
-            award_points(1000);
+            award_points(10);
             render_beam_in_frame(false, nullptr);
             wait_animation_ticks(1);
         }
@@ -740,7 +740,7 @@ int main(int argc, char* argv[]) {
         while (comic_num_lives > 0 && !quit) {
             for (int step = 0; step < 10 && !quit; ++step) {
                 play_game_sound(GameSound::ITEM_COLLECT);
-                award_points(1000);
+                award_points(10);
                 render_beam_in_frame(false, nullptr);
                 wait_animation_ticks(1);
             }

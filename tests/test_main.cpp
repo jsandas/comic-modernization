@@ -885,26 +885,27 @@ static void reset_score_bytes() {
 }
 
 static void test_award_points_no_carry() {
-    // award_points(3) adds three displayed points.
+    // award_points(3) adds 300 displayed points.
     reset_score_bytes();
     award_points(3);
-    check(score_bytes[0] == 3, "award_points: 3 points should add 3 to score_bytes[0]");
+    check(score_bytes[0] == 3, "award_points: 3 units should add 3 to score_bytes[0]");
     check(score_bytes[1] == 0, "award_points: no carry into score_bytes[1] expected");
     check(score_bytes[2] == 0, "award_points: no carry into score_bytes[2] expected");
 }
 
 static void test_award_points_accumulates_in_byte0() {
-    // score_bytes[0] is the primary accumulation byte for award_points().
+    // score_bytes[0] is the primary accumulation byte for base-100 units.
     reset_score_bytes();
     score_bytes[0] = 42;
     award_points(5);
-    check(score_bytes[0] == 47, "award_points: 5 points should add to score_bytes[0]");
+    check(score_bytes[0] == 47, "award_points: 5 units should add to score_bytes[0]");
     check(score_bytes[1] == 0,  "award_points: no carry into score_bytes[1] expected");
     check(score_bytes[2] == 0,  "award_points: no carry into score_bytes[2] expected");
 }
 
 static void test_award_points_carry_into_byte1() {
-    // score_bytes[0] = 90, award_points(20): sum = 110, carry = 1 into byte[1]
+    // score_bytes[0] = 90, award_points(20): sum = 110, carry = 1 into byte[1].
+    // This corresponds to adding 2,000 displayed points.
     reset_score_bytes();
     score_bytes[0] = 90;
     award_points(20);
@@ -914,7 +915,7 @@ static void test_award_points_carry_into_byte1() {
 }
 
 static void test_award_points_full_carry_amount() {
-    // award_points(200) from zero: carry = 2 into score_bytes[1]
+    // award_points(200) from zero: carry = 2 into score_bytes[1] (20,000 points).
     reset_score_bytes();
     award_points(200);
     check(score_bytes[0] == 0, "award_points: 200 mod 100 should leave score_bytes[0] = 0");
@@ -924,7 +925,7 @@ static void test_award_points_full_carry_amount() {
 
 static void test_award_points_large_value_above_255() {
     // Values > 255 must not be truncated.
-    // award_points(300): sum = 300, carry = 3, score_bytes[1] = 3
+    // award_points(300): sum = 300, carry = 3, score_bytes[1] = 3 (30,000 points).
     reset_score_bytes();
     award_points(300);
     check(score_bytes[0] == 0, "award_points: 300 mod 100 should leave score_bytes[0] = 0");

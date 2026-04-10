@@ -21,8 +21,8 @@ extern uint8_t score_bytes[3];
  *   score_bytes[2] = ten-thousands/hundred-thousands (0-99)
  * Total score = byte[0] + (byte[1] * 100) + (byte[2] * 10000), max 999,999
  * 
- * Input points are literal displayed points.
- * Example: award_points(300) adds 300 points.
+ * Input points are base-100 units.
+ * Example: award_points(3) adds 300 displayed points.
  */
 void award_points(uint16_t points) {
     // Points map to the least-significant base-100 byte and carry upward.
@@ -170,9 +170,9 @@ void ActorSystem::setup_enemies_for_stage(
 
     // Setup item for this stage
     current_item_type = stage.item_type;
-    // Convert tile coordinates to game units (×2 because tiles are 2 game units wide/tall)
-    current_item_x = stage.item_x * 2;
-    current_item_y = stage.item_y * 2;
+    // Level item coordinates are already in game units.
+    current_item_x = stage.item_x;
+    current_item_y = stage.item_y;
 
     // Initialize each enemy slot from stage data
     for (int i = 0; i < MAX_NUM_ENEMIES; i++) {
@@ -1412,7 +1412,7 @@ void ActorSystem::handle_fireballs() {
             enemy.state = ENEMY_STATE_WHITE_SPARK;
             fb.x = FIREBALL_DEAD;
             fb.y = FIREBALL_DEAD;
-            award_points(300);  // Award 300 points for killing an enemy with a fireball
+            award_points(3);  // Award 300 points for killing an enemy with a fireball
             play_game_sound(GameSound::ENEMY_HIT);
             break; // Fireball consumed; check next fireball
         }
@@ -1577,7 +1577,8 @@ void ActorSystem::collect_item() {
     // Mark as collected
     items_collected[current_level_index][current_stage_index] = 1;
 
-    // TODO: Award points (2000)
+    // Items award 2000 points.
+    award_points(20);
     play_game_sound(GameSound::ITEM_COLLECT);
 
     // Apply item effect

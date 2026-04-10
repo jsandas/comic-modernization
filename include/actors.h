@@ -246,9 +246,9 @@ protected:
 };
 
 /* Award points to the player's score.
- * Input is literal displayed points (e.g., award_points(300) adds 300 points).
- * Points are added into score_bytes[0] (ones/tens pair in base-100),
- * with full carry propagation into score_bytes[1]/[2]. */
+ * Input is base-100 units (e.g., award_points(3) adds 300 points).
+ * Points are added into score_bytes[0] with full carry propagation into
+ * score_bytes[1]/[2]. */
 void award_points(uint16_t points);
 
 #endif /* ACTORS_H */
