@@ -843,6 +843,7 @@ int main(int argc, char* argv[]) {
         uint32_t delta_time = current_time - last_tick_time;
         last_tick_time = current_time;
         tick_accumulator += delta_time;
+        bool suppress_jump_animation_this_frame = false;
         if (tick_accumulator > MAX_ACCUMULATED_MS) {
             tick_accumulator = MAX_ACCUMULATED_MS;
         }
@@ -991,9 +992,7 @@ int main(int argc, char* argv[]) {
                 // no-floor path, suppress jump art for this render frame.
                 if (!was_falling_or_jumping && comic_is_falling_or_jumping &&
                     comic_jump_counter == 1 && comic_y_vel == 8) {
-                    is_ledge_fall = true;
-                } else if (was_falling_or_jumping && !comic_is_falling_or_jumping) {
-                    is_ledge_fall = false;
+                    suppress_jump_animation_this_frame = true;
                 }
 
                 // Ground movement (only when not in air)
@@ -1033,7 +1032,7 @@ int main(int argc, char* argv[]) {
 
                             comic_is_falling_or_jumping = 1;
                             comic_jump_counter = 1;
-                            is_ledge_fall = true;
+                            suppress_jump_animation_this_frame = true;
                         }
                     }
                 }
@@ -1122,7 +1121,7 @@ int main(int argc, char* argv[]) {
             Animation* previous_animation = current_animation;
             if (is_player_dying()) {
                 current_animation = should_show_player_death_animation() ? &comic_death : nullptr;
-            } else if (comic_is_falling_or_jumping && !is_ledge_fall) {
+            } else if (comic_is_falling_or_jumping && !suppress_jump_animation_this_frame) {
                 current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
             } else {
                 if (key_state_left || key_state_right) {
