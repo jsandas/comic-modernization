@@ -723,6 +723,35 @@ static void test_runtime_level_tiles_populated() {
     reset_door_state();
 }
 
+    static void test_door_entry_sets_checkpoint_for_respawn() {
+        initialize_level_data();
+
+        // Simulate entering lake stage 0 from forest stage 2 via a door.
+        // In level data, lake stage 0 has reciprocal door { y=10, x=118, target_level=1, target_stage=2 }.
+        current_level_number = LEVEL_NUMBER_LAKE;
+        current_stage_number = 0;
+        source_door_level_number = LEVEL_NUMBER_FOREST;
+        source_door_stage_number = 2;
+
+        // Seed checkpoint with sentinel values so we can verify it changes.
+        comic_x_checkpoint = 14;
+        comic_y_checkpoint = 12;
+
+        load_new_level();
+
+        // Spawn point should be in front of reciprocal door.
+        check(comic_x == 119 && comic_y == 10,
+            "door_entry_checkpoint: player should spawn at reciprocal door position");
+
+        // Door entry must set checkpoint so death respawns at this door.
+        check(comic_x_checkpoint == 119 && comic_y_checkpoint == 10,
+            "door_entry_checkpoint: checkpoint should update to reciprocal door spawn");
+
+        // Source door markers should be consumed after stage load.
+        check(source_door_level_number == -1 && source_door_stage_number == -1,
+            "door_entry_checkpoint: source door markers should reset after stage load");
+    }
+
 static void test_stage_left_exit_blocked() {
     reset_physics_state();
     
@@ -1951,6 +1980,7 @@ static const std::vector<TestCase>& test_registry() {
         {"door_state_update_same_level", test_door_state_update_same_level},
         {"door_state_update_different_level", test_door_state_update_different_level},
         {"runtime_level_tiles_populated", test_runtime_level_tiles_populated},
+        {"door_entry_sets_checkpoint_for_respawn", test_door_entry_sets_checkpoint_for_respawn},
         {"cave_level_solidity", test_cave_level_solidity},
         {"problematic_levels_have_solid_tiles", test_problematic_levels_have_solid_tiles},
         {"stage_left_exit_blocked", test_stage_left_exit_blocked},
