@@ -251,4 +251,9 @@ protected:
  * score_bytes[1]/[2]. */
 void award_points(uint16_t points);
 
+/* Award an extra life.
+ * If already at max lives, refill HP and award the comic-c bonus points.
+ */
+void award_extra_life();
+
 #endif /* ACTORS_H */

@@ -91,6 +91,7 @@ uint8_t comic_num_lives = 0;
 
 // Player shield/HP state used by actor collision logic
 uint8_t comic_hp = MAX_HP;
+uint8_t comic_hp_pending_increase = 0;
 
 // Score bytes (used by award_points()) - base-100 encoding
 uint8_t score_bytes[3] = {0, 0, 0};
@@ -1578,6 +1579,40 @@ static void test_item_special_items() {
     actor_system.apply_item_effect(ITEM_LANTERN);
     check(actor_system.comic_has_lantern == 1, 
           "special_items: should have lantern after collection");
+
+        // Shield (not full HP): schedule refill to MAX_HP
+        comic_num_lives = 2;
+        comic_hp = static_cast<uint8_t>(MAX_HP - 2);
+        comic_hp_pending_increase = 0;
+        actor_system.apply_item_effect(ITEM_SHIELD);
+        check(comic_hp_pending_increase == 2,
+            "special_items: shield should schedule refill when HP is not full");
+        check(comic_num_lives == 2,
+            "special_items: shield should not award extra life when HP is not full");
+
+        // Shield (full HP, below cap): award extra life
+        comic_hp = MAX_HP;
+        comic_hp_pending_increase = 0;
+        actor_system.apply_item_effect(ITEM_SHIELD);
+        check(comic_num_lives == 3,
+            "special_items: shield should award extra life when HP is full");
+        check(comic_hp_pending_increase == 0,
+            "special_items: full-HP shield below max lives should not schedule HP refill");
+
+        // Shield (full HP, at cap): keep max lives and award comic-c bonus path.
+        comic_num_lives = 5;
+        comic_hp = MAX_HP;
+        comic_hp_pending_increase = 0;
+        score_bytes[0] = 0;
+        score_bytes[1] = 0;
+        score_bytes[2] = 0;
+        actor_system.apply_item_effect(ITEM_SHIELD);
+        check(comic_num_lives == 5,
+            "special_items: shield at max lives should not increase life count");
+        check(comic_hp_pending_increase == MAX_HP,
+            "special_items: shield at max lives should set pending HP refill");
+        check(score_bytes[0] == 25 && score_bytes[1] == 2 && score_bytes[2] == 0,
+            "special_items: shield at max lives should award 22500 points");
 }
 
 // ===== Audio System Tests =====
@@ -1714,6 +1749,10 @@ static void test_audio_all_sounds_playable() {
 
     ok = play_game_sound(GameSound::ITEM_COLLECT);
     check(ok, "audio_all_sounds: ITEM_COLLECT should play");
+    wait_for_sfx_channel_idle(200);
+
+    ok = play_game_sound(GameSound::EXTRA_LIFE);
+    check(ok, "audio_all_sounds: EXTRA_LIFE should play");
     wait_for_sfx_channel_idle(200);
 
     ok = play_game_sound(GameSound::TELEPORT);

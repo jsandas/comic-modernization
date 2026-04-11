@@ -7,6 +7,8 @@
 // Global door key flag defined in main.cpp (used by doors.cpp)
 extern uint8_t comic_has_door_key;
 extern uint8_t comic_hp;
+extern uint8_t comic_hp_pending_increase;
+extern uint8_t comic_num_lives;
 
 // Score bytes from main.cpp for award_points()
 extern uint8_t score_bytes[3];
@@ -52,6 +54,23 @@ void award_points(uint16_t points) {
     }
 
     score_bytes[2] = static_cast<uint8_t>(high);
+}
+
+void award_extra_life() {
+    constexpr uint8_t MAX_NUM_LIVES = 5;
+
+    play_game_sound(GameSound::EXTRA_LIFE);
+
+    if (comic_num_lives >= MAX_NUM_LIVES) {
+        // Match comic-c: full lives converts shield life-award into HP refill + bonus points.
+        comic_hp_pending_increase = MAX_HP;
+        award_points(75);
+        award_points(75);
+        award_points(75);
+        return;
+    }
+
+    comic_num_lives++;
 }
 
 /**
@@ -1621,7 +1640,12 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
             break;
 
         case ITEM_SHIELD:
-            // Shield refills HP (handled by main game loop)
+            // Match original behavior: full HP grants a life; otherwise refill HP.
+            if (comic_hp >= MAX_HP) {
+                award_extra_life();
+            } else {
+                comic_hp_pending_increase = static_cast<uint8_t>(MAX_HP - comic_hp);
+            }
             break;
 
         case ITEM_GEMS:
