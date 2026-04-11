@@ -274,8 +274,12 @@ void handle_fall_or_jump() {
             return;
         }
         
-        // STEP 5: Apply gravity
-        comic_y_vel += COMIC_GRAVITY;
+        // STEP 5: Apply gravity (reduced in space level)
+        if (current_level_number == LEVEL_NUMBER_SPACE) {
+            comic_y_vel += COMIC_GRAVITY_SPACE;
+        } else {
+            comic_y_vel += COMIC_GRAVITY;
+        }
         if (comic_y_vel > TERMINAL_VELOCITY) {
             comic_y_vel = TERMINAL_VELOCITY;
         }
