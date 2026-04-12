@@ -476,6 +476,7 @@ int main(int argc, char* argv[]) {
     GameState game_state = GameState::Playing;
     bool pause_waiting_for_escape_release = false;
     bool beam_out_sequence_played = false;
+    uint8_t win_counter = 0;
     SDL_Event e;
 
     // Initialize all level data (tile data is compiled-in as hex arrays)
@@ -756,11 +757,37 @@ int main(int argc, char* argv[]) {
         SDL_Texture* victory_texture = load_fullscreen_texture("sys002.ega.png");
         if (victory_texture && !quit) {
             render_fullscreen_texture(victory_texture);
-            wait_animation_ticks(20);
             wait_for_new_keypress();
         }
 
         stop_game_music();
+
+        if (!quit) {
+            play_game_sound(GameSound::GAME_OVER);
+            render_beam_in_frame(false, nullptr);
+
+            if (game_over_sprite) {
+                SDL_Rect gameplay_frame_rect = g_graphics->compute_letterbox_rect(renderer);
+                const float letterbox_scale = static_cast<float>(gameplay_frame_rect.w) / EGA_WIDTH;
+
+                const int game_over_x_ega = 40;
+                const int game_over_y_ega = 64;
+                const int game_over_width_ega = 128;
+                const int game_over_height_ega = 48;
+
+                SDL_Rect game_over_rect = {
+                    gameplay_frame_rect.x + static_cast<int>(game_over_x_ega * letterbox_scale),
+                    gameplay_frame_rect.y + static_cast<int>(game_over_y_ega * letterbox_scale),
+                    static_cast<int>(game_over_width_ega * letterbox_scale),
+                    static_cast<int>(game_over_height_ega * letterbox_scale)
+                };
+
+                SDL_RenderCopy(renderer, game_over_sprite->texture.texture, nullptr, &game_over_rect);
+                SDL_RenderPresent(renderer);
+            }
+
+            wait_for_new_keypress();
+        }
 
         if (!quit) {
             if (!run_high_scores_screen(renderer, g_graphics, score_bytes)) {
@@ -1046,10 +1073,17 @@ int main(int argc, char* argv[]) {
 
                 if (!beam_out_sequence_played && actor_system.comic_num_treasures >= 3) {
                     beam_out_sequence_played = true;
-                    clear_gameplay_key_states();
-                    tick_accumulator = 0.0;
-                    game_state = GameState::Victory;
-                    break;
+                    win_counter = 20;
+                }
+
+                if (beam_out_sequence_played && win_counter > 0) {
+                    win_counter--;
+                    if (win_counter == 1) {
+                        clear_gameplay_key_states();
+                        tick_accumulator = 0.0;
+                        game_state = GameState::Victory;
+                        break;
+                    }
                 }
                 
                 // Lives count-up sequence: award 5 lives with 1-tick delay between each,

@@ -863,6 +863,25 @@ if (comic_num_treasures == 3) {
 - Main loop now uses an explicit runtime `GameState` enum (`Playing`, `Paused`, `Victory`, `GameOver`, `Exiting`) in `src/main.cpp`.
 - Pause/resume and terminal flow (victory/game-over sequence handoff) now transition through `GameState` instead of only boolean flags.
 - Teleportation (edge-trigger input, safe-landing search, camera motion, and FX rendering) is integrated into the tick pipeline.
+
+**Concrete Phase 8 Action Items (Current Sprint):**
+- [x] Keep modern pause implementation (state-based SDL event loop pause) as an intentional modernization decision.
+- [x] Add DOS-faithful victory countdown behavior (`win_counter` equivalent): trigger victory sequence when countdown reaches 1, not immediately at 3 treasures.
+- [x] Update victory flow ordering to match reference sequence more closely:
+  - [x] Beam-out
+  - [x] Score/life tally
+  - [x] Win screen (`SYS002`)
+  - [x] Game-over panel + game-over sound before high scores
+  - [x] High-scores screen handoff
+- [ ] Validate end-to-end parity with gameplay capture: compare treasure-3-to-victory delay and post-win input gating against comic-c.
+- [ ] Add/expand tests for victory trigger timing and sequence ordering (or scripted verification notes if unit testing is impractical for sequence code).
+
+**Phase 8 Manual QA Checklist (Parity Verification):**
+- [ ] Capture reference and modern runs from "3rd treasure collected" to victory handoff.
+- [ ] Verify countdown pacing: sequence triggers after `win_counter` countdown behavior (not immediate).
+- [ ] Verify input gating: each blocking screen (win screen, post-win game-over panel) requires a fresh keypress.
+- [ ] Verify ordering: beam-out → tally → `SYS002` win screen → game-over panel/sound → high-scores.
+- [ ] Verify pause behavior remains modern/state-driven and unchanged by victory fixes.
 - [ ] Port special mechanics
   - [x] Teleportation
   - [x] Door system
