@@ -12,6 +12,7 @@
 #include "../include/audio.h"
 #include "../include/title_sequence.h"
 #include "../include/ui_system.h"
+#include "../include/player_teleport.h"
 
 // Game state
 int comic_x = 20;
@@ -230,13 +231,12 @@ void handle_teleport_tick() {
         teleport_camera_counter--;
     }
 
-    // Match original behavior: player position changes at frame 3.
-    if (teleport_animation == 3) {
-        comic_x = teleport_destination_x;
-        comic_y = teleport_destination_y;
-        comic_x_checkpoint = static_cast<uint8_t>(comic_x);
-        comic_y_checkpoint = static_cast<uint8_t>(comic_y);
-    }
+    apply_teleport_destination_if_ready(
+        teleport_animation,
+        teleport_destination_x,
+        teleport_destination_y,
+        comic_x,
+        comic_y);
 
     teleport_animation++;
     if (teleport_animation >= 6) {

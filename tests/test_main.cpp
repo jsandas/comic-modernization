@@ -14,6 +14,7 @@
 #include "../include/audio.h"
 #include "../include/title_sequence.h"
 #include "../include/ui_system.h"
+#include "../include/player_teleport.h"
 
 #if defined(HAVE_SDL2_MIXER)
 #include <SDL2/SDL.h>
@@ -491,6 +492,28 @@ static void test_player_death_sequence_game_over() {
     check(comic_x == 41 && comic_y == 8,
         "game_over: zero-lives path should not respawn to checkpoint");
     check(comic_hp == 2, "game_over: zero-lives path should not reset HP");
+}
+
+static void test_teleport_does_not_update_respawn_checkpoint() {
+    reset_physics_state();
+
+    comic_x_checkpoint = 22;
+    comic_y_checkpoint = 12;
+
+    comic_x = 40;
+    comic_y = 8;
+
+    apply_teleport_destination_if_ready(
+        3,
+        60,
+        6,
+        comic_x,
+        comic_y);
+
+    check(comic_x == 60 && comic_y == 6,
+        "teleport_checkpoint: teleport frame should move player to destination");
+    check(comic_x_checkpoint == 22 && comic_y_checkpoint == 12,
+        "teleport_checkpoint: teleport should not modify respawn checkpoint");
 }
 
 static void test_high_score_bytes_conversion() {
@@ -2065,6 +2088,7 @@ static const std::vector<TestCase>& test_registry() {
         {"jump_top_clamped_to_playfield", test_jump_top_clamped_to_playfield},
         {"player_death_sequence_respawn", test_player_death_sequence_respawn},
         {"player_death_sequence_game_over", test_player_death_sequence_game_over},
+        {"teleport_does_not_update_respawn_checkpoint", test_teleport_does_not_update_respawn_checkpoint},
         {"high_score_bytes_conversion", test_high_score_bytes_conversion},
         {"door_activation_alignment_x", test_door_activation_alignment_x},
         {"door_activation_alignment_y", test_door_activation_alignment_y},

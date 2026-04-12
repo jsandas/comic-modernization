@@ -27,6 +27,7 @@ add_executable(captain_comic
     src/audio.cpp
     src/title_sequence.cpp
     src/ui_system.cpp
+    src/player_teleport.cpp
 )
 
 # Link libraries
@@ -58,6 +59,7 @@ add_executable(comic_tests
     src/audio.cpp
     src/title_sequence.cpp
     src/ui_system.cpp
+    src/player_teleport.cpp
 )
 
 target_link_libraries(comic_tests

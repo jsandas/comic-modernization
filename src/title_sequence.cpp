@@ -670,7 +670,8 @@ static std::vector<std::string> build_keyboard_setup_lines(const InputBindings& 
         "Move Right",
         "Jump",
         "Fireball",
-        "Open Door"
+        "Open Door",
+        "Teleport"
     };
 
     const std::vector<SDL_Keycode> action_keys = {
@@ -678,14 +679,18 @@ static std::vector<std::string> build_keyboard_setup_lines(const InputBindings& 
         draft.move_right,
         draft.jump,
         draft.fire,
-        draft.open_door
+        draft.open_door,
+        draft.teleport
     };
 
     std::vector<std::string> lines;
     lines.push_back("Keyboard Setup");
     lines.push_back("");
 
-    if (is_confirm_mode) {
+    const int total_actions = static_cast<int>(action_names.size());
+    const bool prompt_for_action = !is_confirm_mode && action_index >= 0 && action_index < total_actions;
+
+    if (!prompt_for_action) {
         lines.push_back("Review bindings");
         lines.push_back("Press Y to accept, N to reconfigure, ESC to cancel");
     } else {
@@ -702,9 +707,6 @@ static std::vector<std::string> build_keyboard_setup_lines(const InputBindings& 
         lines.push_back("");
         lines.push_back(status_line);
     }
-
-    lines.push_back("");
-    lines.push_back("Teleport binding is saved but not yet active in gameplay.");
 
     return lines;
 }
@@ -732,22 +734,18 @@ static bool key_is_already_assigned(const InputBindings& bindings,
         bindings.move_right,
         bindings.jump,
         bindings.fire,
-        bindings.open_door
+        bindings.open_door,
+        bindings.teleport
     };
 
-    for (int i = 0; i < 5; ++i) {
+    constexpr int NUM_ACTIONS = static_cast<int>(sizeof(keys) / sizeof(keys[0]));
+    for (int i = 0; i < NUM_ACTIONS; ++i) {
         if (i == current_action_index) {
             continue;
         }
         if (canonicalize_binding_key(keys[i]) == canonical_key) {
             return true;
         }
-    }
-
-    // Teleport is persisted even though gameplay does not consume it yet.
-    // Reserve it here so saved mappings stay valid on next startup load.
-    if (canonicalize_binding_key(bindings.teleport) == canonical_key) {
-        return true;
     }
 
     return false;
@@ -760,6 +758,7 @@ static void set_binding_for_action(InputBindings& bindings, int action_index, SD
         case 2: bindings.jump = key; break;
         case 3: bindings.fire = key; break;
         case 4: bindings.open_door = key; break;
+        case 5: bindings.teleport = key; break;
         default: break;
     }
 }
@@ -831,7 +830,6 @@ static bool run_keyboard_setup_menu(SDL_Renderer* renderer, TTF_Font* font) {
     };
 
     while (true) {
-        const bool is_confirm_mode = action_index >= 5;
 
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) {
@@ -844,6 +842,7 @@ static bool run_keyboard_setup_menu(SDL_Renderer* renderer, TTF_Font* font) {
             }
 
             const SDL_Keycode key = e.key.keysym.sym;
+            const bool is_confirm_mode = action_index >= 6;
 
             if (key == SDLK_ESCAPE) {
                 clear_cached_lines();
@@ -899,6 +898,8 @@ static bool run_keyboard_setup_menu(SDL_Renderer* renderer, TTF_Font* font) {
             action_index++;
             status_line.clear();
         }
+
+        const bool is_confirm_mode = action_index >= 6;
 
         const bool should_rebuild_cache =
             !cache_valid ||
