@@ -363,37 +363,57 @@ static void test_jump_height() {
           "boots jump height should be 9 units (got " + std::to_string(boots_height) + ")");
 }
 
-    static void test_space_level_uses_lower_gravity() {
-        reset_physics_state();
-        comic_x = 4;
-        comic_y = 6;
-        comic_is_falling_or_jumping = 1;
-        comic_jump_counter = 1;
-        comic_y_vel = 0;
-        key_state_jump = 0;
-        key_state_left = 0;
-        key_state_right = 0;
+static void test_space_level_uses_lower_gravity() {
+    reset_physics_state();
+    comic_x = 4;
+    comic_y = 6;
+    comic_is_falling_or_jumping = 1;
+    comic_jump_counter = 1;
+    comic_y_vel = 0;
+    key_state_jump = 0;
+    key_state_left = 0;
+    key_state_right = 0;
 
-        current_level_number = LEVEL_NUMBER_FOREST;
-        handle_fall_or_jump();
-        check(comic_y_vel == COMIC_GRAVITY,
-            "normal levels should apply COMIC_GRAVITY");
+    current_level_number = LEVEL_NUMBER_FOREST;
+    handle_fall_or_jump();
+    check(comic_y_vel == COMIC_GRAVITY,
+        "normal levels should apply COMIC_GRAVITY");
 
-        reset_physics_state();
-        comic_x = 4;
-        comic_y = 6;
-        comic_is_falling_or_jumping = 1;
-        comic_jump_counter = 1;
-        comic_y_vel = 0;
-        key_state_jump = 0;
-        key_state_left = 0;
-        key_state_right = 0;
+    reset_physics_state();
+    comic_x = 4;
+    comic_y = 6;
+    comic_is_falling_or_jumping = 1;
+    comic_jump_counter = 1;
+    comic_y_vel = 0;
+    key_state_jump = 0;
+    key_state_left = 0;
+    key_state_right = 0;
 
-        current_level_number = LEVEL_NUMBER_SPACE;
-        handle_fall_or_jump();
-        check(comic_y_vel == COMIC_GRAVITY_SPACE,
-            "space level should apply COMIC_GRAVITY_SPACE");
-    }
+    current_level_number = LEVEL_NUMBER_SPACE;
+    handle_fall_or_jump();
+    check(comic_y_vel == COMIC_GRAVITY_SPACE,
+        "space level should apply COMIC_GRAVITY_SPACE");
+}
+
+static void test_jump_top_clamped_to_playfield() {
+    reset_physics_state();
+    comic_x = 4;
+    comic_y = 0;
+    comic_is_falling_or_jumping = 1;
+    comic_jump_counter = 2;
+    comic_y_vel = -16;
+    key_state_jump = 1;
+    key_state_left = 0;
+    key_state_right = 0;
+    current_level_number = LEVEL_NUMBER_FOREST;
+
+    handle_fall_or_jump();
+
+    check(comic_y == 0,
+        "jump top clamp: player y should stay at top boundary (0)");
+    check(!is_player_dying(),
+        "jump top clamp: top clamp should not trigger death state");
+}
 
 static void advance_death_sequence_until_complete(int max_ticks = 128) {
     for (int i = 0; i < max_ticks && is_player_dying(); ++i) {
@@ -2042,6 +2062,7 @@ static const std::vector<TestCase>& test_registry() {
         {"jump_recharge", test_jump_recharge},
         {"jump_height", test_jump_height},
         {"space_level_uses_lower_gravity", test_space_level_uses_lower_gravity},
+        {"jump_top_clamped_to_playfield", test_jump_top_clamped_to_playfield},
         {"player_death_sequence_respawn", test_player_death_sequence_respawn},
         {"player_death_sequence_game_over", test_player_death_sequence_game_over},
         {"high_score_bytes_conversion", test_high_score_bytes_conversion},

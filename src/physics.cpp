@@ -258,9 +258,10 @@ void handle_fall_or_jump() {
             ceiling_stick_flag = false;
         }
         
-        // STEP 4: Integrate velocity (divide by 8)
+        // STEP 4: Integrate velocity (divide by 8) and clamp top boundary
         int delta_y = comic_y_vel >> 3;
-        comic_y += delta_y;
+        int new_y = comic_y + delta_y;
+        comic_y = std::max(0, new_y);
         
         // Apply ceiling stick (push down 1 unit if against ceiling)
         if (ceiling_stick_flag) {

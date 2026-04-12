@@ -80,5 +80,6 @@ add_test(NAME comic_tests_jump_edge_trigger COMMAND comic_tests --filter jump_ed
 add_test(NAME comic_tests_jump_recharge COMMAND comic_tests --filter jump_recharge)
 add_test(NAME comic_tests_jump_height COMMAND comic_tests --filter jump_height)
 add_test(NAME comic_tests_space_level_uses_lower_gravity COMMAND comic_tests --filter space_level_uses_lower_gravity)
+add_test(NAME comic_tests_jump_top_clamped_to_playfield COMMAND comic_tests --filter jump_top_clamped_to_playfield)
 add_test(NAME comic_tests_high_score_bytes_conversion COMMAND comic_tests --filter high_score_bytes_conversion)
 
