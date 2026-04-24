@@ -24,7 +24,6 @@ uint8_t comic_facing = 1; // 1 right, 0 left
 uint8_t comic_animation = 0;
 uint8_t comic_is_falling_or_jumping = 1;
 uint8_t comic_jump_counter = 0;
-bool is_ledge_fall = false;  // true when falling due to walking off edge (not a jump)
 uint8_t comic_jump_power = JUMP_POWER_DEFAULT;
 uint8_t key_state_jump = 0;
 uint8_t previous_key_state_jump = 0;
