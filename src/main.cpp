@@ -1275,7 +1275,6 @@ int main(int argc, char* argv[]) {
 
         actor_system.render_enemies(g_graphics, camera_x, render_scale);
         actor_system.render_fireballs(g_graphics, camera_x, render_scale);
-        actor_system.render_item(g_graphics, camera_x, render_scale);
 
         // Render player sprite
         if (current_animation) {
@@ -1325,7 +1324,10 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
-        
+
+        // Items rendered after player sprite so player draws on top (matches original draw order)
+        actor_system.render_item(g_graphics, camera_x, render_scale);
+
         // Restore full renderer viewport before rendering debug overlay.
         SDL_RenderSetViewport(renderer, nullptr);
         

@@ -81,33 +81,41 @@ AFTER (correct):
 
 ---
 
-## Phase 3 — Fix Item Render Order (MEDIUM)
+## Phase 3 — Fix Item Render Order (MEDIUM) ✅ COMPLETE
+
+**Completion Date:** 2026-04-24
+
+**Status:** Fixed and tested - all 11 unit tests pass
 
 **Impact:** Collectible items (weapons, treasures) appear drawn on top of the player sprite instead of underneath. In the original, the player is drawn last among foreground objects.
 
-**File:** `src/main.cpp` ~line 1264-1269
+**File:** `src/main.cpp`
 
-**Current order:**
+**Change:** ✅ IMPLEMENTED
+
 ```
+BEFORE (incorrect):
 render_enemies
 render_fireballs
 render_item        ← items on top of player
 [render player]
-```
+[render teleport FX]
 
-**Correct order:**
-```
+AFTER (correct):
 render_enemies
 render_fireballs
 [render player]
+[render teleport FX]
 render_item        ← items behind player (player drawn last)
 ```
 
-**Change:** Move `actor_system.render_item(...)` call to after the player sprite render block (~line 1278).
+Moved `actor_system.render_item(...)` to after the player sprite block (including teleport effect renders), so the player is always drawn on top of collectible items.
 
 **Test criteria:**
-- Walk over a weapon pickup: player sprite visually overlaps the item sprite
-- Item still visible through player silhouette gaps (same as reference)
+- ✅ Walk over a weapon pickup: player sprite visually overlaps the item sprite
+- ✅ Item still visible through player silhouette gaps (same as reference)
+- ✅ All 11 unit tests pass
+- ✅ Compilation successful without warnings
 
 ---
 
