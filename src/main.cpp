@@ -1028,7 +1028,7 @@ int main(int argc, char* argv[]) {
                 }
 
                 // Ground movement (only when not in air AND did not just land this tick)
-                // Skipping on landing matches assembly: landing jmps past the left/right block
+                // Skipping on landing matches assembly: landing jumps past the left/right block
                 if (!comic_is_falling_or_jumping && !just_landed) {
                     if (key_state_left) {
                         move_left();
@@ -1078,7 +1078,6 @@ int main(int argc, char* argv[]) {
 
                 // ========== PHASE 2: Door and Teleport Checks (After Physics/Actors) ==========
                 // Assembly order: check doors, then teleports, after physics has resolved position
-                
                 // Process door input once per tick (edge-triggered)
                 // Door activation happens AFTER physics resolves, not before
                 process_door_input();
