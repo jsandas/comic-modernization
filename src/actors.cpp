@@ -189,7 +189,9 @@ void ActorSystem::setup_enemies_for_stage(
 
     // Setup item for this stage
     current_item_type = stage.item_type;
-    // Level item coordinates are already in game units.
+    // Stage item coordinates are consumed here as game-unit positions, not tile indices.
+    // Do not apply a tile-to-game-unit conversion here or elsewhere when reading
+    // stage.item_x/stage.item_y, or the old ×2 placement bug will be reintroduced.
     current_item_x = stage.item_x;
     current_item_y = stage.item_y;
 
