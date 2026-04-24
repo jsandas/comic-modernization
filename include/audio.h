@@ -13,6 +13,7 @@ enum class GameSound : uint8_t {
     PLAYER_HIT,         // Player takes damage
     PLAYER_DIE,         // Player death
     GAME_OVER,          // "Too bad" death jingle
+    EXTRA_LIFE,         // Extra life award ("we're in the money")
     MATERIALIZE,        // Beam in/out and materialize effects
     TELEPORT,           // Teleport action
     COUNT

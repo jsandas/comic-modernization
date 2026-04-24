@@ -22,6 +22,8 @@ extern uint8_t current_stage_number;
 extern const level_t* current_level_ptr;
 extern int8_t source_door_level_number;
 extern int8_t source_door_stage_number;
+extern uint8_t comic_x_checkpoint;
+extern uint8_t comic_y_checkpoint;
 extern int camera_x;
 extern GraphicsSystem* g_graphics;
 
@@ -189,6 +191,10 @@ void load_new_stage() {
                 comic_x = door.x + 1;  /* Center Comic in door (door is 2 units wide) */
                 comic_y = door.y;
                 comic_y_vel = 0;
+
+                /* Entering through a door establishes the new respawn checkpoint. */
+                comic_x_checkpoint = static_cast<uint8_t>(comic_x);
+                comic_y_checkpoint = static_cast<uint8_t>(comic_y);
                 
                 /* Set camera to follow Comic */
                 camera_x = comic_x - (PLAYFIELD_WIDTH / 2);

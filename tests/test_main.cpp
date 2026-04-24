@@ -14,6 +14,7 @@
 #include "../include/audio.h"
 #include "../include/title_sequence.h"
 #include "../include/ui_system.h"
+#include "../include/player_teleport.h"
 
 #if defined(HAVE_SDL2_MIXER)
 #include <SDL2/SDL.h>
@@ -91,6 +92,7 @@ uint8_t comic_num_lives = 0;
 
 // Player shield/HP state used by actor collision logic
 uint8_t comic_hp = MAX_HP;
+uint8_t comic_hp_pending_increase = 0;
 
 // Score bytes (used by award_points()) - base-100 encoding
 uint8_t score_bytes[3] = {0, 0, 0};
@@ -362,6 +364,58 @@ static void test_jump_height() {
           "boots jump height should be 9 units (got " + std::to_string(boots_height) + ")");
 }
 
+static void test_space_level_uses_lower_gravity() {
+    reset_physics_state();
+    comic_x = 4;
+    comic_y = 6;
+    comic_is_falling_or_jumping = 1;
+    comic_jump_counter = 1;
+    comic_y_vel = 0;
+    key_state_jump = 0;
+    key_state_left = 0;
+    key_state_right = 0;
+
+    current_level_number = LEVEL_NUMBER_FOREST;
+    handle_fall_or_jump();
+    check(comic_y_vel == COMIC_GRAVITY,
+        "normal levels should apply COMIC_GRAVITY");
+
+    reset_physics_state();
+    comic_x = 4;
+    comic_y = 6;
+    comic_is_falling_or_jumping = 1;
+    comic_jump_counter = 1;
+    comic_y_vel = 0;
+    key_state_jump = 0;
+    key_state_left = 0;
+    key_state_right = 0;
+
+    current_level_number = LEVEL_NUMBER_SPACE;
+    handle_fall_or_jump();
+    check(comic_y_vel == COMIC_GRAVITY_SPACE,
+        "space level should apply COMIC_GRAVITY_SPACE");
+}
+
+static void test_jump_top_clamped_to_playfield() {
+    reset_physics_state();
+    comic_x = 4;
+    comic_y = 0;
+    comic_is_falling_or_jumping = 1;
+    comic_jump_counter = 2;
+    comic_y_vel = -16;
+    key_state_jump = 1;
+    key_state_left = 0;
+    key_state_right = 0;
+    current_level_number = LEVEL_NUMBER_FOREST;
+
+    handle_fall_or_jump();
+
+    check(comic_y == 0,
+        "jump top clamp: player y should stay at top boundary (0)");
+    check(!is_player_dying(),
+        "jump top clamp: top clamp should not trigger death state");
+}
+
 static void advance_death_sequence_until_complete(int max_ticks = 128) {
     for (int i = 0; i < max_ticks && is_player_dying(); ++i) {
         update_player_death_sequence();
@@ -438,6 +492,28 @@ static void test_player_death_sequence_game_over() {
     check(comic_x == 41 && comic_y == 8,
         "game_over: zero-lives path should not respawn to checkpoint");
     check(comic_hp == 2, "game_over: zero-lives path should not reset HP");
+}
+
+static void test_teleport_does_not_update_respawn_checkpoint() {
+    reset_physics_state();
+
+    comic_x_checkpoint = 22;
+    comic_y_checkpoint = 12;
+
+    comic_x = 40;
+    comic_y = 8;
+
+    apply_teleport_destination_if_ready(
+        3,
+        60,
+        6,
+        comic_x,
+        comic_y);
+
+    check(comic_x == 60 && comic_y == 6,
+        "teleport_checkpoint: teleport frame should move player to destination");
+    check(comic_x_checkpoint == 22 && comic_y_checkpoint == 12,
+        "teleport_checkpoint: teleport should not modify respawn checkpoint");
 }
 
 static void test_high_score_bytes_conversion() {
@@ -723,6 +799,35 @@ static void test_runtime_level_tiles_populated() {
     reset_door_state();
 }
 
+static void test_door_entry_sets_checkpoint_for_respawn() {
+    initialize_level_data();
+
+    // Simulate entering lake stage 0 from forest stage 2 via a door.
+    // In level data, lake stage 0 has reciprocal door { y=10, x=118, target_level=1, target_stage=2 }.
+    current_level_number = LEVEL_NUMBER_LAKE;
+    current_stage_number = 0;
+    source_door_level_number = LEVEL_NUMBER_FOREST;
+    source_door_stage_number = 2;
+
+    // Seed checkpoint with sentinel values so we can verify it changes.
+    comic_x_checkpoint = 14;
+    comic_y_checkpoint = 12;
+
+    load_new_level();
+
+    // Spawn point should be in front of reciprocal door.
+    check(comic_x == 119 && comic_y == 10,
+        "door_entry_checkpoint: player should spawn at reciprocal door position");
+
+    // Door entry must set checkpoint so death respawns at this door.
+    check(comic_x_checkpoint == 119 && comic_y_checkpoint == 10,
+        "door_entry_checkpoint: checkpoint should update to reciprocal door spawn");
+
+    // Source door markers should be consumed after stage load.
+    check(source_door_level_number == -1 && source_door_stage_number == -1,
+        "door_entry_checkpoint: source door markers should reset after stage load");
+}
+
 static void test_stage_left_exit_blocked() {
     reset_physics_state();
     
@@ -885,26 +990,27 @@ static void reset_score_bytes() {
 }
 
 static void test_award_points_no_carry() {
-    // award_points(3) adds three displayed points.
+    // award_points(3) adds 300 displayed points.
     reset_score_bytes();
     award_points(3);
-    check(score_bytes[0] == 3, "award_points: 3 points should add 3 to score_bytes[0]");
+    check(score_bytes[0] == 3, "award_points: 3 units should add 3 to score_bytes[0]");
     check(score_bytes[1] == 0, "award_points: no carry into score_bytes[1] expected");
     check(score_bytes[2] == 0, "award_points: no carry into score_bytes[2] expected");
 }
 
 static void test_award_points_accumulates_in_byte0() {
-    // score_bytes[0] is the primary accumulation byte for award_points().
+    // score_bytes[0] is the primary accumulation byte for base-100 units.
     reset_score_bytes();
     score_bytes[0] = 42;
     award_points(5);
-    check(score_bytes[0] == 47, "award_points: 5 points should add to score_bytes[0]");
+    check(score_bytes[0] == 47, "award_points: 5 units should add to score_bytes[0]");
     check(score_bytes[1] == 0,  "award_points: no carry into score_bytes[1] expected");
     check(score_bytes[2] == 0,  "award_points: no carry into score_bytes[2] expected");
 }
 
 static void test_award_points_carry_into_byte1() {
-    // score_bytes[0] = 90, award_points(20): sum = 110, carry = 1 into byte[1]
+    // score_bytes[0] = 90, award_points(20): sum = 110, carry = 1 into byte[1].
+    // This corresponds to adding 2,000 displayed points.
     reset_score_bytes();
     score_bytes[0] = 90;
     award_points(20);
@@ -914,7 +1020,7 @@ static void test_award_points_carry_into_byte1() {
 }
 
 static void test_award_points_full_carry_amount() {
-    // award_points(200) from zero: carry = 2 into score_bytes[1]
+    // award_points(200) from zero: carry = 2 into score_bytes[1] (20,000 points).
     reset_score_bytes();
     award_points(200);
     check(score_bytes[0] == 0, "award_points: 200 mod 100 should leave score_bytes[0] = 0");
@@ -924,7 +1030,7 @@ static void test_award_points_full_carry_amount() {
 
 static void test_award_points_large_value_above_255() {
     // Values > 255 must not be truncated.
-    // award_points(300): sum = 300, carry = 3, score_bytes[1] = 3
+    // award_points(300): sum = 300, carry = 3, score_bytes[1] = 3 (30,000 points).
     reset_score_bytes();
     award_points(300);
     check(score_bytes[0] == 0, "award_points: 300 mod 100 should leave score_bytes[0] = 0");
@@ -1548,6 +1654,40 @@ static void test_item_special_items() {
     actor_system.apply_item_effect(ITEM_LANTERN);
     check(actor_system.comic_has_lantern == 1, 
           "special_items: should have lantern after collection");
+
+        // Shield (not full HP): schedule refill to MAX_HP
+        comic_num_lives = 2;
+        comic_hp = static_cast<uint8_t>(MAX_HP - 2);
+        comic_hp_pending_increase = 0;
+        actor_system.apply_item_effect(ITEM_SHIELD);
+        check(comic_hp_pending_increase == 2,
+            "special_items: shield should schedule refill when HP is not full");
+        check(comic_num_lives == 2,
+            "special_items: shield should not award extra life when HP is not full");
+
+        // Shield (full HP, below cap): award extra life
+        comic_hp = MAX_HP;
+        comic_hp_pending_increase = 0;
+        actor_system.apply_item_effect(ITEM_SHIELD);
+        check(comic_num_lives == 3,
+            "special_items: shield should award extra life when HP is full");
+        check(comic_hp_pending_increase == 0,
+            "special_items: full-HP shield below max lives should not schedule HP refill");
+
+        // Shield (full HP, at cap): keep max lives and award comic-c bonus path.
+        comic_num_lives = 5;
+        comic_hp = MAX_HP;
+        comic_hp_pending_increase = 0;
+        score_bytes[0] = 0;
+        score_bytes[1] = 0;
+        score_bytes[2] = 0;
+        actor_system.apply_item_effect(ITEM_SHIELD);
+        check(comic_num_lives == 5,
+            "special_items: shield at max lives should not increase life count");
+        check(comic_hp_pending_increase == MAX_HP,
+            "special_items: shield at max lives should set pending HP refill");
+        check(score_bytes[0] == 25 && score_bytes[1] == 2 && score_bytes[2] == 0,
+            "special_items: shield at max lives should award 22500 points");
 }
 
 // ===== Audio System Tests =====
@@ -1684,6 +1824,10 @@ static void test_audio_all_sounds_playable() {
 
     ok = play_game_sound(GameSound::ITEM_COLLECT);
     check(ok, "audio_all_sounds: ITEM_COLLECT should play");
+    wait_for_sfx_channel_idle(200);
+
+    ok = play_game_sound(GameSound::EXTRA_LIFE);
+    check(ok, "audio_all_sounds: EXTRA_LIFE should play");
     wait_for_sfx_channel_idle(200);
 
     ok = play_game_sound(GameSound::TELEPORT);
@@ -1940,8 +2084,11 @@ static const std::vector<TestCase>& test_registry() {
         {"jump_edge_trigger", test_jump_edge_trigger},
         {"jump_recharge", test_jump_recharge},
         {"jump_height", test_jump_height},
+        {"space_level_uses_lower_gravity", test_space_level_uses_lower_gravity},
+        {"jump_top_clamped_to_playfield", test_jump_top_clamped_to_playfield},
         {"player_death_sequence_respawn", test_player_death_sequence_respawn},
         {"player_death_sequence_game_over", test_player_death_sequence_game_over},
+        {"teleport_does_not_update_respawn_checkpoint", test_teleport_does_not_update_respawn_checkpoint},
         {"high_score_bytes_conversion", test_high_score_bytes_conversion},
         {"door_activation_alignment_x", test_door_activation_alignment_x},
         {"door_activation_alignment_y", test_door_activation_alignment_y},
@@ -1950,6 +2097,7 @@ static const std::vector<TestCase>& test_registry() {
         {"door_state_update_same_level", test_door_state_update_same_level},
         {"door_state_update_different_level", test_door_state_update_different_level},
         {"runtime_level_tiles_populated", test_runtime_level_tiles_populated},
+        {"door_entry_sets_checkpoint_for_respawn", test_door_entry_sets_checkpoint_for_respawn},
         {"cave_level_solidity", test_cave_level_solidity},
         {"problematic_levels_have_solid_tiles", test_problematic_levels_have_solid_tiles},
         {"stage_left_exit_blocked", test_stage_left_exit_blocked},

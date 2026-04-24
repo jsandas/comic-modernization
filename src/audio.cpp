@@ -155,6 +155,11 @@ static const std::vector<FrequencyNote> SOUND_GAME_OVER_SEQUENCE = {
     {FREQ_TOO_BAD_1, 5}, {FREQ_TOO_BAD_3, 10}
 };
 
+// Extra life award sound (SOUND_EXTRA_LIFE in comic-c).
+static const std::vector<FrequencyNote> SOUND_EXTRA_LIFE_SEQUENCE = {
+    {NOTE_B4, 5}, {NOTE_D5, 6}, {NOTE_B4, 2}, {NOTE_C5, 5}, {NOTE_D5, 5}
+};
+
 static const std::vector<FrequencyNote> SOUND_MATERIALIZE_SEQUENCE = {
     {FREQ_MATERIALIZE_200, 1}, {FREQ_MATERIALIZE_220, 1}, {FREQ_MATERIALIZE_210, 1},
     {FREQ_MATERIALIZE_230, 1}, {FREQ_MATERIALIZE_220, 1}, {FREQ_MATERIALIZE_240, 1},
@@ -226,6 +231,7 @@ constexpr std::array<uint8_t, static_cast<size_t>(GameSound::COUNT)> SOUND_PRIOR
     8,   // PLAYER_HIT
     9,   // PLAYER_DIE
     2,   // GAME_OVER
+    7,   // EXTRA_LIFE (must override ITEM_COLLECT when awarded from shield)
     4,   // MATERIALIZE
     7,   // TELEPORT
 }};
@@ -349,6 +355,8 @@ static const std::vector<FrequencyNote>* get_sound_sequence(GameSound sound) {
             return &SOUND_PLAYER_DIE_SEQUENCE;
         case GameSound::GAME_OVER:
             return &SOUND_GAME_OVER_SEQUENCE;
+        case GameSound::EXTRA_LIFE:
+            return &SOUND_EXTRA_LIFE_SEQUENCE;
         case GameSound::MATERIALIZE:
             return &SOUND_MATERIALIZE_SEQUENCE;
         case GameSound::TELEPORT:

@@ -258,9 +258,10 @@ void handle_fall_or_jump() {
             ceiling_stick_flag = false;
         }
         
-        // STEP 4: Integrate velocity (divide by 8)
+        // STEP 4: Integrate velocity (divide by 8) and clamp top boundary
         int delta_y = comic_y_vel >> 3;
-        comic_y += delta_y;
+        int new_y = comic_y + delta_y;
+        comic_y = std::max(0, new_y);
         
         // Apply ceiling stick (push down 1 unit if against ceiling)
         if (ceiling_stick_flag) {
@@ -274,8 +275,12 @@ void handle_fall_or_jump() {
             return;
         }
         
-        // STEP 5: Apply gravity
-        comic_y_vel += COMIC_GRAVITY;
+        // STEP 5: Apply gravity (reduced in space level)
+        if (current_level_number == LEVEL_NUMBER_SPACE) {
+            comic_y_vel += COMIC_GRAVITY_SPACE;
+        } else {
+            comic_y_vel += COMIC_GRAVITY;
+        }
         if (comic_y_vel > TERMINAL_VELOCITY) {
             comic_y_vel = TERMINAL_VELOCITY;
         }
@@ -365,8 +370,16 @@ void handle_fall_or_jump() {
         }
         
         if (!foot_solid) {
-            // No ground, start falling
+            // Match original edge-walk behavior: immediately enter falling with
+            // an initial downward speed (1 unit/tick) and depleted jump counter.
+            comic_y_vel = 8;
+            if (comic_x_momentum > 0) {
+                comic_x_momentum = 2;
+            } else if (comic_x_momentum < 0) {
+                comic_x_momentum = -2;
+            }
             comic_is_falling_or_jumping = 1;
+            comic_jump_counter = 1;
         }
     }
 }

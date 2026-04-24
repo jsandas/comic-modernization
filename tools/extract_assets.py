@@ -151,8 +151,10 @@ _range("comic_death", 0x10e0, 8)
 _range("teleport", 0x1ae0, 3)
 _range("materialize", 0x1ea0, 12)
 _range("fireball", 0x0c80, 2, step=80, size=(16, 8))
-_range("white_spark", 0x0d20, 3)
-_range("red_spark", 0x0f00, 3)
+# Spark effects are 16x16 masked sprites (160 bytes/frame), not 16x32.
+# Using 16x32 pulls in adjacent sprite data and produces corrupted PNGs.
+_range("white_spark", 0x0d20, 3, step=160, size=(16, 16))
+_range("red_spark", 0x0f00, 3, step=160, size=(16, 16))
 
 # score digits and meter bars
 for i in range(10):
