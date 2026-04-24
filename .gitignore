@@ -43,6 +43,7 @@
 assets
 build
 original
+reference
 
 tools/generate_tiles
 

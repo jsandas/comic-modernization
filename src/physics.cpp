@@ -343,9 +343,9 @@ void handle_fall_or_jump() {
             }
             
             if (foot_solid) {
-                // Landing: align to tile boundary and stop falling
-                uint8_t tile_row = foot_y / 2;
-                comic_y = tile_row * 2 - 4;
+                // Landing: snap to nearest even boundary below foot probe
+                // (matches assembly: clear low bit of comic_y + 1)
+                comic_y = (comic_y + 1) & 0xFE;
                 comic_is_falling_or_jumping = 0;
                 comic_y_vel = 0;
                 comic_x_momentum = 0;
