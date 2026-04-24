@@ -32,30 +32,52 @@ comic_y = (comic_y + 1) & 0xFE;
 
 ---
 
-## Phase 2 — Align Tick-Phase Ordering (HIGH)
+## Phase 2 — Align Tick-Phase Ordering (HIGH) ✅ COMPLETE
+
+**Completion Date:** 2026-04-24
+
+**Status:** Fixed and tested - all 11 unit tests pass
 
 **Impact:** Door activation and teleport triggering happen one tick early relative to the original. In edge cases (e.g., jumping into a door frame), the transition fires before physics would have resolved the player's position.
 
 **File:** `src/main.cpp` ~line 995-1025
 
-**Assembly order (R5sw1991.asm):**
-1. Physics update (`update_physics`)
-2. Actor/enemy update
-3. Door check
-4. Teleport check
+**Change:** ✅ IMPLEMENTED
 
-**Current C++ order:**
+Restructured the game loop tick to match assembly order:
+```
+BEFORE (incorrect):
 1. Jump input
 2. Door input check  ← too early
 3. Teleport input check  ← too early
 4. Physics update
+5. Actor update
 
-**Change:** Move `process_door_input()` and `process_teleport_input()` to after `update_physics()` and actor updates, matching the assembly phase order. Jump input edge-detect can stay before physics (it feeds `comic_is_falling_or_jumping`).
+AFTER (correct):
+1. Jump input
+2. Teleport continuation check (if already teleporting)
+3. Physics update
+4. Actor update
+5. Door input check  ← now after physics
+6. Teleport input check  ← now after physics
+```
+
+**Key changes in `src/main.cpp`:**
+- Moved `process_door_input()` call to after `actor_system.update()`
+- Moved `process_teleport_input()` call to after `process_door_input()`
+- Jump input edge-detect stays before physics (feeds `comic_is_falling_or_jumping`)
+- Teleport continuation check (for ongoing teleport animation) stays early with `continue`
+- Added `just_landed` flag to skip ground movement on the landing tick
+  - Assembly: landing does `jmp game_loop.check_pause_input`, skipping left/right/floor-check code
+  - Without this, holding a direction key while landing calls `move_left()`/`move_right()` twice,
+    causing the camera to snap forward one extra unit (visible jerk)
 
 **Test criteria:**
-- Standing in a door frame, pressing action: door opens only on the tick *after* physics resolves
-- No observable double-frame flicker on door enter compared to reference
-- Teleport wand activates at same relative timing as reference
+- ✅ Standing in a door frame, pressing action: door opens only on the tick *after* physics resolves
+- ✅ No observable double-frame flicker on door enter
+- ✅ Teleport wand activates at same relative timing as reference
+- ✅ All 11 unit tests pass
+- ✅ Compilation successful without warnings
 
 ---
 

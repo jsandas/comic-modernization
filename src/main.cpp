@@ -993,18 +993,10 @@ int main(int argc, char* argv[]) {
                 }
 
                 // Process jump input once per tick (edge-triggered)
+                // Note: Jump input feeds comic_is_falling_or_jumping, so must be before physics
                 process_jump_input();
 
-                // Process door input once per tick (edge-triggered)
-                process_door_input();
-
-                // Process teleport input once per tick (edge-triggered)
-                if (!comic_is_falling_or_jumping && !comic_is_teleporting) {
-                    process_teleport_input(actor_system.comic_has_teleport_wand != 0);
-                } else {
-                    previous_key_state_teleport = key_state_teleport;
-                }
-
+                // Handle ongoing teleport animation (continues to next tick if active)
                 if (comic_is_teleporting) {
                     handle_teleport_tick();
 
@@ -1023,6 +1015,11 @@ int main(int argc, char* argv[]) {
                 const uint8_t was_falling_or_jumping = comic_is_falling_or_jumping;
                 handle_fall_or_jump();
 
+                // Detect landing this tick: was airborne, now grounded
+                // Assembly: on landing, jmp game_loop.check_pause_input skips ALL
+                // left/right movement AND the floor walk-off check for that tick.
+                const bool just_landed = (was_falling_or_jumping != 0) && (comic_is_falling_or_jumping == 0);
+
                 // If physics transitioned from grounded to airborne using the
                 // no-floor path, suppress jump art for this render frame.
                 if (!was_falling_or_jumping && comic_is_falling_or_jumping &&
@@ -1030,8 +1027,9 @@ int main(int argc, char* argv[]) {
                     suppress_jump_animation_this_frame = true;
                 }
 
-                // Ground movement (only when not in air)
-                if (!comic_is_falling_or_jumping) {
+                // Ground movement (only when not in air AND did not just land this tick)
+                // Skipping on landing matches assembly: landing jumps past the left/right block
+                if (!comic_is_falling_or_jumping && !just_landed) {
                     if (key_state_left) {
                         move_left();
                     }
@@ -1077,6 +1075,20 @@ int main(int argc, char* argv[]) {
                     : nullptr;
                 actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x, key_state_fire);
                 ui_system.update();
+
+                // ========== PHASE 2: Door and Teleport Checks (After Physics/Actors) ==========
+                // Assembly order: check doors, then teleports, after physics has resolved position
+                // Process door input once per tick (edge-triggered)
+                // Door activation happens AFTER physics resolves, not before
+                process_door_input();
+
+                // Process teleport input once per tick (edge-triggered)
+                // Teleport activation happens AFTER physics resolves, not before
+                if (!comic_is_falling_or_jumping && !comic_is_teleporting) {
+                    process_teleport_input(actor_system.comic_has_teleport_wand != 0);
+                } else {
+                    previous_key_state_teleport = key_state_teleport;
+                }
 
                 if (!beam_out_sequence_played && actor_system.comic_num_treasures >= 3) {
                     beam_out_sequence_played = true;
