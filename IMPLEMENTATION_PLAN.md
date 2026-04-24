@@ -67,6 +67,10 @@ AFTER (correct):
 - Moved `process_teleport_input()` call to after `process_door_input()`
 - Jump input edge-detect stays before physics (feeds `comic_is_falling_or_jumping`)
 - Teleport continuation check (for ongoing teleport animation) stays early with `continue`
+- Added `just_landed` flag to skip ground movement on the landing tick
+  - Assembly: landing does `jmp game_loop.check_pause_input`, skipping left/right/floor-check code
+  - Without this, holding a direction key while landing calls `move_left()`/`move_right()` twice,
+    causing the camera to snap forward one extra unit (visible jerk)
 
 **Test criteria:**
 - ✅ Standing in a door frame, pressing action: door opens only on the tick *after* physics resolves

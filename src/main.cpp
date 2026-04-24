@@ -1015,6 +1015,11 @@ int main(int argc, char* argv[]) {
                 const uint8_t was_falling_or_jumping = comic_is_falling_or_jumping;
                 handle_fall_or_jump();
 
+                // Detect landing this tick: was airborne, now grounded
+                // Assembly: on landing, jmp game_loop.check_pause_input skips ALL
+                // left/right movement AND the floor walk-off check for that tick.
+                const bool just_landed = (was_falling_or_jumping != 0) && (comic_is_falling_or_jumping == 0);
+
                 // If physics transitioned from grounded to airborne using the
                 // no-floor path, suppress jump art for this render frame.
                 if (!was_falling_or_jumping && comic_is_falling_or_jumping &&
@@ -1022,8 +1027,9 @@ int main(int argc, char* argv[]) {
                     suppress_jump_animation_this_frame = true;
                 }
 
-                // Ground movement (only when not in air)
-                if (!comic_is_falling_or_jumping) {
+                // Ground movement (only when not in air AND did not just land this tick)
+                // Skipping on landing matches assembly: landing jmps past the left/right block
+                if (!comic_is_falling_or_jumping && !just_landed) {
                     if (key_state_left) {
                         move_left();
                     }
