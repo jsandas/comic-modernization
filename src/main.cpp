@@ -79,6 +79,7 @@ uint8_t teleport_destination_x = 0;
 uint8_t teleport_destination_y = 0;
 uint8_t teleport_camera_counter = 0;
 int8_t teleport_camera_vel = 0;
+bool teleport_skip_tick = false;
 
 // Global system pointers (for access from other modules)
 ActorSystem* g_actor_system = nullptr;  // Actor system pointer (for cheat access)
@@ -208,6 +209,7 @@ void begin_teleport() {
     teleport_destination_x = dest_x;
     teleport_destination_y = dest_y;
     comic_is_teleporting = true;
+    teleport_skip_tick = true;
 
     play_game_sound(GameSound::TELEPORT);
 }
@@ -225,12 +227,19 @@ void handle_teleport_tick() {
         return;
     }
 
+    if (teleport_skip_tick) {
+        teleport_skip_tick = false;
+        return;
+    }
+
     if (teleport_camera_counter > 0) {
         const int max_camera_x = MAP_WIDTH - PLAYFIELD_WIDTH;
         const int moved_camera_x = camera_x + teleport_camera_vel;
-        camera_x = std::clamp(moved_camera_x, 0, max_camera_x);
+        camera_x = std::max(0, std::min(moved_camera_x, max_camera_x));
         teleport_camera_counter--;
     }
+
+    teleport_animation++;
 
     apply_teleport_destination_if_ready(
         teleport_animation,
@@ -239,7 +248,6 @@ void handle_teleport_tick() {
         comic_x,
         comic_y);
 
-    teleport_animation++;
     if (teleport_animation >= 6) {
         comic_is_teleporting = false;
     }
