@@ -993,18 +993,10 @@ int main(int argc, char* argv[]) {
                 }
 
                 // Process jump input once per tick (edge-triggered)
+                // Note: Jump input feeds comic_is_falling_or_jumping, so must be before physics
                 process_jump_input();
 
-                // Process door input once per tick (edge-triggered)
-                process_door_input();
-
-                // Process teleport input once per tick (edge-triggered)
-                if (!comic_is_falling_or_jumping && !comic_is_teleporting) {
-                    process_teleport_input(actor_system.comic_has_teleport_wand != 0);
-                } else {
-                    previous_key_state_teleport = key_state_teleport;
-                }
-
+                // Handle ongoing teleport animation (continues to next tick if active)
                 if (comic_is_teleporting) {
                     handle_teleport_tick();
 
@@ -1077,6 +1069,21 @@ int main(int argc, char* argv[]) {
                     : nullptr;
                 actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x, key_state_fire);
                 ui_system.update();
+
+                // ========== PHASE 2: Door and Teleport Checks (After Physics/Actors) ==========
+                // Assembly order: check doors, then teleports, after physics has resolved position
+                
+                // Process door input once per tick (edge-triggered)
+                // Door activation happens AFTER physics resolves, not before
+                process_door_input();
+
+                // Process teleport input once per tick (edge-triggered)
+                // Teleport activation happens AFTER physics resolves, not before
+                if (!comic_is_falling_or_jumping && !comic_is_teleporting) {
+                    process_teleport_input(actor_system.comic_has_teleport_wand != 0);
+                } else {
+                    previous_key_state_teleport = key_state_teleport;
+                }
 
                 if (!beam_out_sequence_played && actor_system.comic_num_treasures >= 3) {
                     beam_out_sequence_played = true;
