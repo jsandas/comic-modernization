@@ -1281,8 +1281,10 @@ int main(int argc, char* argv[]) {
         }
 
         if (comic_is_teleporting) {
-            const uint8_t source_frame = teleport_animation;
-            if (source_frame < teleport_sprites.size() && teleport_sprites[source_frame]) {
+            const uint8_t last_teleport_frame =
+                static_cast<uint8_t>(teleport_sprites.size() - 1);
+            const uint8_t source_frame = std::min(teleport_animation, last_teleport_frame);
+            if (teleport_sprites[source_frame]) {
                 int source_screen_x = (static_cast<int>(teleport_source_x) - camera_x) * render_scale + render_scale;
                 int source_screen_y = static_cast<int>(teleport_source_y) * render_scale + render_scale * 2;
                 g_graphics->render_sprite_centered_scaled(
@@ -1295,8 +1297,9 @@ int main(int argc, char* argv[]) {
             }
 
             if (teleport_animation >= 1) {
-                const uint8_t dest_frame = static_cast<uint8_t>(teleport_animation - 1);
-                if (dest_frame < teleport_sprites.size() && teleport_sprites[dest_frame]) {
+                const uint8_t destination_phase = static_cast<uint8_t>(teleport_animation - 1);
+                const uint8_t dest_frame = std::min(destination_phase, last_teleport_frame);
+                if (teleport_sprites[dest_frame]) {
                     int destination_screen_x =
                         (static_cast<int>(teleport_destination_x) - camera_x) * render_scale + render_scale;
                     int destination_screen_y =
