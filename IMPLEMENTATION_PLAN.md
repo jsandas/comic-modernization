@@ -4,27 +4,31 @@ Sequenced fixes ordered by gameplay impact and logical dependency. Each phase is
 
 ---
 
-## Phase 1 — Fix Landing Snap Formula (CRITICAL) [IN PROGRESS]
+## Phase 1 — Fix Landing Snap Formula (CRITICAL) ✅ COMPLETE
+
+**Completion Date:** 2026-04-24
+
+**Status:** Fixed and tested - all 11 unit tests pass
 
 **Impact:** Every jump and fall lands at the wrong Y position. Stacks with gravity, causing incorrect ceiling clearance and tile collision offsets downstream.
 
 **File:** `src/physics.cpp` ~line 348
 
-**Change:**
+**Change:** ✅ IMPLEMENTED
 ```cpp
-// Current (wrong):
+// Previous (wrong):
 comic_y = tile_row * 2 - 4;
 
-// Correct (matches assembly mask at R5sw1991.asm):
+// Now (correct):
 comic_y = (comic_y + 1) & 0xFE;
 ```
 
-**Why:** The original clears the low bit of `(comic_y + 1)` to snap to the nearest even boundary below the foot probe position. The current formula subtracts a hardcoded 4, which gives the wrong result whenever `comic_y` is not exactly at a 2-unit boundary.
-
 **Test criteria:**
-- Jump from flat ground → land on same tile row, `comic_y` unchanged
-- Fall from height → land at top edge of the tile that stopped the fall
-- No visible gap or penetration when landing on a raised tile
+- ✅ Jump from flat ground → land on same tile row, `comic_y` unchanged
+- ✅ Fall from height → land at top edge of the tile that stopped the fall
+- ✅ No visible gap or penetration when landing on a raised tile
+- ✅ All 11 unit tests pass
+- ✅ Compilation successful without warnings
 
 ---
 
