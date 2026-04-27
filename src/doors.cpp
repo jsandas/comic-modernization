@@ -52,7 +52,14 @@ static void load_pending_door_destination() {
         load_new_stage();
     }
 
-    g_door_anim_world_x = static_cast<uint8_t>(comic_x - 1);
+    // Keep door overlay position in bounds if reciprocal spawn resolution fails.
+    if (comic_x <= 0) {
+        g_door_anim_world_x = 0;
+    } else if (comic_x > 255) {
+        g_door_anim_world_x = 255;
+    } else {
+        g_door_anim_world_x = static_cast<uint8_t>(comic_x - 1);
+    }
     g_door_anim_world_y = static_cast<uint8_t>(comic_y);
 }
 
