@@ -97,19 +97,19 @@ AFTER (correct):
 BEFORE (incorrect):
 render_enemies
 render_fireballs
-render_item        ← items on top of player
+render_item
 [render player]
 [render teleport FX]
 
 AFTER (correct):
 render_enemies
 render_fireballs
-[render player]
+render_item        ← items behind player
+[render player]    ← player drawn last (on top)
 [render teleport FX]
-render_item        ← items behind player (player drawn last)
 ```
 
-Moved `actor_system.render_item(...)` to after the player sprite block (including teleport effect renders), so the player is always drawn on top of collectible items.
+Moved `actor_system.render_item(...)` to before the player sprite block so the player draws on top of collectible items.
 
 **Test criteria:**
 - ✅ Walk over a weapon pickup: player sprite visually overlaps the item sprite
