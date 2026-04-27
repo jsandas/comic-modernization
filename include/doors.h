@@ -45,17 +45,17 @@
 uint8_t check_door_activation();
 
 enum class DoorAnimationPhase : uint8_t {
-	NONE = 0,
-	ENTERING = 1,
-	EXIT_DELAY = 2,
-	EXITING = 3
+    NONE = 0,
+    ENTERING = 1,
+    EXIT_DELAY = 2,
+    EXITING = 3
 };
 
 enum class DoorAnimationRenderMode : uint8_t {
-	NONE = 0,
-	HALF_OPEN = 1,
-	FULL_OPEN = 2,
-	HALF_CLOSED = 3
+    NONE = 0,
+    HALF_OPEN = 1,
+    FULL_OPEN = 2,
+    HALF_CLOSED = 3
 };
 
 /* Door animation state used by the main loop.
@@ -65,7 +65,7 @@ extern DoorAnimationPhase g_door_anim_phase;
 extern uint8_t g_door_anim_frame;
 
 /* Advance the door animation by one game tick.
- * Handles deferred stage/level transition at the end of OPENING. */
+ * Handles deferred stage/level transition at the end of ENTERING. */
 void update_door_animation_tick();
 
 /* Return the active door render state for this frame.
