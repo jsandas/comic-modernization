@@ -779,6 +779,236 @@ static void test_door_state_update_different_level() {
           "current_stage_number should be 1 (target stage)");
 }
 
+    static void check_door_render_state(
+        DoorAnimationRenderMode expected_mode,
+        bool expected_draw_overlay_in_front,
+        bool expected_player_visible,
+        const std::string& context
+    ) {
+        uint8_t world_x = 0;
+        uint8_t world_y = 0;
+        DoorAnimationRenderMode mode = DoorAnimationRenderMode::NONE;
+        bool draw_overlay_in_front = false;
+        bool player_visible = false;
+
+        bool has_render_state = get_door_animation_render_state(
+          &world_x,
+          &world_y,
+          &mode,
+          &draw_overlay_in_front,
+          &player_visible);
+
+        check(has_render_state, context + ": expected active door render state");
+        check(mode == expected_mode, context + ": unexpected render mode");
+        check(draw_overlay_in_front == expected_draw_overlay_in_front,
+            context + ": unexpected overlay layering");
+        check(player_visible == expected_player_visible,
+            context + ": unexpected player visibility");
+    }
+
+    static void test_door_animation_phase_progression_and_render_state() {
+        reset_door_state();
+        initialize_level_data();
+
+        current_level_number = LEVEL_NUMBER_FOREST;
+        current_stage_number = 0;
+        current_level_ptr = get_level_by_number(current_level_number);
+        comic_x = 10;
+        comic_y = 8;
+        g_skip_load_on_door = false;
+
+        door_t door{};
+        door.x = 10;
+        door.y = 8;
+        door.target_level = LEVEL_NUMBER_LAKE;
+        door.target_stage = 1;
+
+        activate_door(&door);
+
+        check(g_door_anim_phase == DoorAnimationPhase::ENTERING,
+            "door_anim_progression: phase should start in ENTERING");
+        check(g_door_anim_frame == 0,
+            "door_anim_progression: frame should start at 0");
+        check_door_render_state(
+          DoorAnimationRenderMode::HALF_OPEN,
+          false,
+          true,
+          "door_anim_progression entering frame 0");
+
+        update_door_animation_tick();
+        check(g_door_anim_phase == DoorAnimationPhase::ENTERING,
+            "door_anim_progression: phase should remain ENTERING at frame 1");
+        check(g_door_anim_frame == 1,
+            "door_anim_progression: frame should advance to 1");
+        check_door_render_state(
+          DoorAnimationRenderMode::FULL_OPEN,
+          false,
+          true,
+          "door_anim_progression entering frame 1");
+
+        update_door_animation_tick();
+        check(g_door_anim_phase == DoorAnimationPhase::ENTERING,
+            "door_anim_progression: phase should remain ENTERING at frame 2");
+        check(g_door_anim_frame == 2,
+            "door_anim_progression: frame should advance to 2");
+        check_door_render_state(
+          DoorAnimationRenderMode::HALF_CLOSED,
+          true,
+          true,
+          "door_anim_progression entering frame 2");
+
+        update_door_animation_tick();
+        check(g_door_anim_phase == DoorAnimationPhase::ENTERING,
+            "door_anim_progression: phase should remain ENTERING at frame 3");
+        check(g_door_anim_frame == 3,
+            "door_anim_progression: frame should advance to 3");
+        check_door_render_state(
+          DoorAnimationRenderMode::NONE,
+          false,
+          false,
+          "door_anim_progression entering frame 3");
+
+        update_door_animation_tick();
+        check(g_door_anim_phase == DoorAnimationPhase::EXIT_DELAY,
+            "door_anim_progression: phase should transition to EXIT_DELAY");
+        check(g_door_anim_frame == 0,
+            "door_anim_progression: frame should reset to 0 at EXIT_DELAY");
+        check_door_render_state(
+          DoorAnimationRenderMode::NONE,
+          false,
+          false,
+          "door_anim_progression exit delay");
+
+        update_door_animation_tick();
+        check(g_door_anim_phase == DoorAnimationPhase::EXIT_DELAY,
+            "door_anim_progression: phase should remain EXIT_DELAY tick 1");
+
+        update_door_animation_tick();
+        check(g_door_anim_phase == DoorAnimationPhase::EXIT_DELAY,
+            "door_anim_progression: phase should remain EXIT_DELAY tick 2");
+
+        update_door_animation_tick();
+        check(g_door_anim_phase == DoorAnimationPhase::EXITING,
+            "door_anim_progression: phase should transition to EXITING");
+        check(g_door_anim_frame == 0,
+            "door_anim_progression: EXITING should start at frame 0");
+        check_door_render_state(
+          DoorAnimationRenderMode::NONE,
+          false,
+          false,
+          "door_anim_progression exiting frame 0");
+
+        update_door_animation_tick();
+        check(g_door_anim_frame == 1,
+            "door_anim_progression: EXITING frame should advance to 1");
+        check_door_render_state(
+          DoorAnimationRenderMode::HALF_OPEN,
+          true,
+          true,
+          "door_anim_progression exiting frame 1");
+
+        update_door_animation_tick();
+        check(g_door_anim_frame == 2,
+            "door_anim_progression: EXITING frame should advance to 2");
+        check_door_render_state(
+          DoorAnimationRenderMode::FULL_OPEN,
+          false,
+          true,
+          "door_anim_progression exiting frame 2");
+
+        update_door_animation_tick();
+        check(g_door_anim_frame == 3,
+            "door_anim_progression: EXITING frame should advance to 3");
+        check_door_render_state(
+          DoorAnimationRenderMode::HALF_CLOSED,
+          false,
+          true,
+          "door_anim_progression exiting frame 3");
+
+        update_door_animation_tick();
+        check(g_door_anim_frame == 4,
+            "door_anim_progression: EXITING frame should advance to 4");
+        check_door_render_state(
+          DoorAnimationRenderMode::NONE,
+          false,
+          true,
+          "door_anim_progression exiting frame 4");
+
+        update_door_animation_tick();
+        check(g_door_anim_phase == DoorAnimationPhase::NONE,
+            "door_anim_progression: phase should end at NONE");
+        check(g_door_anim_frame == 0,
+            "door_anim_progression: frame should reset to 0 when complete");
+
+        uint8_t world_x = 0;
+        uint8_t world_y = 0;
+        DoorAnimationRenderMode mode = DoorAnimationRenderMode::NONE;
+        bool draw_overlay_in_front = false;
+        bool player_visible = false;
+        check(!get_door_animation_render_state(
+              &world_x,
+              &world_y,
+              &mode,
+              &draw_overlay_in_front,
+              &player_visible),
+            "door_anim_progression: render state should be inactive after completion");
+
+        g_skip_load_on_door = true;
+    }
+
+    static void test_door_destination_load_deferred_until_entering_complete() {
+        reset_door_state();
+        initialize_level_data();
+
+        current_level_number = LEVEL_NUMBER_FOREST;
+        current_stage_number = 0;
+        current_level_ptr = get_level_by_number(current_level_number);
+        comic_x = 10;
+        comic_y = 8;
+        g_skip_load_on_door = false;
+
+        door_t door{};
+        door.x = 10;
+        door.y = 8;
+        door.target_level = LEVEL_NUMBER_LAKE;
+        door.target_stage = 1;
+
+        activate_door(&door);
+
+        check(current_level_number == LEVEL_NUMBER_FOREST,
+            "door_deferred_load: target level should not load immediately");
+        check(current_stage_number == 0,
+            "door_deferred_load: target stage should not load immediately");
+
+        update_door_animation_tick();
+        check(current_level_number == LEVEL_NUMBER_FOREST,
+            "door_deferred_load: level should remain source during entering frame 1");
+        check(current_stage_number == 0,
+            "door_deferred_load: stage should remain source during entering frame 1");
+
+        update_door_animation_tick();
+        check(current_level_number == LEVEL_NUMBER_FOREST,
+            "door_deferred_load: level should remain source during entering frame 2");
+        check(current_stage_number == 0,
+            "door_deferred_load: stage should remain source during entering frame 2");
+
+        update_door_animation_tick();
+        check(current_level_number == LEVEL_NUMBER_FOREST,
+            "door_deferred_load: level should remain source during entering frame 3");
+        check(current_stage_number == 0,
+            "door_deferred_load: stage should remain source during entering frame 3");
+
+        update_door_animation_tick();
+        check(current_level_number == LEVEL_NUMBER_LAKE,
+            "door_deferred_load: target level should load after entering completes");
+        check(current_stage_number == 1,
+            "door_deferred_load: target stage should load after entering completes");
+        check(g_door_anim_phase == DoorAnimationPhase::EXIT_DELAY,
+            "door_deferred_load: phase should move to EXIT_DELAY after deferred load");
+
+        g_skip_load_on_door = true;
+    }
+
 static void test_runtime_level_tiles_populated() {
     initialize_level_data();
     current_level_number = LEVEL_NUMBER_FOREST;
@@ -2100,6 +2330,8 @@ static const std::vector<TestCase>& test_registry() {
         {"door_open_key_requirement", test_door_open_key_requirement},
         {"door_state_update_same_level", test_door_state_update_same_level},
         {"door_state_update_different_level", test_door_state_update_different_level},
+        {"door_animation_phase_progression_and_render_state", test_door_animation_phase_progression_and_render_state},
+        {"door_destination_load_deferred_until_entering_complete", test_door_destination_load_deferred_until_entering_complete},
         {"runtime_level_tiles_populated", test_runtime_level_tiles_populated},
         {"door_entry_sets_checkpoint_for_respawn", test_door_entry_sets_checkpoint_for_respawn},
         {"cave_level_solidity", test_cave_level_solidity},
