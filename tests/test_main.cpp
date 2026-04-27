@@ -78,6 +78,8 @@ int8_t source_door_stage_number = -1;
 
 // Testing hook from doors.cpp
 extern bool g_skip_load_on_door;
+extern DoorAnimationPhase g_door_anim_phase;
+extern uint8_t g_door_anim_frame;
 
 // Checkpoint position
 uint8_t comic_y_checkpoint = 12;
@@ -266,6 +268,8 @@ static void reset_door_state() {
     current_level_ptr = nullptr;
     source_door_level_number = -1;
     source_door_stage_number = -1;
+    g_door_anim_phase = DoorAnimationPhase::NONE;
+    g_door_anim_frame = 0;
     // default testing behaviour: avoid loading when a door is activated
     g_skip_load_on_door = true;
 }

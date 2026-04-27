@@ -992,6 +992,12 @@ int main(int argc, char* argv[]) {
                     continue;
                 }
 
+                if (g_door_anim_phase != DoorAnimationPhase::NONE) {
+                    update_door_animation_tick();
+                    ui_system.update();
+                    continue;
+                }
+
                 // Process jump input once per tick (edge-triggered)
                 // Note: Jump input feeds comic_is_falling_or_jumping, so must be before physics
                 process_jump_input();
@@ -1273,11 +1279,70 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        uint8_t door_world_x = 0;
+        uint8_t door_world_y = 0;
+        DoorAnimationRenderMode door_render_mode = DoorAnimationRenderMode::NONE;
+        bool door_overlay_in_front = false;
+        bool door_player_visible = true;
+        const bool door_anim_active = get_door_animation_render_state(
+            &door_world_x,
+            &door_world_y,
+            &door_render_mode,
+            &door_overlay_in_front,
+            &door_player_visible
+        );
+
+        auto render_door_animation_overlay = [&](bool draw_front_layer) {
+            if (!door_anim_active || door_render_mode == DoorAnimationRenderMode::NONE) {
+                return;
+            }
+
+            if (door_overlay_in_front != draw_front_layer) {
+                return;
+            }
+
+            const int tile_w = render_scale * 2;
+            const int tile_h = render_scale * 2;
+            const int screen_x = (static_cast<int>(door_world_x) - camera_x) * render_scale;
+            const int screen_y = static_cast<int>(door_world_y) * render_scale;
+
+            Uint8 prev_r = 0;
+            Uint8 prev_g = 0;
+            Uint8 prev_b = 0;
+            Uint8 prev_a = 0;
+            SDL_GetRenderDrawColor(renderer, &prev_r, &prev_g, &prev_b, &prev_a);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+
+            if (door_render_mode == DoorAnimationRenderMode::FULL_OPEN) {
+                SDL_Rect full_open_rect = {screen_x, screen_y, tile_w * 2, tile_h * 2};
+                SDL_RenderFillRect(renderer, &full_open_rect);
+            } else {
+                SDL_Rect left_inner_half = {
+                    screen_x + (tile_w / 2),
+                    screen_y,
+                    tile_w / 2,
+                    tile_h * 2
+                };
+                SDL_Rect right_inner_half = {
+                    screen_x + tile_w,
+                    screen_y,
+                    tile_w / 2,
+                    tile_h * 2
+                };
+                SDL_RenderFillRect(renderer, &left_inner_half);
+                SDL_RenderFillRect(renderer, &right_inner_half);
+            }
+
+            SDL_SetRenderDrawColor(renderer, prev_r, prev_g, prev_b, prev_a);
+        };
+
+        render_door_animation_overlay(false);
+
         actor_system.render_enemies(g_graphics, camera_x, render_scale);
         actor_system.render_fireballs(g_graphics, camera_x, render_scale);
 
         // Render player sprite
-        if (current_animation) {
+        if (current_animation && door_player_visible) {
             AnimationFrame* frame = g_graphics->get_current_frame(*current_animation);
             if (frame) {
                 // Center player on screen relative to camera
@@ -1289,6 +1354,8 @@ int main(int argc, char* argv[]) {
                 g_graphics->render_sprite_centered_scaled(screen_x, screen_y, frame->sprite, player_width, player_height);
             }
         }
+
+        render_door_animation_overlay(true);
 
         if (comic_is_teleporting) {
             const uint8_t last_teleport_frame =
