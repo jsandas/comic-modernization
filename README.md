@@ -4,16 +4,16 @@ A modern recreation of the classic 1988 DOS game *The Adventures of Captain Comi
 
 ## Project Status
 
-**Current Phase:** Audio (Phase 6 - Pending)
+**Current Phase:** Game Loop Integration (Phase 8 - In Progress)
 
 ✅ Foundation complete (SDL2 setup, build system, basic game loop)  
 ✅ Core physics complete (gravity, jumping, collision, stage transitions)  
 ✅ Rendering system complete (tiles, sprites, animations, camera)  
 ✅ Level system complete (all 8 levels, doors, stage transitions)  
-✅ Enemy system complete (all 5 AI behaviors, spawning, collision, animation)  
-✅ Fireball system complete (spawning, movement, corkscrew, enemy collision)  
-✅ Item system complete (Phase 5 complete)  
-⏸️ Audio, UI/Menus, and remaining phases pending
+✅ Actor system complete (enemies, fireballs, items — Phase 5)  
+✅ Audio system complete (SFX + music — Phase 6)  
+✅ UI/Menus complete (title sequence, HUD, menus, animations — Phase 7)  
+🔄 Game loop integration in progress (Phase 8)
 
 ## About
 
@@ -36,11 +36,8 @@ This project ports the game to modern systems while maintaining behavioral fidel
 **Required:**
 - CMake 3.16+
 - C++17 compiler (GCC 7+, Clang 5+, MSVC 2017+)
-- SDL2 development libraries (SDL2, SDL2_image, SDL2_ttf)
+- SDL2 development libraries (SDL2, SDL2_image, SDL2_ttf, SDL2_mixer)
 - Original game files (https://archive.org/download/TheAdventuresOfCaptainComic/AdventuresOfCaptainComicEpisode1The-PlanetOfDeathR5sw1991michaelA.Denioaction.zip)
-
-**Optional (recommended):**
-- SDL2_mixer (for sound effects and music; game runs without it but silently)
 
 ### Assets
 
@@ -73,7 +70,7 @@ are referenced by the C++ code.
 ### macOS
 
 ```bash
-# Install SDL2 (sdl2_mixer is optional but recommended for audio)
+# Install SDL2
 brew install sdl2 sdl2_image sdl2_ttf sdl2_mixer
 
 # Build
@@ -89,7 +86,6 @@ make
 
 ```bash
 # Install SDL2 (Ubuntu/Debian)
-# Note: libsdl2-mixer-dev is optional but recommended for audio
 sudo apt-get install cmake g++ libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev
 
 # Or Fedora
@@ -107,7 +103,6 @@ make
 ### Windows
 
 ```bash
-# Note: sdl2-mixer is optional but recommended for audio
 vcpkg install sdl2 sdl2-image sdl2-ttf sdl2-mixer
 
 # Build with Visual Studio or MinGW
@@ -164,6 +159,26 @@ cmake --build .
   - ✅ Door Key: unlock doors
   - ✅ Teleport Wand: special teleport ability
   - ✅ Treasures (Gems, Crown, Gold): victory tracking
+- ✅ Audio system:
+  - ✅ PC-speaker-style square-wave SFX synthesis (SDL2_mixer)
+  - ✅ Single-channel priority SFX system (higher priority interrupts lower)
+  - ✅ 10 sound effects: fire, item collect, door open, stage transition, enemy hit, player hit, player die, game over, teleport
+  - ✅ Title music with full looping (100-note melody)
+  - ✅ Dedicated music channel independent from SFX
+- ✅ Title sequence:
+  - ✅ Title screen (SYS000.EGA) with 6-step palette fade-in
+  - ✅ Story screen (SYS001.EGA) and items/controls screen (SYS004.EGA)
+  - ✅ Title music playback during sequence
+  - ✅ Letterbox rendering for 320×200 EGA content
+  - ✅ `--skip-title` flag to bypass sequence during development
+- ✅ HUD/UI system:
+  - ✅ Score display (6-digit base-100 encoding)
+  - ✅ Lives counter (0-5 icons, bright/dark states)
+  - ✅ HP meter (6 cells)
+  - ✅ Fireball meter (6 cells, full/half/empty states)
+  - ✅ Full inventory grid (9 items, 3×3 layout, 2-frame animation)
+  - ✅ Menus: pause, high scores, keyboard setup, startup notice
+  - ✅ Beam-in/beam-out, death, and victory animations
 - ✅ **Debug/Cheat System** (development tool, `--debug` flag required):
   - ✅ Noclip mode (F1)
   - ✅ Level/stage warp (F2)
@@ -180,10 +195,10 @@ See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for the complete 10-phase imp
 2. ✅ **Core Physics** - Gravity, jumping, collision, stage transitions
 3. ✅ **Rendering** - Tiles, sprites, animations, hardware acceleration
 4. ✅ **Level System** - All 8 levels, doors, stage transitions
-5. ✅ **Actors** - Enemies ✅, Fireballs ✅, Items ✅
-6. ⏸️ **Audio** - Sound effects, music
-7. ⏸️ **UI/Menus** - HUD, title screen, high scores
-8. ⏸️ **Game Loop** - Complete game flow, states
+5. ✅ **Actors** - Enemies, fireballs, items
+6. ✅ **Audio** - SFX (10 sounds), title music, priority system
+7. ✅ **UI/Menus** - Title sequence, HUD, menus, death/victory animations
+8. 🔄 **Game Loop** - Complete game flow, states
 9. ⏸️ **Polish** - Testing, optimization
 10. ⏸️ **Release** - Packaging, distribution
 ## Project Structure
@@ -234,7 +249,11 @@ comic-modernization/
 
 ### Testing
 
-Currently manual testing. Automated tests planned for Phase 9.
+Automated unit tests cover physics, actors, items, UI helpers, and audio. Run with:
+
+```bash
+cd build && ctest --output-on-failure
+```
 
 ### Tools
 
@@ -279,5 +298,5 @@ Assets: Original game assets © Michael Denio - consult original licensing
 
 ---
 
-**Last Updated:** 2026-02-22  
-**Status:** Active Development (Phase 5 of 10)
+**Last Updated:** 2026-04-26  
+**Status:** Active Development (Phase 8 of 10)
