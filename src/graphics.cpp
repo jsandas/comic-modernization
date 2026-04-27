@@ -605,6 +605,8 @@ void GraphicsSystem::render_sprite_top_clip_scaled(int screen_x, int screen_y, c
         return;
     }
 
+    const int clamped_clip_height = std::min(clip_height, full_height);
+
     // Anchor at the top-left corner of where the full sprite would be drawn, so the
     // bottom edge is clipped rather than the whole image being squashed.
     const int dest_x = screen_x - width / 2;
@@ -614,15 +616,21 @@ void GraphicsSystem::render_sprite_top_clip_scaled(int screen_x, int screen_y, c
     int tex_w = 0;
     int tex_h = 0;
     SDL_QueryTexture(sprite.texture.texture, nullptr, nullptr, &tex_w, &tex_h);
-
-    // clip_height / full_height == fraction of texture rows to read from the top.
-    const int src_h = (tex_h * clip_height) / full_height;
-    if (src_h <= 0) {
+    if (tex_w <= 0 || tex_h <= 0) {
         return;
     }
 
+    // clip_height / full_height == fraction of texture rows to read from the top.
+    int src_h = (tex_h * clamped_clip_height) / full_height;
+    if (src_h <= 0) {
+        return;
+    }
+    if (src_h > tex_h) {
+        src_h = tex_h;
+    }
+
     SDL_Rect src_rect = {0, 0, tex_w, src_h};
-    SDL_Rect dst_rect = {dest_x, dest_y, width, clip_height};
+    SDL_Rect dst_rect = {dest_x, dest_y, width, clamped_clip_height};
     SDL_RendererFlip flip = flip_h ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
     SDL_RenderCopyEx(renderer, sprite.texture.texture, &src_rect, &dst_rect, 0, nullptr, flip);
 }

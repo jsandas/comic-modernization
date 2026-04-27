@@ -102,13 +102,13 @@ public:
     void render_sprite_scaled(int screen_x, int screen_y, const Sprite& sprite, int width, int height, bool flip_h = false);
     void render_sprite_centered(int screen_x, int screen_y, const Sprite& sprite, bool flip_h = false);
     void render_sprite_centered_scaled(int screen_x, int screen_y, const Sprite& sprite, int width, int height, bool flip_h = false);
-        // Render a sprite cropped to its top `clip_height` screen-pixels, anchored so the
-        // top of the sprite stays at the same position as a full-height blit would.
-        // `full_height` is the screen height the complete sprite occupies (used for centering
-        // and to compute the proportional source rect). `clip_height` must be <= full_height.
-        void render_sprite_top_clip_scaled(int screen_x, int screen_y, const Sprite& sprite,
-                                           int width, int full_height, int clip_height,
-                                           bool flip_h = false);
+    // Render a sprite cropped to its top `clip_height` screen-pixels, anchored so the
+    // top of the sprite stays at the same position as a full-height blit would.
+    // `full_height` is the screen height the complete sprite occupies (used for centering
+    // and to compute the proportional source rect). `clip_height` must be <= full_height.
+    void render_sprite_top_clip_scaled(int screen_x, int screen_y, const Sprite& sprite,
+                                       int width, int full_height, int clip_height,
+                                       bool flip_h = false);
     
     // Text rendering
     void render_text(int screen_x, int screen_y, const std::string& text, SDL_Color color);
