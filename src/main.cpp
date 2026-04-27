@@ -1325,7 +1325,8 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // Items rendered after player sprite so player draws on top (matches original draw order)
+        // Assembly-faithful order: items are rendered after Comic, so with painter's
+        // algorithm they appear on top when overlapping.
         actor_system.render_item(g_graphics, camera_x, render_scale);
 
         // Restore full renderer viewport before rendering debug overlay.
