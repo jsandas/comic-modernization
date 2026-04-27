@@ -98,6 +98,10 @@ Animation comic_jump_left;
 Animation comic_death;
 Animation* current_animation = nullptr;
 
+// Phase 5: run cycle frame counter, advanced once per game tick unconditionally
+// (mirrors assembly comic_run_cycle which increments at the top of every .tick)
+int comic_run_cycle_frame = 0;
+
 void process_door_input() {
     // Edge-triggered door activation: only trigger on rising edge of open key
     // This prevents the door from immediately re-triggering when entering a new stage
@@ -981,6 +985,10 @@ int main(int argc, char* argv[]) {
                 tick_accumulator -= MS_PER_TICK;
                 ticks_processed++;
 
+                // Phase 5: advance run cycle unconditionally every tick before any
+                // early-return branches, matching assembly .tick behavior.
+                comic_run_cycle_frame = (comic_run_cycle_frame + 1) % 3;
+
                 if (is_player_dying()) {
                     update_player_death_sequence();
                     ui_system.update();
@@ -1198,7 +1206,15 @@ int main(int argc, char* argv[]) {
             }
 
             if (current_animation) {
-                g_graphics->update_animation(*current_animation, current_time);
+                const bool is_run_anim = (current_animation == &comic_run_right ||
+                                          current_animation == &comic_run_left);
+                if (is_run_anim) {
+                    // Phase 5: run animation advances exactly once per game tick via
+                    // comic_run_cycle_frame, not by wall-clock comparison.
+                    current_animation->current_frame = comic_run_cycle_frame;
+                } else {
+                    g_graphics->update_animation(*current_animation, current_time);
+                }
             }
         }
 
@@ -1350,7 +1366,12 @@ int main(int argc, char* argv[]) {
                 int screen_x = (comic_x - camera_x) * render_scale + render_scale;  // Center X
                 int screen_y = comic_y * render_scale + render_scale * 2; // Center Y
                 int player_width = render_scale * 2;
-                int player_height = render_scale * 4;
+                // Phase 6: clip sprite to half height during the death animation
+                // to simulate the character "melting" into the floor, matching the
+                // assembly's partial-row blit in comic_dies.
+                const int player_height = should_show_player_death_animation()
+                    ? render_scale * 2
+                    : render_scale * 4;
                 g_graphics->render_sprite_centered_scaled(screen_x, screen_y, frame->sprite, player_width, player_height);
             }
         }

@@ -145,13 +145,9 @@ Moved `actor_system.render_item(...)` to before the player sprite block so the p
 
 ---
 
-## Phase 5 — Run Cycle Advance Every Tick (LOW)
+## Phase 5 — Run Cycle Advance Every Tick (LOW) ✅ COMPLETE
 
-**Impact:** The assembly advances `comic_run_cycle` (animation frame index) exactly once per game tick while running. The current SDL animation system uses a wall-clock timer, which can advance 0 or 2 frames in a single tick at tick boundaries. Causes minor animation stutter.
-
-**File:** `src/main.cpp` (animation update block), `include/graphics.h`
-
-**Change:** When `comic_is_falling_or_jumping == 0` and horizontal movement is non-zero, increment the run animation frame counter by 1 inside the tick loop unconditionally, rather than relying on `SDL_GetTicks()` comparison in `get_current_frame`.
+**Status:** Implemented. `comic_run_cycle_frame` is incremented once per game tick (unconditionally, before any early-return branches) in the tick loop. The render animation block uses `comic_run_cycle_frame` directly for run animations instead of `update_animation()`, eliminating wall-clock stutter.
 
 **Test criteria:**
 - Run animation advances exactly 1 frame per game tick
@@ -159,13 +155,9 @@ Moved `actor_system.render_item(...)` to before the player sprite block so the p
 
 ---
 
-## Phase 6 — Player Death Partial-Height Clipping (LOW)
+## Phase 6 — Player Death Partial-Height Clipping (LOW) ✅ COMPLETE
 
-**Impact:** On death, the original renders the player at half sprite height (clipped at midpoint), simulating the character "melting" into the floor. Currently the full sprite is shown until the death sequence ends.
-
-**File:** `src/main.cpp` (death render block), `src/graphics.h`
-
-**Change:** When the death animation is active and `comic_health == 0`, clip the destination rect height to `render_scale * 2` (half normal height) during the sprite blit.
+**Status:** Implemented. When `should_show_player_death_animation()` is true, the player sprite is rendered at `render_scale * 2` (half height) instead of `render_scale * 4`, clipping at the midpoint of the sprite to match the assembly's partial-row blit behavior.
 
 **Test criteria:**
 - On taking fatal damage: player sprite height halves in the death frames
