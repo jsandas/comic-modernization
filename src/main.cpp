@@ -1373,13 +1373,20 @@ int main(int argc, char* argv[]) {
                 int screen_x = (comic_x - camera_x) * render_scale + render_scale;  // Center X
                 int screen_y = comic_y * render_scale + render_scale * 2; // Center Y
                 int player_width = render_scale * 2;
-                // Phase 6: clip sprite to half height during the death animation
-                // to simulate the character "melting" into the floor, matching the
-                // assembly's partial-row blit in comic_dies.
-                const int player_height = should_show_player_death_animation()
-                    ? render_scale * 2
-                    : render_scale * 4;
-                g_graphics->render_sprite_centered_scaled(screen_x, screen_y, frame->sprite, player_width, player_height);
+                const int player_full_height = render_scale * 4;
+                // Phase 6: show only the top half of the sprite during the death animation,
+                // matching the assembly's partial-row blit in comic_dies.
+                // render_sprite_top_clip_scaled crops the source texture proportionally and
+                // anchors the destination at the sprite's natural top edge so the bottom is
+                // clipped (not squashed).
+                if (should_show_player_death_animation()) {
+                    g_graphics->render_sprite_top_clip_scaled(
+                        screen_x, screen_y, frame->sprite,
+                        player_width, player_full_height, render_scale * 2);
+                } else {
+                    g_graphics->render_sprite_centered_scaled(
+                        screen_x, screen_y, frame->sprite, player_width, player_full_height);
+                }
             }
         }
 
