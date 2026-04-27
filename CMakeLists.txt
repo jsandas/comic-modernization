@@ -84,4 +84,6 @@ add_test(NAME comic_tests_jump_height COMMAND comic_tests --filter jump_height)
 add_test(NAME comic_tests_space_level_uses_lower_gravity COMMAND comic_tests --filter space_level_uses_lower_gravity)
 add_test(NAME comic_tests_jump_top_clamped_to_playfield COMMAND comic_tests --filter jump_top_clamped_to_playfield)
 add_test(NAME comic_tests_high_score_bytes_conversion COMMAND comic_tests --filter high_score_bytes_conversion)
+add_test(NAME comic_tests_door_animation_phase_progression_and_render_state COMMAND comic_tests --filter door_animation_phase_progression_and_render_state)
+add_test(NAME comic_tests_door_destination_load_deferred_until_entering_complete COMMAND comic_tests --filter door_destination_load_deferred_until_entering_complete)
 

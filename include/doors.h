@@ -44,6 +44,42 @@
  */
 uint8_t check_door_activation();
 
+enum class DoorAnimationPhase : uint8_t {
+    NONE = 0,
+    ENTERING = 1,
+    EXIT_DELAY = 2,
+    EXITING = 3
+};
+
+enum class DoorAnimationRenderMode : uint8_t {
+    NONE = 0,
+    HALF_OPEN = 1,
+    FULL_OPEN = 2,
+    HALF_CLOSED = 3
+};
+
+/* Door animation state used by the main loop.
+ * ENTERING frames: 0..3 (half-open, full-open, half-closed, closed)
+ * EXITING frames:  0..4 (closed, half-open, full-open, half-closed, closed) */
+extern DoorAnimationPhase g_door_anim_phase;
+extern uint8_t g_door_anim_frame;
+
+/* Advance the door animation by one game tick.
+ * Handles deferred stage/level transition at the end of ENTERING. */
+void update_door_animation_tick();
+
+/* Return the active door render state for this frame.
+ * world_x/world_y are the upper-left door tile coordinates in game units.
+ * draw_overlay_in_front controls whether the half-door overlay is rendered
+ * before or after Comic. player_visible indicates whether Comic should render. */
+bool get_door_animation_render_state(
+	uint8_t* world_x,
+	uint8_t* world_y,
+	DoorAnimationRenderMode* mode,
+	bool* draw_overlay_in_front,
+	bool* player_visible
+);
+
 /* Testing hook: when set to true, activate_door will update the current
  * level/stage numbers and source_door_* flags but will NOT actually call
  * load_new_level()/load_new_stage(). This allows unit tests to exercise

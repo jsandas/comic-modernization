@@ -6,6 +6,15 @@
 // Testing hook defined in header; see comment there.
 bool g_skip_load_on_door = false;
 
+DoorAnimationPhase g_door_anim_phase = DoorAnimationPhase::NONE;
+uint8_t g_door_anim_frame = 0;
+static uint8_t g_door_exit_delay_ticks = 0;
+
+static uint8_t g_door_anim_world_x = DOOR_UNUSED;
+static uint8_t g_door_anim_world_y = DOOR_UNUSED;
+static uint8_t g_door_pending_level = 0;
+static uint8_t g_door_pending_stage = 0;
+
 /**
  * doors.cpp - Door system implementation
  * 
@@ -32,6 +41,28 @@ extern int8_t source_door_stage_number;
 extern void load_new_level();
 extern void load_new_stage();
 
+static void load_pending_door_destination() {
+    const uint8_t target_level = g_door_pending_level;
+    current_stage_number = g_door_pending_stage;
+    current_level_number = target_level;
+
+    if (target_level != static_cast<uint8_t>(source_door_level_number)) {
+        load_new_level();
+    } else {
+        load_new_stage();
+    }
+
+    // Keep door overlay position in bounds if reciprocal spawn resolution fails.
+    if (comic_x <= 0) {
+        g_door_anim_world_x = 0;
+    } else if (comic_x > 255) {
+        g_door_anim_world_x = 255;
+    } else {
+        g_door_anim_world_x = static_cast<uint8_t>(comic_x - 1);
+    }
+    g_door_anim_world_y = static_cast<uint8_t>(comic_y);
+}
+
 /**
  * check_door_activation - Check if Comic is in front of a door and open key is pressed
  * 
@@ -56,6 +87,10 @@ uint8_t check_door_activation() {
     
     if (key_state_open != 1) {
         return 0;  /* Open key not pressed */
+    }
+
+    if (g_door_anim_phase != DoorAnimationPhase::NONE) {
+        return 0;  /* Ignore re-entry while a door sequence is active */
     }
     
     /* Get current stage data */
@@ -99,6 +134,128 @@ uint8_t check_door_activation() {
     return 0;
 }
 
+void update_door_animation_tick() {
+    if (g_door_anim_phase == DoorAnimationPhase::NONE) {
+        return;
+    }
+
+    if (g_door_anim_phase == DoorAnimationPhase::ENTERING) {
+        if (g_door_anim_frame < 3) {
+            g_door_anim_frame++;
+            return;
+        }
+
+        load_pending_door_destination();
+        g_door_anim_phase = DoorAnimationPhase::EXIT_DELAY;
+        g_door_anim_frame = 0;
+        g_door_exit_delay_ticks = 3;
+        return;
+    }
+
+    if (g_door_anim_phase == DoorAnimationPhase::EXIT_DELAY) {
+        if (g_door_exit_delay_ticks > 0) {
+            g_door_exit_delay_ticks--;
+        }
+
+        if (g_door_exit_delay_ticks == 0) {
+            play_game_sound(GameSound::DOOR_OPEN);
+            g_door_anim_phase = DoorAnimationPhase::EXITING;
+            g_door_anim_frame = 0;
+        }
+        return;
+    }
+
+    if (g_door_anim_frame >= 4) {
+        g_door_anim_phase = DoorAnimationPhase::NONE;
+        g_door_anim_frame = 0;
+        g_door_exit_delay_ticks = 0;
+        g_door_anim_world_x = DOOR_UNUSED;
+        g_door_anim_world_y = DOOR_UNUSED;
+        return;
+    }
+
+    g_door_anim_frame++;
+}
+
+bool get_door_animation_render_state(
+    uint8_t* world_x,
+    uint8_t* world_y,
+    DoorAnimationRenderMode* mode,
+    bool* draw_overlay_in_front,
+    bool* player_visible
+) {
+    if (!world_x || !world_y || !mode || !draw_overlay_in_front || !player_visible ||
+        g_door_anim_phase == DoorAnimationPhase::NONE) {
+        return false;
+    }
+
+    if (g_door_anim_world_x == DOOR_UNUSED || g_door_anim_world_y == DOOR_UNUSED) {
+        return false;
+    }
+
+    *world_x = g_door_anim_world_x;
+    *world_y = g_door_anim_world_y;
+    *mode = DoorAnimationRenderMode::NONE;
+    *draw_overlay_in_front = false;
+    *player_visible = true;
+
+    if (g_door_anim_phase == DoorAnimationPhase::ENTERING) {
+        switch (g_door_anim_frame) {
+            case 0:
+                *mode = DoorAnimationRenderMode::HALF_OPEN;
+                *draw_overlay_in_front = false;
+                *player_visible = true;
+                return true;
+            case 1:
+                *mode = DoorAnimationRenderMode::FULL_OPEN;
+                *draw_overlay_in_front = false;
+                *player_visible = true;
+                return true;
+            case 2:
+                *mode = DoorAnimationRenderMode::HALF_CLOSED;
+                *draw_overlay_in_front = true;
+                *player_visible = true;
+                return true;
+            default:
+                *mode = DoorAnimationRenderMode::NONE;
+                *player_visible = false;
+                return true;
+        }
+    }
+
+    if (g_door_anim_phase == DoorAnimationPhase::EXIT_DELAY) {
+        *mode = DoorAnimationRenderMode::NONE;
+        *player_visible = false;
+        return true;
+    }
+
+    switch (g_door_anim_frame) {
+        case 0:
+            *mode = DoorAnimationRenderMode::NONE;
+            *player_visible = false;
+            return true;
+        case 1:
+            *mode = DoorAnimationRenderMode::HALF_OPEN;
+            *draw_overlay_in_front = true;
+            *player_visible = true;
+            return true;
+        case 2:
+            *mode = DoorAnimationRenderMode::FULL_OPEN;
+            *draw_overlay_in_front = false;
+            *player_visible = true;
+            return true;
+        case 3:
+            *mode = DoorAnimationRenderMode::HALF_CLOSED;
+            *draw_overlay_in_front = false;
+            *player_visible = true;
+            return true;
+        default:
+            *mode = DoorAnimationRenderMode::NONE;
+            *player_visible = true;
+            return true;
+    }
+}
+
 /**
  * activate_door - Perform door transition to target level/stage
  * 
@@ -126,10 +283,7 @@ void activate_door(const door_t *door) {
         return;  /* Invalid target level */
     }
     
-    /* Save the source level and stage so the destination can find the
-     * reciprocal door and position Comic at the matching door */
-    play_game_sound(GameSound::DOOR_OPEN);
-
+    /* Save source for reciprocal spawn after destination stage is loaded. */
     source_door_level_number = current_level_number;
     source_door_stage_number = current_stage_number;
 
@@ -137,24 +291,21 @@ void activate_door(const door_t *door) {
      * source_door_* and may print warnings if reciprocal door data is
      * missing). The tests still need to see the level/stage numbers update. */
     if (g_skip_load_on_door) {
+        g_door_anim_phase = DoorAnimationPhase::NONE;
+        g_door_anim_frame = 0;
+        g_door_exit_delay_ticks = 0;
         current_stage_number = door->target_stage;
         current_level_number = door->target_level;
         return;
     }
-    
-    /* Set the current level/stage to wherever the door leads */
-    current_stage_number = door->target_stage;
-    uint8_t target_level = door->target_level;
-    
-    /* If targeting a different level, load the entire level (tileset + stages)
-     * Otherwise, just load the stage within the current level */
-    if (target_level != source_door_level_number) {
-        /* Different level: update level number and load new level */
-        current_level_number = target_level;
-        load_new_level();
-    } else {
-        /* Same level: only load the new stage (tiles, enemies, items) */
-        current_level_number = target_level;
-        load_new_stage();
-    }
+
+    play_game_sound(GameSound::DOOR_OPEN);
+
+    g_door_pending_level = door->target_level;
+    g_door_pending_stage = door->target_stage;
+    g_door_anim_world_x = door->x;
+    g_door_anim_world_y = door->y;
+    g_door_anim_phase = DoorAnimationPhase::ENTERING;
+    g_door_anim_frame = 0;
+    g_door_exit_delay_ticks = 0;
 }
