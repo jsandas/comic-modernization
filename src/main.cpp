@@ -987,7 +987,14 @@ int main(int argc, char* argv[]) {
 
                 // Phase 5: advance run cycle unconditionally every tick before any
                 // early-return branches, matching assembly .tick behavior.
-                comic_run_cycle_frame = (comic_run_cycle_frame + 1) % 3;
+                // Derive modulus from the actual run animation frame count so the
+                // counter stays consistent if the animation data ever changes.
+                {
+                    const int run_frame_count = static_cast<int>(comic_run_right.frames.size());
+                    if (run_frame_count > 0) {
+                        comic_run_cycle_frame = (comic_run_cycle_frame + 1) % run_frame_count;
+                    }
+                }
 
                 if (is_player_dying()) {
                     update_player_death_sequence();
