@@ -98,6 +98,10 @@ Animation comic_jump_left;
 Animation comic_death;
 Animation* current_animation = nullptr;
 
+// Phase 5: run cycle frame counter, advanced once per game tick unconditionally
+// (mirrors assembly comic_run_cycle which increments at the top of every .tick)
+int comic_run_cycle_frame = 0;
+
 void process_door_input() {
     // Edge-triggered door activation: only trigger on rising edge of open key
     // This prevents the door from immediately re-triggering when entering a new stage
@@ -981,6 +985,17 @@ int main(int argc, char* argv[]) {
                 tick_accumulator -= MS_PER_TICK;
                 ticks_processed++;
 
+                // Phase 5: advance run cycle unconditionally every tick before any
+                // early-return branches, matching assembly .tick behavior.
+                // Derive modulus from the actual run animation frame count so the
+                // counter stays consistent if the animation data ever changes.
+                {
+                    const int run_frame_count = static_cast<int>(comic_run_right.frames.size());
+                    if (run_frame_count > 0) {
+                        comic_run_cycle_frame = (comic_run_cycle_frame + 1) % run_frame_count;
+                    }
+                }
+
                 if (is_player_dying()) {
                     update_player_death_sequence();
                     ui_system.update();
@@ -1198,7 +1213,15 @@ int main(int argc, char* argv[]) {
             }
 
             if (current_animation) {
-                g_graphics->update_animation(*current_animation, current_time);
+                const bool is_run_anim = (current_animation == &comic_run_right ||
+                                          current_animation == &comic_run_left);
+                if (is_run_anim) {
+                    // Phase 5: run animation advances exactly once per game tick via
+                    // comic_run_cycle_frame, not by wall-clock comparison.
+                    current_animation->current_frame = comic_run_cycle_frame;
+                } else {
+                    g_graphics->update_animation(*current_animation, current_time);
+                }
             }
         }
 
@@ -1350,8 +1373,20 @@ int main(int argc, char* argv[]) {
                 int screen_x = (comic_x - camera_x) * render_scale + render_scale;  // Center X
                 int screen_y = comic_y * render_scale + render_scale * 2; // Center Y
                 int player_width = render_scale * 2;
-                int player_height = render_scale * 4;
-                g_graphics->render_sprite_centered_scaled(screen_x, screen_y, frame->sprite, player_width, player_height);
+                const int player_full_height = render_scale * 4;
+                // Phase 6: show only the top half of the sprite during the death animation,
+                // matching the assembly's partial-row blit in comic_dies.
+                // render_sprite_top_clip_scaled crops the source texture proportionally and
+                // anchors the destination at the sprite's natural top edge so the bottom is
+                // clipped (not squashed).
+                if (should_show_player_death_animation()) {
+                    g_graphics->render_sprite_top_clip_scaled(
+                        screen_x, screen_y, frame->sprite,
+                        player_width, player_full_height, render_scale * 2);
+                } else {
+                    g_graphics->render_sprite_centered_scaled(
+                        screen_x, screen_y, frame->sprite, player_width, player_full_height);
+                }
             }
         }
 
