@@ -189,7 +189,7 @@ cmake --build .
 
 ## Roadmap
 
-See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for the complete 10-phase implementation plan:
+See [MODERNIZATION_PLAN.md](docs/MODERNIZATION_PLAN.md) for the complete 10-phase implementation plan:
 
 1. ✅ **Foundation** - SDL2 setup, build system
 2. ✅ **Core Physics** - Gravity, jumping, collision, stage transitions
@@ -207,7 +207,7 @@ See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for the complete 10-phase imp
 comic-modernization/
 ├── CMakeLists.txt              # Build configuration
 ├── README.md                   # This file
-├── MODERNIZATION_PLAN.md       # Roadmap and status
+├── docs/                       # Project documentation and roadmap
 ├── include/                    # Header files
 ├── src/                        # Game source
 ├── tests/                      # Test suite
