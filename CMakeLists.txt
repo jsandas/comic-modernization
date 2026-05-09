@@ -2,6 +2,21 @@ cmake_minimum_required(VERSION 3.16)
 project(CaptainComic)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+option(ENABLE_CLANG_TIDY "Run clang-tidy during compilation" OFF)
+
+if (ENABLE_CLANG_TIDY)
+    find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+    if (NOT CLANG_TIDY_EXE)
+        message(FATAL_ERROR "ENABLE_CLANG_TIDY is ON, but clang-tidy was not found.")
+    endif()
+
+    # Use the generated compile database and honor .clang-tidy from the repo root.
+    set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_EXE};-p=${CMAKE_BINARY_DIR})
+    message(STATUS "clang-tidy enabled: ${CLANG_TIDY_EXE}")
+endif()
 
 find_package(SDL2 REQUIRED)
 

@@ -1,0 +1,62 @@
+{
+  "version": 4,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 23,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default",
+      "description": "Standard local configure without clang-tidy.",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ENABLE_CLANG_TIDY": "OFF"
+      }
+    },
+    {
+      "name": "clang-tidy-intel",
+      "displayName": "Clang-Tidy (Intel Homebrew)",
+      "description": "Enable clang-tidy using /usr/local/opt/llvm/bin.",
+      "inherits": "default",
+      "environment": {
+        "PATH": "/usr/local/opt/llvm/bin:$penv{PATH}"
+      },
+      "cacheVariables": {
+        "ENABLE_CLANG_TIDY": "ON"
+      }
+    },
+    {
+      "name": "clang-tidy-apple-silicon",
+      "displayName": "Clang-Tidy (Apple Silicon Homebrew)",
+      "description": "Enable clang-tidy using /opt/homebrew/opt/llvm/bin.",
+      "inherits": "default",
+      "environment": {
+        "PATH": "/opt/homebrew/opt/llvm/bin:$penv{PATH}"
+      },
+      "cacheVariables": {
+        "ENABLE_CLANG_TIDY": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "build-default",
+      "displayName": "Build Default",
+      "configurePreset": "default"
+    },
+    {
+      "name": "build-clang-tidy-intel",
+      "displayName": "Build Clang-Tidy (Intel Homebrew)",
+      "configurePreset": "clang-tidy-intel"
+    },
+    {
+      "name": "build-clang-tidy-apple-silicon",
+      "displayName": "Build Clang-Tidy (Apple Silicon Homebrew)",
+      "configurePreset": "clang-tidy-apple-silicon"
+    }
+  ]
+}
