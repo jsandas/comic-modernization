@@ -18,10 +18,9 @@ if (ENABLE_CLANG_TIDY)
     message(STATUS "clang-tidy enabled: ${CLANG_TIDY_EXE}")
 endif()
 
-find_package(SDL2 REQUIRED)
-
 # Find SDL2 extension libraries using pkg-config
 find_package(PkgConfig REQUIRED)
+pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET sdl2)
 pkg_check_modules(SDL2_IMAGE REQUIRED IMPORTED_TARGET SDL2_image)
 pkg_check_modules(SDL2_TTF REQUIRED IMPORTED_TARGET SDL2_ttf)
 pkg_check_modules(SDL2_MIXER IMPORTED_TARGET SDL2_mixer)
@@ -47,12 +46,8 @@ target_include_directories(comic_core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 )
 
-target_include_directories(comic_core PRIVATE 
-    ${SDL2_INCLUDE_DIRS}
-)
-
 target_link_libraries(comic_core PUBLIC
-    ${SDL2_LIBRARIES}
+    PkgConfig::SDL2
     PkgConfig::SDL2_IMAGE
     PkgConfig::SDL2_TTF
 )
