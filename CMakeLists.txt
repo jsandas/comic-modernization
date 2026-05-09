@@ -18,12 +18,83 @@ if (ENABLE_CLANG_TIDY)
     message(STATUS "clang-tidy enabled: ${CLANG_TIDY_EXE}")
 endif()
 
-# Find SDL2 extension libraries using pkg-config
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET sdl2)
-pkg_check_modules(SDL2_IMAGE REQUIRED IMPORTED_TARGET SDL2_image)
-pkg_check_modules(SDL2_TTF REQUIRED IMPORTED_TARGET SDL2_ttf)
-pkg_check_modules(SDL2_MIXER IMPORTED_TARGET SDL2_mixer)
+# Find SDL2 libraries with platform-aware fallback.
+set(SDL2_TARGET "")
+set(SDL2_IMAGE_TARGET "")
+set(SDL2_TTF_TARGET "")
+set(SDL2_MIXER_TARGET "")
+set(SDL_INCLUDE_DIRS_FALLBACK "")
+
+if (WIN32)
+    # Prefer config packages on Windows (vcpkg-friendly).
+    find_package(SDL2 CONFIG REQUIRED)
+    find_package(SDL2_image CONFIG REQUIRED)
+    find_package(SDL2_ttf CONFIG REQUIRED)
+    find_package(SDL2_mixer CONFIG QUIET)
+
+    set(SDL2_TARGET SDL2::SDL2)
+    set(SDL2_IMAGE_TARGET SDL2_image::SDL2_image)
+    set(SDL2_TTF_TARGET SDL2_ttf::SDL2_ttf)
+
+    if (TARGET SDL2_mixer::SDL2_mixer)
+        set(SDL2_MIXER_TARGET SDL2_mixer::SDL2_mixer)
+    endif()
+else()
+    # Prefer pkg-config on Unix-like systems, but support environments without it.
+    find_package(PkgConfig QUIET)
+    if (PkgConfig_FOUND)
+        pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET sdl2)
+        pkg_check_modules(SDL2_IMAGE REQUIRED IMPORTED_TARGET SDL2_image)
+        pkg_check_modules(SDL2_TTF REQUIRED IMPORTED_TARGET SDL2_ttf)
+        pkg_check_modules(SDL2_MIXER IMPORTED_TARGET SDL2_mixer)
+
+        set(SDL2_TARGET PkgConfig::SDL2)
+        set(SDL2_IMAGE_TARGET PkgConfig::SDL2_IMAGE)
+        set(SDL2_TTF_TARGET PkgConfig::SDL2_TTF)
+
+        if (SDL2_MIXER_FOUND)
+            set(SDL2_MIXER_TARGET PkgConfig::SDL2_MIXER)
+        endif()
+    else()
+        # Fallback to CMake package discovery when pkg-config is unavailable.
+        find_package(SDL2 REQUIRED)
+        find_package(SDL2_image REQUIRED)
+        find_package(SDL2_ttf REQUIRED)
+        find_package(SDL2_mixer QUIET)
+
+        if (TARGET SDL2::SDL2)
+            set(SDL2_TARGET SDL2::SDL2)
+        else()
+            set(SDL2_TARGET ${SDL2_LIBRARIES})
+            list(APPEND SDL_INCLUDE_DIRS_FALLBACK ${SDL2_INCLUDE_DIRS})
+        endif()
+
+        if (TARGET SDL2_image::SDL2_image)
+            set(SDL2_IMAGE_TARGET SDL2_image::SDL2_image)
+        else()
+            set(SDL2_IMAGE_TARGET ${SDL2_IMAGE_LIBRARIES})
+            list(APPEND SDL_INCLUDE_DIRS_FALLBACK ${SDL2_IMAGE_INCLUDE_DIRS})
+        endif()
+
+        if (TARGET SDL2_ttf::SDL2_ttf)
+            set(SDL2_TTF_TARGET SDL2_ttf::SDL2_ttf)
+        else()
+            set(SDL2_TTF_TARGET ${SDL2_TTF_LIBRARIES})
+            list(APPEND SDL_INCLUDE_DIRS_FALLBACK ${SDL2_TTF_INCLUDE_DIRS})
+        endif()
+
+        if (TARGET SDL2_mixer::SDL2_mixer)
+            set(SDL2_MIXER_TARGET SDL2_mixer::SDL2_mixer)
+        elseif (DEFINED SDL2_MIXER_LIBRARIES AND SDL2_MIXER_LIBRARIES)
+            set(SDL2_MIXER_TARGET ${SDL2_MIXER_LIBRARIES})
+            list(APPEND SDL_INCLUDE_DIRS_FALLBACK ${SDL2_MIXER_INCLUDE_DIRS})
+        endif()
+    endif()
+endif()
+
+if (NOT SDL2_TARGET OR NOT SDL2_IMAGE_TARGET OR NOT SDL2_TTF_TARGET)
+    message(FATAL_ERROR "Failed to discover required SDL2/SDL2_image/SDL2_ttf dependencies.")
+endif()
 
 # --- Core Game Logic Library ---
 # Shared logic used by both the main game and the test suite
@@ -46,14 +117,19 @@ target_include_directories(comic_core PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 )
 
+if (SDL_INCLUDE_DIRS_FALLBACK)
+    list(REMOVE_DUPLICATES SDL_INCLUDE_DIRS_FALLBACK)
+    target_include_directories(comic_core PUBLIC ${SDL_INCLUDE_DIRS_FALLBACK})
+endif()
+
 target_link_libraries(comic_core PUBLIC
-    PkgConfig::SDL2
-    PkgConfig::SDL2_IMAGE
-    PkgConfig::SDL2_TTF
+    ${SDL2_TARGET}
+    ${SDL2_IMAGE_TARGET}
+    ${SDL2_TTF_TARGET}
 )
 
-if (SDL2_MIXER_FOUND)
-    target_link_libraries(comic_core PUBLIC PkgConfig::SDL2_MIXER)
+if (SDL2_MIXER_TARGET)
+    target_link_libraries(comic_core PUBLIC ${SDL2_MIXER_TARGET})
     target_compile_definitions(comic_core PUBLIC HAVE_SDL2_MIXER=1)
 else()
     message(WARNING "SDL2_mixer not found. Building without audio output support.")
