@@ -24,7 +24,7 @@ find_package(SDL2 REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2_IMAGE REQUIRED IMPORTED_TARGET SDL2_image)
 pkg_check_modules(SDL2_TTF REQUIRED IMPORTED_TARGET SDL2_ttf)
-pkg_check_modules(SDL2_MIXER SDL2_mixer)
+pkg_check_modules(SDL2_MIXER IMPORTED_TARGET SDL2_mixer)
 
 # --- Core Game Logic Library ---
 # Shared logic used by both the main game and the test suite
@@ -58,8 +58,7 @@ target_link_libraries(comic_core PUBLIC
 )
 
 if (SDL2_MIXER_FOUND)
-    target_link_libraries(comic_core PUBLIC ${SDL2_MIXER_LIBRARIES})
-    target_include_directories(comic_core PUBLIC ${SDL2_MIXER_INCLUDE_DIRS})
+    target_link_libraries(comic_core PUBLIC PkgConfig::SDL2_MIXER)
     target_compile_definitions(comic_core PUBLIC HAVE_SDL2_MIXER=1)
 else()
     message(WARNING "SDL2_mixer not found. Building without audio output support.")
