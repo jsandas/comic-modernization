@@ -1,0 +1,26 @@
+---
+Language: Cpp
+# Based on Google style with minor tweaks for standard C++17 projects
+BasedOnStyle: Google
+
+# Basic formatting
+IndentWidth: 4
+ColumnLimit: 100
+TabWidth: 4
+UseTab: Never
+
+# Pointer and Reference Alignment (e.g., int* ptr instead of int *ptr)
+PointerAlignment: Left
+
+# Braces
+BreakBeforeBraces: Attach
+
+# Includes
+SortIncludes: true
+
+# Access Modifiers (public, private)
+AccessModifierOffset: -4
+
+# Function parameters
+AllowAllParametersOfDeclarationOnNextLine: false
+AlignAfterOpenBracket: Align

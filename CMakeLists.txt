@@ -2,77 +2,169 @@ cmake_minimum_required(VERSION 3.16)
 project(CaptainComic)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(SDL2 REQUIRED)
+option(ENABLE_CLANG_TIDY "Run clang-tidy during compilation" OFF)
 
-# Find SDL2_image and SDL2_ttf using pkg-config with IMPORTED_TARGET
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(SDL2_IMAGE REQUIRED IMPORTED_TARGET SDL2_image)
-pkg_check_modules(SDL2_TTF REQUIRED IMPORTED_TARGET SDL2_ttf)
-pkg_check_modules(SDL2_MIXER IMPORTED_TARGET SDL2_mixer)
+if (ENABLE_CLANG_TIDY)
+    find_program(CLANG_TIDY_EXE NAMES clang-tidy)
+    if (NOT CLANG_TIDY_EXE)
+        message(FATAL_ERROR "ENABLE_CLANG_TIDY is ON, but clang-tidy was not found.")
+    endif()
 
-include_directories(${SDL2_INCLUDE_DIRS})
-include_directories(${CMAKE_SOURCE_DIR}/include)
+    # Use the generated compile database and honor .clang-tidy from the repo root.
+    set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_EXE};-p=${CMAKE_BINARY_DIR})
+    message(STATUS "clang-tidy enabled: ${CLANG_TIDY_EXE}")
+endif()
 
-add_executable(captain_comic 
-    src/main.cpp
-    src/physics.cpp
+# Find SDL2 libraries with platform-aware fallback.
+set(SDL2_TARGET "")
+set(SDL2_IMAGE_TARGET "")
+set(SDL2_TTF_TARGET "")
+set(SDL2_MIXER_TARGET "")
+set(SDL_INCLUDE_DIRS_FALLBACK "")
+
+if (WIN32)
+    # Prefer config packages on Windows (vcpkg-friendly).
+    find_package(SDL2 CONFIG REQUIRED)
+    find_package(SDL2_image CONFIG REQUIRED)
+    find_package(SDL2_ttf CONFIG REQUIRED)
+    find_package(SDL2_mixer CONFIG QUIET)
+
+    set(SDL2_TARGET SDL2::SDL2)
+    set(SDL2_IMAGE_TARGET SDL2_image::SDL2_image)
+    set(SDL2_TTF_TARGET SDL2_ttf::SDL2_ttf)
+
+    if (TARGET SDL2_mixer::SDL2_mixer)
+        set(SDL2_MIXER_TARGET SDL2_mixer::SDL2_mixer)
+    endif()
+else()
+    # Prefer pkg-config on Unix-like systems, but support environments without it.
+    find_package(PkgConfig QUIET)
+    if (PkgConfig_FOUND)
+        pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET sdl2)
+        pkg_check_modules(SDL2_IMAGE REQUIRED IMPORTED_TARGET SDL2_image)
+        pkg_check_modules(SDL2_TTF REQUIRED IMPORTED_TARGET SDL2_ttf)
+        pkg_check_modules(SDL2_MIXER IMPORTED_TARGET SDL2_mixer)
+
+        set(SDL2_TARGET PkgConfig::SDL2)
+        set(SDL2_IMAGE_TARGET PkgConfig::SDL2_IMAGE)
+        set(SDL2_TTF_TARGET PkgConfig::SDL2_TTF)
+
+        if (SDL2_MIXER_FOUND)
+            set(SDL2_MIXER_TARGET PkgConfig::SDL2_MIXER)
+        endif()
+    else()
+        # Fallback to CMake package discovery when pkg-config is unavailable.
+        find_package(SDL2 REQUIRED)
+        find_package(SDL2_image REQUIRED)
+        find_package(SDL2_ttf REQUIRED)
+        find_package(SDL2_mixer QUIET)
+
+        if (TARGET SDL2::SDL2)
+            set(SDL2_TARGET SDL2::SDL2)
+        else()
+            set(SDL2_TARGET ${SDL2_LIBRARIES})
+            list(APPEND SDL_INCLUDE_DIRS_FALLBACK ${SDL2_INCLUDE_DIRS})
+        endif()
+
+        if (TARGET SDL2_image::SDL2_image)
+            set(SDL2_IMAGE_TARGET SDL2_image::SDL2_image)
+        else()
+            set(SDL2_IMAGE_TARGET ${SDL2_IMAGE_LIBRARIES})
+            list(APPEND SDL_INCLUDE_DIRS_FALLBACK ${SDL2_IMAGE_INCLUDE_DIRS})
+        endif()
+
+        if (TARGET SDL2_ttf::SDL2_ttf)
+            set(SDL2_TTF_TARGET SDL2_ttf::SDL2_ttf)
+        else()
+            set(SDL2_TTF_TARGET ${SDL2_TTF_LIBRARIES})
+            list(APPEND SDL_INCLUDE_DIRS_FALLBACK ${SDL2_TTF_INCLUDE_DIRS})
+        endif()
+
+        if (TARGET SDL2_mixer::SDL2_mixer)
+            set(SDL2_MIXER_TARGET SDL2_mixer::SDL2_mixer)
+        elseif (DEFINED SDL2_MIXER_LIBRARIES AND SDL2_MIXER_LIBRARIES)
+            set(SDL2_MIXER_TARGET ${SDL2_MIXER_LIBRARIES})
+            list(APPEND SDL_INCLUDE_DIRS_FALLBACK ${SDL2_MIXER_INCLUDE_DIRS})
+        endif()
+    endif()
+endif()
+
+if (NOT SDL2_TARGET OR NOT SDL2_IMAGE_TARGET OR NOT SDL2_TTF_TARGET)
+    message(FATAL_ERROR "Failed to discover required SDL2/SDL2_image/SDL2_ttf dependencies.")
+endif()
+
+# --- Core Game Logic Library ---
+# Shared logic used by both the main game and the test suite
+add_library(comic_core STATIC
+    src/actors.cpp
+    src/audio.cpp
+    src/cheats.cpp
+    src/doors.cpp
     src/graphics.cpp
     src/level_data.cpp
     src/level_loader.cpp
     src/level_tiles.cpp
-    src/doors.cpp
-    src/cheats.cpp
-    src/actors.cpp
-    src/audio.cpp
+    src/physics.cpp
+    src/player_teleport.cpp
     src/title_sequence.cpp
     src/ui_system.cpp
-    src/player_teleport.cpp
 )
 
-# Link libraries
-target_link_libraries(captain_comic 
-    ${SDL2_LIBRARIES}
-    PkgConfig::SDL2_IMAGE
-    PkgConfig::SDL2_TTF
+if (MSVC)
+    # level_data.cpp uses designated initializers; apply C++20 to comic_core on MSVC.
+    # Per-file standard overrides are not consistently honored by all VS/MSBuild flows.
+    set_target_properties(comic_core PROPERTIES
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED ON
+    )
+endif()
+
+target_include_directories(comic_core PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 )
 
-if (SDL2_MIXER_FOUND)
-    target_link_libraries(captain_comic PkgConfig::SDL2_MIXER)
-    target_compile_definitions(captain_comic PRIVATE HAVE_SDL2_MIXER=1)
+if (SDL_INCLUDE_DIRS_FALLBACK)
+    list(REMOVE_DUPLICATES SDL_INCLUDE_DIRS_FALLBACK)
+    target_include_directories(comic_core PUBLIC ${SDL_INCLUDE_DIRS_FALLBACK})
+endif()
+
+target_link_libraries(comic_core PUBLIC
+    ${SDL2_TARGET}
+    ${SDL2_IMAGE_TARGET}
+    ${SDL2_TTF_TARGET}
+)
+
+if (SDL2_MIXER_TARGET)
+    target_link_libraries(comic_core PUBLIC ${SDL2_MIXER_TARGET})
+    target_compile_definitions(comic_core PUBLIC HAVE_SDL2_MIXER=1)
 else()
     message(WARNING "SDL2_mixer not found. Building without audio output support.")
 endif()
 
+# --- Main Executable ---
+add_executable(captain_comic src/main.cpp)
+target_link_libraries(captain_comic PRIVATE comic_core)
+target_compile_definitions(captain_comic PRIVATE SDL_MAIN_HANDLED)
+
+# --- Test Suite ---
 enable_testing()
 
-add_executable(comic_tests
+add_executable(comic_tests 
     tests/test_main.cpp
-    src/physics.cpp
-    src/graphics.cpp
-    src/level_data.cpp
-    src/level_loader.cpp
-    src/level_tiles.cpp
-    src/doors.cpp
-    src/cheats.cpp
-    src/actors.cpp
-    src/audio.cpp
-    src/title_sequence.cpp
-    src/ui_system.cpp
-    src/player_teleport.cpp
+    tests/test_helpers.cpp
+    tests/test_physics.cpp
+    tests/test_graphics.cpp
+    tests/test_actors.cpp
+    tests/test_audio.cpp
+    tests/test_ui.cpp
 )
+target_link_libraries(comic_tests PRIVATE comic_core)
+target_compile_definitions(comic_tests PRIVATE SDL_MAIN_HANDLED)
 
-target_link_libraries(comic_tests
-    ${SDL2_LIBRARIES}
-    PkgConfig::SDL2_IMAGE
-    PkgConfig::SDL2_TTF
-)
-
-if (SDL2_MIXER_FOUND)
-    target_link_libraries(comic_tests PkgConfig::SDL2_MIXER)
-    target_compile_definitions(comic_tests PRIVATE HAVE_SDL2_MIXER=1)
-endif()
-
+# Test Registrations
 add_test(NAME comic_tests_all COMMAND comic_tests)
 add_test(NAME comic_tests_physics_tiles COMMAND comic_tests --filter physics_tiles)
 add_test(NAME comic_tests_animation_looping COMMAND comic_tests --filter animation_looping)
@@ -86,4 +178,3 @@ add_test(NAME comic_tests_jump_top_clamped_to_playfield COMMAND comic_tests --fi
 add_test(NAME comic_tests_high_score_bytes_conversion COMMAND comic_tests --filter high_score_bytes_conversion)
 add_test(NAME comic_tests_door_animation_phase_progression_and_render_state COMMAND comic_tests --filter door_animation_phase_progression_and_render_state)
 add_test(NAME comic_tests_door_destination_load_deferred_until_entering_complete COMMAND comic_tests --filter door_destination_load_deferred_until_entering_complete)
-

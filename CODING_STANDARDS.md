@@ -21,7 +21,9 @@ The goal is readable, maintainable C++ code that is faithful to the original gam
 ```
 comic-modernization/
 ├── CMakeLists.txt              # Build configuration
-├── MODERNIZATION_PLAN.md       # Project roadmap
+├── docs/                       # Project documentation
+│   ├── MODERNIZATION_PLAN.md   # Project roadmap
+│   └── ...
 ├── README.md                   # Build and usage instructions
 ├── CODING_STANDARDS.md         # This file
 ├── include/                    # Header files (.h)
@@ -605,7 +607,7 @@ cd build && ctest --output-on-failure
   - Enemy behaviors and state machines
 
 **Documentation:**
-- [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) - Project roadmap
+- [MODERNIZATION_PLAN.md](docs/MODERNIZATION_PLAN.md) - Project roadmap
 - [README.md](README.md) - Build instructions
 - [AGENT_INSTRUCTIONS.md](agent/AGENT_INSTRUCTIONS.md) - AI agent guidelines
 

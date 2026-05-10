@@ -1034,7 +1034,9 @@ if (comic_num_treasures == 3) {
 comic-modernization/
 ├── CMakeLists.txt           # Build configuration
 ├── README.md                # User documentation
-├── MODERNIZATION_PLAN.md    # This file
+├── docs/                    # Project documentation
+│   ├── MODERNIZATION_PLAN.md # This file
+│   └── ...
 ├── .gitignore               # Git ignore rules
 │
 ├── src/                     # Source code

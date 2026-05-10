@@ -73,12 +73,20 @@ are referenced by the C++ code.
 # Install SDL2
 brew install sdl2 sdl2_image sdl2_ttf sdl2_mixer
 
-# Build
+# Build (recommended: CMake preset)
+cmake --preset default
+cmake --build --preset build-default
+
+# Run
+./build/captain_comic
+```
+
+Manual fallback:
+
+```bash
 mkdir build && cd build
 cmake ..
 make
-
-# Run
 ./captain_comic
 ```
 
@@ -189,7 +197,7 @@ cmake --build .
 
 ## Roadmap
 
-See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for the complete 10-phase implementation plan:
+See [MODERNIZATION_PLAN.md](docs/MODERNIZATION_PLAN.md) for the complete 10-phase implementation plan:
 
 1. ✅ **Foundation** - SDL2 setup, build system
 2. ✅ **Core Physics** - Gravity, jumping, collision, stage transitions
@@ -207,7 +215,7 @@ See [MODERNIZATION_PLAN.md](MODERNIZATION_PLAN.md) for the complete 10-phase imp
 comic-modernization/
 ├── CMakeLists.txt              # Build configuration
 ├── README.md                   # This file
-├── MODERNIZATION_PLAN.md       # Roadmap and status
+├── docs/                       # Project documentation and roadmap
 ├── include/                    # Header files
 ├── src/                        # Game source
 ├── tests/                      # Test suite
@@ -254,6 +262,41 @@ Automated unit tests cover physics, actors, items, UI helpers, and audio. Run wi
 ```bash
 cd build && ctest --output-on-failure
 ```
+
+### CMake Presets
+
+This repository includes `CMakePresets.json` for reproducible local configuration.
+
+- `default` - Standard debug configure without clang-tidy
+- `clang-tidy-intel` - Enables clang-tidy and prepends `/usr/local/opt/llvm/bin` to PATH
+- `clang-tidy-apple-silicon` - Enables clang-tidy and prepends `/opt/homebrew/opt/llvm/bin` to PATH
+
+Configure and build with presets:
+
+```bash
+cmake --preset default
+cmake --build --preset build-default
+```
+
+### Static Analysis (clang-tidy)
+
+The repository includes a root `.clang-tidy` configuration tuned for this codebase.
+
+Enable clang-tidy using the preset that matches your Homebrew layout:
+
+```bash
+cmake --preset clang-tidy-intel
+cmake --build --preset build-clang-tidy-intel
+```
+
+or
+
+```bash
+cmake --preset clang-tidy-apple-silicon
+cmake --build --preset build-clang-tidy-apple-silicon
+```
+
+If clang-tidy is not installed or not present in the preset PATH, CMake will fail with a clear error.
 
 ### Tools
 
