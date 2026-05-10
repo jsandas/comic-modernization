@@ -126,12 +126,19 @@ void test_audio_graceful_failure_when_not_initialized() {
 }
 
 void test_audio_priority_interrupt() {
-    reset_physics_state();}
+    reset_physics_state();
+}
+
 void test_audio_priority_blocking() {
-    reset_physics_state();}
+    reset_physics_state();
+}
+
 void test_audio_all_sounds_playable() {
-    reset_physics_state();}
+    reset_physics_state();
+}
+
 void test_audio_music_playback() {
-    reset_physics_state();}
+    reset_physics_state();
+}
 
 #endif
