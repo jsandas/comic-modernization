@@ -36,7 +36,7 @@ void test_audio_priority_interrupt() {
     check(play_game_sound(GameSound::FIRE), "audio_priority_interrupt: lower priority sound should play");
     check(play_game_sound(GameSound::ENEMY_HIT), "audio_priority_interrupt: higher priority sound should interrupt");
     check(play_game_sound(GameSound::PLAYER_HIT), "audio_priority_interrupt: higher priority sound should interrupt");
-    check(play_game_sound(GameSound::PLAYER_DIE), "audio_priority_interrupt: highest priority sound should interrupt");
+    check(play_game_sound(GameSound::PLAYER_DIE), "audio_priority_interrupt: high priority sound should interrupt");
     shutdown_audio_system();
     quit_sdl_audio();
 }
@@ -59,8 +59,14 @@ void test_audio_enemy_hit_interrupts_fire() {
     check(init_sdl_audio(), "audio_enemy_hit_interrupts_fire: SDL audio init should succeed");
     check(initialize_audio_system(), "audio_enemy_hit_interrupts_fire: initialization should succeed");
     check(play_game_sound(GameSound::FIRE), "audio_enemy_hit_interrupts_fire: fire should start playing");
+    check(Mix_Playing(0) != 0,
+        "audio_enemy_hit_interrupts_fire: fire should occupy the SFX channel");
     check(play_game_sound(GameSound::ENEMY_HIT),
           "audio_enemy_hit_interrupts_fire: enemy hit should interrupt fire");
+    check(Mix_Playing(0) != 0,
+        "audio_enemy_hit_interrupts_fire: enemy hit should still be playing on the SFX channel");
+    check(!play_game_sound(GameSound::FIRE),
+        "audio_enemy_hit_interrupts_fire: lower priority fire should be blocked while enemy hit plays");
     shutdown_audio_system();
     quit_sdl_audio();
 }
