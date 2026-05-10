@@ -114,8 +114,9 @@ add_library(comic_core STATIC
 )
 
 if (MSVC)
-    # level_data.cpp uses designated initializers that require C++20 on MSVC.
-    set_source_files_properties(src/level_data.cpp PROPERTIES
+    # level_data.cpp uses designated initializers; apply C++20 to comic_core on MSVC.
+    # Per-file standard overrides are not consistently honored by all VS/MSBuild flows.
+    set_target_properties(comic_core PROPERTIES
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED ON
     )
