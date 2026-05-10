@@ -113,6 +113,11 @@ add_library(comic_core STATIC
     src/ui_system.cpp
 )
 
+if (MSVC)
+    # level_data.cpp uses designated initializers that require C++20 on MSVC.
+    set_source_files_properties(src/level_data.cpp PROPERTIES COMPILE_OPTIONS "/std:c++20")
+endif()
+
 target_include_directories(comic_core PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
 )
