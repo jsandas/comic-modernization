@@ -4,6 +4,14 @@
 #include <vector>
 #include <string>
 
+#if defined(_WIN32)
+// Some SDL package setups define a global main macro on Windows.
+// Ensure this test runner exports a real `main` entrypoint.
+#ifdef main
+#undef main
+#endif
+#endif
+
 static const std::vector<TestCase>& test_registry() {
     static const std::vector<TestCase> tests = {
         // Physics & Tiles
