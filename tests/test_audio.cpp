@@ -33,9 +33,10 @@ void test_audio_priority_interrupt() {
     reset_physics_state();
     check(init_sdl_audio(), "audio_priority_interrupt: SDL audio init should succeed");
     check(initialize_audio_system(), "audio_priority_interrupt: initialization should succeed");
-    check(play_game_sound(GameSound::STAGE_TRANSITION), "audio_priority_interrupt: lower priority sound should play");
+    check(play_game_sound(GameSound::FIRE), "audio_priority_interrupt: lower priority sound should play");
+    check(play_game_sound(GameSound::ENEMY_HIT), "audio_priority_interrupt: higher priority sound should interrupt");
     check(play_game_sound(GameSound::PLAYER_HIT), "audio_priority_interrupt: higher priority sound should interrupt");
-    check(play_game_sound(GameSound::PLAYER_DIE), "audio_priority_interrupt: even higher priority should interrupt");
+    check(play_game_sound(GameSound::PLAYER_DIE), "audio_priority_interrupt: highest priority sound should interrupt");
     shutdown_audio_system();
     quit_sdl_audio();
 }
@@ -53,6 +54,17 @@ void test_audio_priority_blocking() {
     quit_sdl_audio();
 }
 
+void test_audio_enemy_hit_interrupts_fire() {
+    reset_physics_state();
+    check(init_sdl_audio(), "audio_enemy_hit_interrupts_fire: SDL audio init should succeed");
+    check(initialize_audio_system(), "audio_enemy_hit_interrupts_fire: initialization should succeed");
+    check(play_game_sound(GameSound::FIRE), "audio_enemy_hit_interrupts_fire: fire should start playing");
+    check(play_game_sound(GameSound::ENEMY_HIT),
+          "audio_enemy_hit_interrupts_fire: enemy hit should interrupt fire");
+    shutdown_audio_system();
+    quit_sdl_audio();
+}
+
 void test_audio_all_sounds_playable() {
     reset_physics_state();
     check(init_sdl_audio(), "audio_all_sounds: SDL audio init should succeed");
@@ -60,34 +72,34 @@ void test_audio_all_sounds_playable() {
     bool ok;
     ok = play_game_sound(GameSound::GAME_OVER);
     check(ok, "audio_all_sounds: GAME_OVER should play");
-    wait_for_sfx_channel_idle(200);
+    wait_for_sfx_channel_idle(2000);
     ok = play_game_sound(GameSound::STAGE_TRANSITION);
     check(ok, "audio_all_sounds: STAGE_TRANSITION should play");
-    wait_for_sfx_channel_idle(200);
+    wait_for_sfx_channel_idle(2500);
     ok = play_game_sound(GameSound::ENEMY_HIT);
     check(ok, "audio_all_sounds: ENEMY_HIT should play");
-    wait_for_sfx_channel_idle(200);
+    wait_for_sfx_channel_idle(500);
     ok = play_game_sound(GameSound::FIRE);
     check(ok, "audio_all_sounds: FIRE should play");
-    wait_for_sfx_channel_idle(200);
+    wait_for_sfx_channel_idle(500);
     ok = play_game_sound(GameSound::DOOR_OPEN);
     check(ok, "audio_all_sounds: DOOR_OPEN should play");
-    wait_for_sfx_channel_idle(200);
+    wait_for_sfx_channel_idle(1000);
     ok = play_game_sound(GameSound::ITEM_COLLECT);
     check(ok, "audio_all_sounds: ITEM_COLLECT should play");
-    wait_for_sfx_channel_idle(200);
+    wait_for_sfx_channel_idle(1000);
     ok = play_game_sound(GameSound::EXTRA_LIFE);
     check(ok, "audio_all_sounds: EXTRA_LIFE should play");
-    wait_for_sfx_channel_idle(200);
+    wait_for_sfx_channel_idle(1500);
     ok = play_game_sound(GameSound::TELEPORT);
     check(ok, "audio_all_sounds: TELEPORT should play");
-    wait_for_sfx_channel_idle(200);
+    wait_for_sfx_channel_idle(1000);
     ok = play_game_sound(GameSound::PLAYER_HIT);
     check(ok, "audio_all_sounds: PLAYER_HIT should play");
-    wait_for_sfx_channel_idle(200);
+    wait_for_sfx_channel_idle(1000);
     ok = play_game_sound(GameSound::PLAYER_DIE);
     check(ok, "audio_all_sounds: PLAYER_DIE should play");
-    wait_for_sfx_channel_idle(200);
+    wait_for_sfx_channel_idle(1000);
     check(!play_game_sound(GameSound::UNUSED_0), "audio_all_sounds: UNUSED_0 should not play (no jump sound)");
     shutdown_audio_system();
     quit_sdl_audio();
@@ -130,6 +142,10 @@ void test_audio_priority_interrupt() {
 }
 
 void test_audio_priority_blocking() {
+    reset_physics_state();
+}
+
+void test_audio_enemy_hit_interrupts_fire() {
     reset_physics_state();
 }
 

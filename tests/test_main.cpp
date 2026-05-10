@@ -68,6 +68,7 @@ static const std::vector<TestCase>& test_registry() {
         {"audio_graceful_failure_when_not_initialized", test_audio_graceful_failure_when_not_initialized},
         {"audio_priority_interrupt", test_audio_priority_interrupt},
         {"audio_priority_blocking", test_audio_priority_blocking},
+        {"audio_enemy_hit_interrupts_fire", test_audio_enemy_hit_interrupts_fire},
         {"audio_all_sounds_playable", test_audio_all_sounds_playable},
         {"audio_music_playback", test_audio_music_playback},
 

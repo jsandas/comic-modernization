@@ -63,6 +63,7 @@ void test_audio_init_shutdown_idempotency();
 void test_audio_graceful_failure_when_not_initialized();
 void test_audio_priority_interrupt();
 void test_audio_priority_blocking();
+void test_audio_enemy_hit_interrupts_fire();
 void test_audio_all_sounds_playable();
 void test_audio_music_playback();
 
