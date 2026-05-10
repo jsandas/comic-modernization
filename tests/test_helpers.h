@@ -23,7 +23,7 @@ struct TestCase {
     void (*run)();
 };
 
-// Global variables (defined in test_helpers.cpp)
+// Test globals defined in test_helpers.cpp
 extern int failures;
 extern int comic_x;
 extern int comic_y;
@@ -48,6 +48,7 @@ extern const level_t* current_level_ptr;
 extern int8_t source_door_level_number;
 extern int8_t source_door_stage_number;
 
+// Door animation globals defined in src/doors.cpp
 extern bool g_skip_load_on_door;
 extern DoorAnimationPhase g_door_anim_phase;
 extern uint8_t g_door_anim_frame;
