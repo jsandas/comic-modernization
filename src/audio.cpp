@@ -223,17 +223,17 @@ int g_music_channel = -1;  // Channel dedicated to music playback
 // ===== Sound Priorities =====
 constexpr std::array<uint8_t, static_cast<size_t>(GameSound::COUNT)> SOUND_PRIORITIES = {{
     0,   // UNUSED_0 (no jump sound in original game)
-    5,   // FIRE
-    6,   // ITEM_COLLECT (includes treasures and power-ups)
-    5,   // DOOR_OPEN
-    3,   // STAGE_TRANSITION
-    4,   // ENEMY_HIT
-    8,   // PLAYER_HIT
-    9,   // PLAYER_DIE
-    2,   // GAME_OVER
-    7,   // EXTRA_LIFE (must override ITEM_COLLECT when awarded from shield)
+    0,   // FIRE
+    3,   // ITEM_COLLECT
+    4,   // DOOR_OPEN
+    4,   // STAGE_TRANSITION
+    1,   // ENEMY_HIT
+    2,   // PLAYER_HIT
+    4,   // PLAYER_DIE
+    4,   // GAME_OVER
+    4,   // EXTRA_LIFE
     4,   // MATERIALIZE
-    7,   // TELEPORT
+    2,   // TELEPORT
 }};
 
 
