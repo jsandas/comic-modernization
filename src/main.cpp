@@ -45,6 +45,7 @@ bool lives_sequence_complete = false;  // Flag to stop lives sequence after comp
 uint8_t comic_hp = 0;  // Current health points (0-6)
 uint8_t comic_hp_pending_increase = MAX_HP;  // HP fills gradually from 0 to MAX_HP at game start
 uint8_t score_bytes[3] = {0, 0, 0};  // Score in base-100 encoding
+uint8_t score_10000_counter = 0;  // Count carries into ten-thousands digit; 5 -> extra life
 // Note: Firepower, items, and treasures are managed by ActorSystem (authoritative state)
 
 // Level/stage transition tracking
@@ -1329,6 +1330,11 @@ int main(int argc, char* argv[]) {
             const int screen_x = (static_cast<int>(door_world_x) - camera_x) * render_scale;
             const int screen_y = static_cast<int>(door_world_y) * render_scale;
 
+            const bool can_draw_tiles =
+                tileset != nullptr &&
+                current_level_ptr != nullptr &&
+                tile_w >= 2;
+
             Uint8 prev_r = 0;
             Uint8 prev_g = 0;
             Uint8 prev_b = 0;
@@ -1336,24 +1342,61 @@ int main(int argc, char* argv[]) {
             SDL_GetRenderDrawColor(renderer, &prev_r, &prev_g, &prev_b, &prev_a);
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
-            if (door_render_mode == DoorAnimationRenderMode::FULL_OPEN) {
-                SDL_Rect full_open_rect = {screen_x, screen_y, tile_w * 2, tile_h * 2};
-                SDL_RenderFillRect(renderer, &full_open_rect);
-            } else {
-                SDL_Rect left_inner_half = {
-                    screen_x + (tile_w / 2),
-                    screen_y,
-                    tile_w / 2,
-                    tile_h * 2
+            SDL_Rect door_rect = {screen_x, screen_y, tile_w * 2, tile_h * 2};
+            SDL_RenderFillRect(renderer, &door_rect);
+
+            if (can_draw_tiles) {
+                auto draw_tile_half = [&](uint8_t tile_id, bool left_half, int dst_x, int dst_y) {
+                    auto it = tileset->tiles.find(tile_id);
+                    if (it == tileset->tiles.end()) {
+                        return;
+                    }
+
+                    const TextureInfo& texture = it->second;
+                    if (!texture.texture || texture.width <= 0 || texture.height <= 0) {
+                        return;
+                    }
+
+                    const int src_half_w = texture.width / 2;
+                    if (src_half_w <= 0) {
+                        return;
+                    }
+
+                    SDL_Rect src = {
+                        left_half ? 0 : src_half_w,
+                        0,
+                        src_half_w,
+                        texture.height
+                    };
+                    SDL_Rect dst = {dst_x, dst_y, tile_w / 2, tile_h};
+                    SDL_RenderCopy(renderer, texture.texture, &src, &dst);
                 };
-                SDL_Rect right_inner_half = {
-                    screen_x + tile_w,
-                    screen_y,
-                    tile_w / 2,
-                    tile_h * 2
-                };
-                SDL_RenderFillRect(renderer, &left_inner_half);
-                SDL_RenderFillRect(renderer, &right_inner_half);
+
+                const uint8_t tile_ul = current_level_ptr->door_tile_ul;
+                const uint8_t tile_ur = current_level_ptr->door_tile_ur;
+                const uint8_t tile_ll = current_level_ptr->door_tile_ll;
+                const uint8_t tile_lr = current_level_ptr->door_tile_lr;
+
+                const int half_w = tile_w / 2;
+                int shift = 0;
+                if (door_render_mode == DoorAnimationRenderMode::HALF_OPEN ||
+                    door_render_mode == DoorAnimationRenderMode::HALF_CLOSED) {
+                    shift = half_w / 2;
+                } else if (door_render_mode == DoorAnimationRenderMode::FULL_OPEN) {
+                    shift = half_w;
+                }
+
+                // Top row
+                draw_tile_half(tile_ul, true,  screen_x + 0,                    screen_y);
+                draw_tile_half(tile_ul, false, screen_x + half_w - shift,       screen_y);
+                draw_tile_half(tile_ur, true,  screen_x + tile_w + shift,       screen_y);
+                draw_tile_half(tile_ur, false, screen_x + tile_w + half_w,      screen_y);
+
+                // Bottom row
+                draw_tile_half(tile_ll, true,  screen_x + 0,                    screen_y + tile_h);
+                draw_tile_half(tile_ll, false, screen_x + half_w - shift,       screen_y + tile_h);
+                draw_tile_half(tile_lr, true,  screen_x + tile_w + shift,       screen_y + tile_h);
+                draw_tile_half(tile_lr, false, screen_x + tile_w + half_w,      screen_y + tile_h);
             }
 
             SDL_SetRenderDrawColor(renderer, prev_r, prev_g, prev_b, prev_a);

@@ -65,6 +65,7 @@ extern uint8_t comic_hp;
 extern uint8_t comic_hp_pending_increase;
 
 extern uint8_t score_bytes[3];
+extern uint8_t score_10000_counter;
 
 // Helper functions
 void check(bool condition, const std::string& message);

@@ -46,6 +46,8 @@ void test_actor_animation_frames();
 void test_actor_behavior_bounce_movement();
 void test_actor_restraint_throttling();
 void test_actor_door_key_sync();
+void test_actor_spawn_avoids_solid_tiles();
+void test_actor_pit_fall_despawns_without_spark();
 void test_fireball_meter_depletion_timing();
 void test_fireball_meter_recharge_timing();
 void test_fireball_offscreen_deactivates();
@@ -80,6 +82,7 @@ void test_award_points_full_carry_amount();
 void test_award_points_large_value_above_255();
 void test_award_points_max_score_saturation();
 void test_award_points_large_carry_saturation();
+void test_award_points_awards_extra_life_every_50000();
 void test_high_score_bytes_conversion();
 
 #endif // TEST_CASES_H

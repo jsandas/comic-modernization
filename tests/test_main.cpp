@@ -51,6 +51,8 @@ static const std::vector<TestCase>& test_registry() {
         {"actor_behavior_bounce_movement", test_actor_behavior_bounce_movement},
         {"actor_restraint_throttling", test_actor_restraint_throttling},
         {"actor_door_key_sync", test_actor_door_key_sync},
+        {"actor_spawn_avoids_solid_tiles", test_actor_spawn_avoids_solid_tiles},
+        {"actor_pit_fall_despawns_without_spark", test_actor_pit_fall_despawns_without_spark},
         {"fireball_meter_depletion_timing", test_fireball_meter_depletion_timing},
         {"fireball_meter_recharge_timing", test_fireball_meter_recharge_timing},
         {"fireball_offscreen_deactivates", test_fireball_offscreen_deactivates},
@@ -85,6 +87,7 @@ static const std::vector<TestCase>& test_registry() {
         {"award_points_large_value_above_255", test_award_points_large_value_above_255},
         {"award_points_max_score_saturation", test_award_points_max_score_saturation},
         {"award_points_large_carry_saturation", test_award_points_large_carry_saturation},
+        {"award_points_awards_extra_life_every_50000", test_award_points_awards_extra_life_every_50000},
         {"high_score_bytes_conversion", test_high_score_bytes_conversion}
     };
     return tests;

@@ -466,6 +466,61 @@ void test_actor_door_key_sync() {
     check(comic_has_door_key == 1, "global door key variable should be synced by ActorSystem");
 }
 
+void test_actor_spawn_avoids_solid_tiles() {
+    reset_physics_state();
+    ActorSystem actor_system;
+    actor_system.initialize();
+    reset_actor_state(actor_system);
+
+    std::vector<uint8_t> tiles(128 * 10, 0x40); // solid by default (0x40 > 0x3e)
+    const int spawn_tile_x = 13; // spawn_x ~= 26 on first right-facing spawn cycle
+
+    // Carve a non-solid space above a solid floor in the spawn column.
+    for (int tile_y = 0; tile_y <= 3; ++tile_y) {
+        tiles[tile_y * 128 + spawn_tile_x] = 0x00;
+    }
+    for (int tile_y = 4; tile_y < 10; ++tile_y) {
+        tiles[tile_y * 128 + spawn_tile_x] = 0x40;
+    }
+
+    comic_x = 10;
+    comic_y = 10;
+    comic_facing = COMIC_FACING_RIGHT;
+    camera_x = 0;
+
+    auto& enemies = const_cast<std::vector<enemy_t>&>(actor_system.get_enemies());
+    setup_test_enemy(enemies, 0, ENEMY_BEHAVIOR_BOUNCE);
+
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x);
+
+    check(enemies[0].state == ENEMY_STATE_SPAWNED,
+          "actor_spawn_solidity: enemy should spawn when a valid spawn column exists");
+    check(!actor_system.is_tile_solid(actor_system.get_tile_at(enemies[0].x, enemies[0].y)),
+          "actor_spawn_solidity: spawned enemy should not be placed inside a solid tile");
+}
+
+void test_actor_pit_fall_despawns_without_spark() {
+    reset_physics_state();
+    ActorSystem actor_system;
+    actor_system.initialize();
+    reset_actor_state(actor_system);
+
+    std::vector<uint8_t> tiles(128 * 10, 0x00); // passable map so pit behavior is reachable
+    auto& enemies = const_cast<std::vector<enemy_t>&>(actor_system.get_enemies());
+
+    setup_test_enemy(enemies, 0, ENEMY_BEHAVIOR_ROLL);
+    enemies[0].state = ENEMY_STATE_SPAWNED;
+    enemies[0].x = 12;
+    enemies[0].y = static_cast<uint8_t>(PLAYFIELD_HEIGHT - 3);
+    enemies[0].y_vel = 1;
+    enemies[0].restraint = ENEMY_RESTRAINT_MOVE_EVERY_TICK;
+
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x);
+
+    check(enemies[0].state == ENEMY_STATE_DESPAWNED,
+          "actor_pit_fall: enemy should despawn immediately when falling into a pit");
+}
+
 void test_item_blastola_cola_firepower() {
     reset_physics_state();
     ActorSystem actor_system;
