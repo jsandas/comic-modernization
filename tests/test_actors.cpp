@@ -45,10 +45,15 @@ void test_actor_spawn_one_per_tick() {
         setup_test_enemy(enemies, i, ENEMY_BEHAVIOR_BOUNCE);
     }
     
-    const uint8_t* tiles = new uint8_t[128 * 10]();  // Empty tilemap
+    std::vector<uint8_t> tiles(128 * 10, 0x00);
+    for (int tile_y = 4; tile_y < 10; ++tile_y) {
+        for (int tile_x = 0; tile_x < 128; ++tile_x) {
+            tiles[tile_y * 128 + tile_x] = 0x40;
+        }
+    }
     
     // First update - should spawn exactly 1 enemy
-    actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x);
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x);
     
     int spawned = 0;
     for (const auto& enemy : enemies) {
@@ -56,7 +61,6 @@ void test_actor_spawn_one_per_tick() {
     }
     check(spawned == 1, "actor_spawn: should spawn exactly 1 enemy per tick");
     
-    delete[] tiles;
 }
 
 void test_actor_spawn_offset_cycling() {
@@ -65,7 +69,12 @@ void test_actor_spawn_offset_cycling() {
     actor_system.initialize();
     reset_actor_state(actor_system);
     
-    const uint8_t* tiles = new uint8_t[128 * 10]();
+    std::vector<uint8_t> tiles(128 * 10, 0x00);
+    for (int tile_y = 4; tile_y < 10; ++tile_y) {
+        for (int tile_x = 0; tile_x < 128; ++tile_x) {
+            tiles[tile_y * 128 + tile_x] = 0x40;
+        }
+    }
     auto& enemies = const_cast<std::vector<enemy_t>&>(actor_system.get_enemies());
     
     // Spawn offset should cycle: 24→26→28→30→24...
@@ -76,7 +85,7 @@ void test_actor_spawn_offset_cycling() {
         setup_test_enemy(enemies, 0, ENEMY_BEHAVIOR_BOUNCE);
         
         // Trigger spawn
-        actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x);
+        actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x);
         
         if (enemies[0].state == ENEMY_STATE_SPAWNED) {
             spawn_positions.push_back(enemies[0].x);
@@ -94,7 +103,6 @@ void test_actor_spawn_offset_cycling() {
     }
     check(has_variation, "actor_spawn_offset: spawn positions should vary due to offset cycling");
     
-    delete[] tiles;
 }
 
 void test_actor_despawn_distance() {
