@@ -128,3 +128,7 @@ Evidence:
 Evidence:
 - [src/actors.cpp](../src/actors.cpp)
 - [tests/test_actors.cpp](../tests/test_actors.cpp)
+
+- [x] Collecting the 3rd treasure starts `win_counter` countdown before victory handoff.
+Evidence:
+- Phase 8 end-to-end manual QA run (2026-05-11)

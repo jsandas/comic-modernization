@@ -128,3 +128,7 @@ The following gameplay issues were reported during Phase 8 QA and are now addres
 - Root cause: pit-fall sentinel state reached render path for one frame and was rendered with the normal spark effect.
 - Fix: keep the one-frame pit-fall sentinel state, but suppress spark rendering in that state; the enemy then despawns on the next update tick.
 - Evidence: [src/actors.cpp](../src/actors.cpp), [tests/test_actors.cpp](../tests/test_actors.cpp)
+
+5. End-to-end victory trigger timing after 3rd treasure:
+- Validation: gameplay run confirms collecting the 3rd treasure starts the `win_counter` countdown, then transitions into the victory sequence (not immediate handoff).
+- Evidence: Phase 8 manual QA run (2026-05-11).
