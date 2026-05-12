@@ -353,14 +353,15 @@ void ActorSystem::render_enemies(GraphicsSystem* graphics_system, int camera_x, 
             continue;
         }
 
-        // Dying enemy states: white spark (2..6) or red spark (8..12).
+        // Pit-fall sentinel: render enemy clamped at bottom for one frame,
+        // with no spark effect, then despawn on the next update tick.
+        if (enemy.state == ENEMY_STATE_PIT_FALL_SENTINEL) {
+            render_enemy_base();
+            continue;
+        }
+
+        // Dying enemy states: white spark (2..7) or red spark (8..13).
         if (enemy.state >= ENEMY_STATE_WHITE_SPARK) {
-            // Pit-fall sentinel: render enemy clamped at bottom for one frame,
-            // with no spark effect, then despawn on the next update tick.
-            if (enemy.state == ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME) {
-                render_enemy_base();
-                continue;
-            }
 
             uint8_t normalized_state = enemy.state;
             if (enemy.state >= ENEMY_STATE_RED_SPARK) {
@@ -458,6 +459,11 @@ void ActorSystem::update(
             if (enemy.spawn_timer_and_animation == 0) {
                 maybe_spawn_enemy(i);
             }
+            continue;
+        }
+
+        if (enemy.state == ENEMY_STATE_PIT_FALL_SENTINEL) {
+            despawn_enemy(enemy);
             continue;
         }
 
@@ -951,7 +957,7 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
 
         // Despawn at or below the bottom of the playfield
         if (new_y >= PLAYFIELD_HEIGHT - 2) {
-            enemy->state = ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME;
+            enemy->state = ENEMY_STATE_PIT_FALL_SENTINEL;
             enemy->y = PLAYFIELD_HEIGHT - 2;
             return;
         }
@@ -1066,7 +1072,7 @@ void ActorSystem::enemy_behavior_roll(enemy_t* enemy) {
     if (enemy->y_vel > 0) {
         // Falling: check if near bottom and despawn
         if (enemy->y + 1 >= PLAYFIELD_HEIGHT - 3) {
-            enemy->state = ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME;
+            enemy->state = ENEMY_STATE_PIT_FALL_SENTINEL;
             enemy->y = PLAYFIELD_HEIGHT - 2;
             return;
         }

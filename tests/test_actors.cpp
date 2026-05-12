@@ -525,7 +525,7 @@ void test_actor_pit_fall_despawns_without_spark() {
 
     actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x);
 
-        check(enemies[0].state == ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME,
+        check(enemies[0].state == ENEMY_STATE_PIT_FALL_SENTINEL,
             "actor_pit_fall: enemy should enter pit-fall sentinel (no spark) at bottom edge");
         check(enemies[0].y == PLAYFIELD_HEIGHT - 2,
             "actor_pit_fall: enemy should clamp to the bottom of the playfield before despawn");
