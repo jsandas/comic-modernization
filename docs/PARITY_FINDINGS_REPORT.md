@@ -125,6 +125,6 @@ The following gameplay issues were reported during Phase 8 QA and are now addres
 - Evidence: [src/actors.cpp](../src/actors.cpp), [tests/test_actors.cpp](../tests/test_actors.cpp)
 
 4. White spark displayed when enemies fell into pits:
-- Root cause: pit-fall sentinel state reached render path for one frame.
-- Fix: immediate despawn on pit-fall sentinel before render phase.
+- Root cause: pit-fall sentinel state reached render path for one frame and was rendered with the normal spark effect.
+- Fix: keep the one-frame pit-fall sentinel state, but suppress spark rendering in that state; the enemy then despawns on the next update tick.
 - Evidence: [src/actors.cpp](../src/actors.cpp), [tests/test_actors.cpp](../tests/test_actors.cpp)
