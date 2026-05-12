@@ -208,6 +208,42 @@ void test_award_points_large_carry_saturation() {
           "award_points: massive award should saturate at max");
 }
 
+void test_award_points_awards_extra_life_every_50000() {
+    reset_physics_state();
+    score_bytes[0] = 99;
+    score_bytes[1] = 99;
+    score_bytes[2] = 0;
+    score_10000_counter = 4;
+    comic_num_lives = 2;
+
+    // This causes carry into the ten-thousands byte and should roll
+    // score_10000_counter 4->5->0, awarding one life.
+    award_points(1);
+
+    check(score_bytes[0] == 0 && score_bytes[1] == 0 && score_bytes[2] == 1,
+          "award_points_50000: score should carry into ten-thousands byte");
+    check(score_10000_counter == 0,
+          "award_points_50000: score_10000_counter should reset after extra life award");
+    check(comic_num_lives == 3,
+          "award_points_50000: extra life should be awarded every 50000 points");
+}
+
+void test_award_points_awards_extra_life_after_500_internal_units() {
+    reset_physics_state();
+    comic_num_lives = 2;
+
+    for (int i = 0; i < 5; i++) {
+        award_points(100);
+    }
+
+    check(score_bytes[0] == 0 && score_bytes[1] == 5 && score_bytes[2] == 0,
+          "award_points_500_internal: score should reach 500 internal units");
+    check(score_10000_counter == 0,
+          "award_points_500_internal: counter should reset after 500 internal units");
+    check(comic_num_lives == 3,
+          "award_points_500_internal: extra life should trigger at 500 internal units");
+}
+
 void test_high_score_bytes_conversion() {
     reset_physics_state();
     // Zero score

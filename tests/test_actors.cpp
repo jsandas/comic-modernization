@@ -45,10 +45,15 @@ void test_actor_spawn_one_per_tick() {
         setup_test_enemy(enemies, i, ENEMY_BEHAVIOR_BOUNCE);
     }
     
-    const uint8_t* tiles = new uint8_t[128 * 10]();  // Empty tilemap
+    std::vector<uint8_t> tiles(128 * 10, 0x00);
+    for (int tile_y = 4; tile_y < 10; ++tile_y) {
+        for (int tile_x = 0; tile_x < 128; ++tile_x) {
+            tiles[tile_y * 128 + tile_x] = 0x40;
+        }
+    }
     
     // First update - should spawn exactly 1 enemy
-    actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x);
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x);
     
     int spawned = 0;
     for (const auto& enemy : enemies) {
@@ -56,7 +61,6 @@ void test_actor_spawn_one_per_tick() {
     }
     check(spawned == 1, "actor_spawn: should spawn exactly 1 enemy per tick");
     
-    delete[] tiles;
 }
 
 void test_actor_spawn_offset_cycling() {
@@ -65,7 +69,12 @@ void test_actor_spawn_offset_cycling() {
     actor_system.initialize();
     reset_actor_state(actor_system);
     
-    const uint8_t* tiles = new uint8_t[128 * 10]();
+    std::vector<uint8_t> tiles(128 * 10, 0x00);
+    for (int tile_y = 4; tile_y < 10; ++tile_y) {
+        for (int tile_x = 0; tile_x < 128; ++tile_x) {
+            tiles[tile_y * 128 + tile_x] = 0x40;
+        }
+    }
     auto& enemies = const_cast<std::vector<enemy_t>&>(actor_system.get_enemies());
     
     // Spawn offset should cycle: 24→26→28→30→24...
@@ -76,7 +85,7 @@ void test_actor_spawn_offset_cycling() {
         setup_test_enemy(enemies, 0, ENEMY_BEHAVIOR_BOUNCE);
         
         // Trigger spawn
-        actor_system.update(comic_x, comic_y, comic_facing, tiles, camera_x);
+        actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x);
         
         if (enemies[0].state == ENEMY_STATE_SPAWNED) {
             spawn_positions.push_back(enemies[0].x);
@@ -94,7 +103,6 @@ void test_actor_spawn_offset_cycling() {
     }
     check(has_variation, "actor_spawn_offset: spawn positions should vary due to offset cycling");
     
-    delete[] tiles;
 }
 
 void test_actor_despawn_distance() {
@@ -464,6 +472,68 @@ void test_actor_door_key_sync() {
     actor_system.apply_item_effect(ITEM_DOOR_KEY);
     check(actor_system.comic_has_door_key == 1, "actor system should have door key flag set");
     check(comic_has_door_key == 1, "global door key variable should be synced by ActorSystem");
+}
+
+void test_actor_spawn_avoids_solid_tiles() {
+    reset_physics_state();
+    ActorSystem actor_system;
+    actor_system.initialize();
+    reset_actor_state(actor_system);
+
+    std::vector<uint8_t> tiles(128 * 10, 0x40); // solid by default (0x40 > 0x3e)
+    const int spawn_tile_x = 13; // spawn_x ~= 26 on first right-facing spawn cycle
+
+    // Carve a non-solid space above a solid floor in the spawn column.
+    for (int tile_y = 0; tile_y <= 3; ++tile_y) {
+        tiles[tile_y * 128 + spawn_tile_x] = 0x00;
+    }
+    for (int tile_y = 4; tile_y < 10; ++tile_y) {
+        tiles[tile_y * 128 + spawn_tile_x] = 0x40;
+    }
+
+    comic_x = 10;
+    comic_y = 10;
+    comic_facing = COMIC_FACING_RIGHT;
+    camera_x = 0;
+
+    auto& enemies = const_cast<std::vector<enemy_t>&>(actor_system.get_enemies());
+    setup_test_enemy(enemies, 0, ENEMY_BEHAVIOR_BOUNCE);
+
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x);
+
+    check(enemies[0].state == ENEMY_STATE_SPAWNED,
+          "actor_spawn_solidity: enemy should spawn when a valid spawn column exists");
+    check(!actor_system.is_tile_solid(actor_system.get_tile_at(enemies[0].x, enemies[0].y)),
+          "actor_spawn_solidity: spawned enemy should not be placed inside a solid tile");
+}
+
+void test_actor_pit_fall_despawns_without_spark() {
+    reset_physics_state();
+    ActorSystem actor_system;
+    actor_system.initialize();
+    reset_actor_state(actor_system);
+
+    std::vector<uint8_t> tiles(128 * 10, 0x00); // passable map so pit behavior is reachable
+    auto& enemies = const_cast<std::vector<enemy_t>&>(actor_system.get_enemies());
+
+    setup_test_enemy(enemies, 0, ENEMY_BEHAVIOR_ROLL);
+    enemies[0].state = ENEMY_STATE_SPAWNED;
+    enemies[0].x = 12;
+    enemies[0].y = static_cast<uint8_t>(PLAYFIELD_HEIGHT - 3);
+    enemies[0].y_vel = 1;
+    enemies[0].restraint = ENEMY_RESTRAINT_MOVE_EVERY_TICK;
+
+    actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x);
+
+        check(enemies[0].state == ENEMY_STATE_PIT_FALL_SENTINEL,
+            "actor_pit_fall: enemy should enter pit-fall sentinel (no spark) at bottom edge");
+        check(enemies[0].y == PLAYFIELD_HEIGHT - 2,
+            "actor_pit_fall: enemy should clamp to the bottom of the playfield before despawn");
+
+        actor_system.update(comic_x, comic_y, comic_facing, tiles.data(), camera_x);
+
+        check(enemies[0].state == ENEMY_STATE_DESPAWNED,
+            "actor_pit_fall: enemy should despawn on the tick after bottom-edge clamp");
 }
 
 void test_item_blastola_cola_firepower() {

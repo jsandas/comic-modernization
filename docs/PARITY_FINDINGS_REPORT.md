@@ -104,3 +104,27 @@ Given the project intent (replicate original feel on modern systems):
 - Treat door animation parity as high-value authenticity work.
 - Make fast-enemy bug parity a documented, deliberate project toggle/policy.
 - Keep modern architecture (SDL2, accumulator loop) while matching gameplay outcomes at tick boundaries.
+
+## Phase 8 QA Addendum (2026-05-10)
+
+The following gameplay issues were reported during Phase 8 QA and are now addressed:
+
+1. Extra life not awarded every 50,000 points:
+- Root cause: `award_points()` no longer tracked ten-thousands carry cadence.
+- Fix: restored `score_10000_counter` carry tracking and 5-step rollover extra-life award path.
+- Evidence: [src/actors.cpp](../src/actors.cpp), [src/main.cpp](../src/main.cpp), [tests/test_ui.cpp](../tests/test_ui.cpp)
+
+2. Door animation opening looked like black replacement instead of opening leaves:
+- Root cause: overlay renderer only painted black rectangles for open states.
+- Fix: render door tile halves shifted away from the center line for half/full open states.
+- Evidence: [src/main.cpp](../src/main.cpp)
+
+3. Enemies spawning inside solid tiles:
+- Root cause: simplified spawn Y selection only checked up to two positions.
+- Fix: spawn search now mirrors assembly flow (find solid anchor tile, then first non-solid above).
+- Evidence: [src/actors.cpp](../src/actors.cpp), [tests/test_actors.cpp](../tests/test_actors.cpp)
+
+4. White spark displayed when enemies fell into pits:
+- Root cause: pit-fall sentinel state reached render path for one frame and was rendered with the normal spark effect.
+- Fix: keep the one-frame pit-fall sentinel state, but suppress spark rendering in that state; the enemy then despawns on the next update tick.
+- Evidence: [src/actors.cpp](../src/actors.cpp), [tests/test_actors.cpp](../tests/test_actors.cpp)

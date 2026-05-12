@@ -45,6 +45,7 @@ bool lives_sequence_complete = false;  // Flag to stop lives sequence after comp
 uint8_t comic_hp = 0;  // Current health points (0-6)
 uint8_t comic_hp_pending_increase = MAX_HP;  // HP fills gradually from 0 to MAX_HP at game start
 uint8_t score_bytes[3] = {0, 0, 0};  // Score in base-100 encoding
+uint8_t score_10000_counter = 0;  // Count carries into ten-thousands digit; 5 -> extra life
 // Note: Firepower, items, and treasures are managed by ActorSystem (authoritative state)
 
 // Level/stage transition tracking
@@ -1195,7 +1196,13 @@ int main(int argc, char* argv[]) {
             current_time = SDL_GetTicks();
             Animation* previous_animation = current_animation;
             if (is_player_dying()) {
-                current_animation = should_show_player_death_animation() ? &comic_death : nullptr;
+                if (should_show_player_death_animation()) {
+                    current_animation = &comic_death;
+                } else if (should_clip_player_death_render()) {
+                    current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
+                } else {
+                    current_animation = nullptr;
+                }
             } else if (comic_is_falling_or_jumping && !suppress_jump_animation_this_frame) {
                 current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
             } else {
@@ -1329,6 +1336,11 @@ int main(int argc, char* argv[]) {
             const int screen_x = (static_cast<int>(door_world_x) - camera_x) * render_scale;
             const int screen_y = static_cast<int>(door_world_y) * render_scale;
 
+            const bool can_draw_tiles =
+                tileset != nullptr &&
+                current_level_ptr != nullptr &&
+                tile_w >= 2;
+
             Uint8 prev_r = 0;
             Uint8 prev_g = 0;
             Uint8 prev_b = 0;
@@ -1336,24 +1348,53 @@ int main(int argc, char* argv[]) {
             SDL_GetRenderDrawColor(renderer, &prev_r, &prev_g, &prev_b, &prev_a);
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
-            if (door_render_mode == DoorAnimationRenderMode::FULL_OPEN) {
-                SDL_Rect full_open_rect = {screen_x, screen_y, tile_w * 2, tile_h * 2};
-                SDL_RenderFillRect(renderer, &full_open_rect);
-            } else {
-                SDL_Rect left_inner_half = {
-                    screen_x + (tile_w / 2),
-                    screen_y,
-                    tile_w / 2,
-                    tile_h * 2
+            SDL_Rect door_rect = {screen_x, screen_y, tile_w * 2, tile_h * 2};
+            SDL_RenderFillRect(renderer, &door_rect);
+
+            if (can_draw_tiles) {
+                const uint8_t tile_ul = current_level_ptr->door_tile_ul;
+                const uint8_t tile_ur = current_level_ptr->door_tile_ur;
+                const uint8_t tile_ll = current_level_ptr->door_tile_ll;
+                const uint8_t tile_lr = current_level_ptr->door_tile_lr;
+
+                auto redraw_world_tile = [&](int world_tile_x, int world_tile_y) {
+                    if (world_tile_x < 0 || world_tile_y < 0) {
+                        return;
+                    }
+
+                    if (world_tile_x >= MAP_WIDTH_TILES * 2 || world_tile_y >= MAP_HEIGHT_TILES * 2) {
+                        return;
+                    }
+
+                    const int tile_screen_x = (world_tile_x - camera_x) * render_scale;
+                    const int tile_screen_y = world_tile_y * render_scale;
+                    const uint8_t tile_id = get_tile_at(world_tile_x, world_tile_y);
+                    g_graphics->render_tile(tile_screen_x, tile_screen_y, tileset, tile_id, render_scale);
                 };
-                SDL_Rect right_inner_half = {
-                    screen_x + tile_w,
-                    screen_y,
-                    tile_w / 2,
-                    tile_h * 2
-                };
-                SDL_RenderFillRect(renderer, &left_inner_half);
-                SDL_RenderFillRect(renderer, &right_inner_half);
+
+                int shift = 0;
+                if (door_render_mode == DoorAnimationRenderMode::HALF_OPEN ||
+                    door_render_mode == DoorAnimationRenderMode::HALF_CLOSED) {
+                    shift = tile_w / 4;
+                } else if (door_render_mode == DoorAnimationRenderMode::FULL_OPEN) {
+                    shift = tile_w / 2;
+                }
+
+                const int left_col_x = screen_x - shift;
+                const int right_col_x = screen_x + tile_w + shift;
+
+                // Each door leaf is one full tile column (2 game units wide).
+                g_graphics->render_tile(left_col_x, screen_y, tileset, tile_ul, render_scale);
+                g_graphics->render_tile(left_col_x, screen_y + tile_h, tileset, tile_ll, render_scale);
+                g_graphics->render_tile(right_col_x, screen_y, tileset, tile_ur, render_scale);
+                g_graphics->render_tile(right_col_x, screen_y + tile_h, tileset, tile_lr, render_scale);
+
+                // Redraw the wall columns beside the doorway so the leaves slide
+                // behind the surrounding tiles instead of overlapping them.
+                redraw_world_tile(static_cast<int>(door_world_x) - 2, static_cast<int>(door_world_y));
+                redraw_world_tile(static_cast<int>(door_world_x) - 2, static_cast<int>(door_world_y) + 2);
+                redraw_world_tile(static_cast<int>(door_world_x) + 4, static_cast<int>(door_world_y));
+                redraw_world_tile(static_cast<int>(door_world_x) + 4, static_cast<int>(door_world_y) + 2);
             }
 
             SDL_SetRenderDrawColor(renderer, prev_r, prev_g, prev_b, prev_a);
@@ -1374,18 +1415,21 @@ int main(int argc, char* argv[]) {
                 int screen_y = comic_y * render_scale + render_scale * 2; // Center Y
                 int player_width = render_scale * 2;
                 const int player_full_height = render_scale * 4;
-                // Phase 6: show only the top half of the sprite during the death animation,
-                // matching the assembly's partial-row blit in comic_dies.
-                // render_sprite_top_clip_scaled crops the source texture proportionally and
-                // anchors the destination at the sprite's natural top edge so the bottom is
-                // clipped (not squashed).
-                if (should_show_player_death_animation()) {
+                if (should_clip_player_death_render()) {
                     g_graphics->render_sprite_top_clip_scaled(
-                        screen_x, screen_y, frame->sprite,
-                        player_width, player_full_height, render_scale * 2);
+                        screen_x,
+                        screen_y,
+                        frame->sprite,
+                        player_width,
+                        player_full_height,
+                        render_scale * 2);
                 } else {
                     g_graphics->render_sprite_centered_scaled(
-                        screen_x, screen_y, frame->sprite, player_width, player_full_height);
+                        screen_x,
+                        screen_y,
+                        frame->sprite,
+                        player_width,
+                        player_full_height);
                 }
             }
         }

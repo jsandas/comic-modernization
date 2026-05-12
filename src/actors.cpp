@@ -12,6 +12,7 @@ extern uint8_t comic_num_lives;
 
 // Score bytes from main.cpp for award_points()
 extern uint8_t score_bytes[3];
+extern uint8_t score_10000_counter;
 
 /**
  * award_points - Award points to the player's score
@@ -39,6 +40,13 @@ void award_points(uint16_t points) {
     uint16_t sum1 = static_cast<uint16_t>(score_bytes[1]) + carry;
     score_bytes[1] = static_cast<uint8_t>(sum1 % 100);
 
+    uint16_t ten_thousand_progress = static_cast<uint16_t>(score_10000_counter) + carry;
+    while (ten_thousand_progress >= 5) {
+        ten_thousand_progress -= 5;
+        award_extra_life();
+    }
+    score_10000_counter = static_cast<uint8_t>(ten_thousand_progress);
+
     carry = sum1 / 100;
     if (carry == 0) {
         return;
@@ -50,10 +58,9 @@ void award_points(uint16_t points) {
         score_bytes[0] = 99;
         score_bytes[1] = 99;
         score_bytes[2] = 99;
-        return;
+    } else {
+        score_bytes[2] = static_cast<uint8_t>(high);
     }
-
-    score_bytes[2] = static_cast<uint8_t>(high);
 }
 
 void award_extra_life() {
@@ -346,8 +353,16 @@ void ActorSystem::render_enemies(GraphicsSystem* graphics_system, int camera_x, 
             continue;
         }
 
-        // Dying enemy states: white spark (2..6) or red spark (8..12).
+        // Pit-fall sentinel: render enemy clamped at bottom for one frame,
+        // with no spark effect, then despawn on the next update tick.
+        if (enemy.state == ENEMY_STATE_PIT_FALL_SENTINEL) {
+            render_enemy_base();
+            continue;
+        }
+
+        // Dying enemy states: white spark (2..7) or red spark (8..13).
         if (enemy.state >= ENEMY_STATE_WHITE_SPARK) {
+
             uint8_t normalized_state = enemy.state;
             if (enemy.state >= ENEMY_STATE_RED_SPARK) {
                 normalized_state = static_cast<uint8_t>(
@@ -420,6 +435,17 @@ void ActorSystem::update(
     g_camera_x = camera_x;
     current_tiles = tiles;
 
+    auto despawn_enemy = [&](enemy_t& enemy) {
+        enemy.state = ENEMY_STATE_DESPAWNED;
+        enemy.spawn_timer_and_animation = enemy_respawn_counter_cycle;
+
+        // Cycle respawn timer: 20→40→60→80→100→20
+        enemy_respawn_counter_cycle += RESPAWN_TIMER_STEP;
+        if (enemy_respawn_counter_cycle > RESPAWN_TIMER_MAX) {
+            enemy_respawn_counter_cycle = RESPAWN_TIMER_MIN;
+        }
+    };
+
     spawned_this_tick = 0;
 
     for (int i = 0; i < MAX_NUM_ENEMIES; i++) {
@@ -436,20 +462,18 @@ void ActorSystem::update(
             continue;
         }
 
+        if (enemy.state == ENEMY_STATE_PIT_FALL_SENTINEL) {
+            despawn_enemy(enemy);
+            continue;
+        }
+
         // Handle death animation states (white spark or red spark)
         if (enemy.state >= ENEMY_STATE_WHITE_SPARK) {
             // Still animating spark effect
             if ((enemy.state == ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME) ||
                 (enemy.state == ENEMY_STATE_RED_SPARK + DEATH_ANIMATION_LAST_FRAME)) {
                 // Animation finished; despawn
-                enemy.state = ENEMY_STATE_DESPAWNED;
-                enemy.spawn_timer_and_animation = enemy_respawn_counter_cycle;
-                
-                // Cycle respawn timer: 20→40→60→80→100→20
-                enemy_respawn_counter_cycle += RESPAWN_TIMER_STEP;
-                if (enemy_respawn_counter_cycle > RESPAWN_TIMER_MAX) {
-                    enemy_respawn_counter_cycle = RESPAWN_TIMER_MIN;
-                }
+                despawn_enemy(enemy);
             } else {
                 // Advance animation frame
                 enemy.state++;
@@ -569,13 +593,45 @@ bool ActorSystem::maybe_spawn_enemy(int enemy_index) {
     }
     uint8_t spawn_x = static_cast<uint8_t>(spawn_x_temp);
 
-    // Determine spawn Y: search for passable tile at Comic's foot level or higher
-    uint8_t spawn_y = g_comic_y;
-    for (int y_search = 0; y_search < 2; y_search++) {
-        if (!is_tile_solid(get_tile_at(spawn_x, spawn_y))) {
-            break;  // Found passable tile
+    // Determine spawn Y by matching assembly behavior:
+    // 1) Start at Comic's feet rounded to even boundary + 4.
+    // 2) Scan upward until finding a solid tile.
+    // 3) Continue scanning upward until finding first non-solid tile above it.
+    int search_y = (static_cast<int>(g_comic_y) & 0xFE) + 4;
+    if (search_y > PLAYFIELD_HEIGHT - 2) {
+        search_y = PLAYFIELD_HEIGHT - 2;
+    }
+
+    bool solid_found = false;
+    while (search_y > 0) {
+        if (is_tile_solid(get_tile_at(spawn_x, static_cast<uint8_t>(search_y)))) {
+            solid_found = true;
+            break;
         }
-        spawn_y = (uint8_t)(spawn_y - 1);
+        search_y -= 2;
+    }
+
+    if (!solid_found) {
+        return false;
+    }
+
+    bool spawn_found = false;
+    uint8_t spawn_y = 0;
+    while (search_y >= 0) {
+        search_y -= 2;
+        if (search_y < 0) {
+            break;
+        }
+
+        if (!is_tile_solid(get_tile_at(spawn_x, static_cast<uint8_t>(search_y)))) {
+            spawn_y = static_cast<uint8_t>(search_y);
+            spawn_found = true;
+            break;
+        }
+    }
+
+    if (!spawn_found) {
+        return false;
     }
 
     // Initialize spawned enemy
@@ -901,7 +957,7 @@ void ActorSystem::enemy_behavior_leap(enemy_t* enemy) {
 
         // Despawn at or below the bottom of the playfield
         if (new_y >= PLAYFIELD_HEIGHT - 2) {
-            enemy->state = ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME;
+            enemy->state = ENEMY_STATE_PIT_FALL_SENTINEL;
             enemy->y = PLAYFIELD_HEIGHT - 2;
             return;
         }
@@ -1016,7 +1072,7 @@ void ActorSystem::enemy_behavior_roll(enemy_t* enemy) {
     if (enemy->y_vel > 0) {
         // Falling: check if near bottom and despawn
         if (enemy->y + 1 >= PLAYFIELD_HEIGHT - 3) {
-            enemy->state = ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME;
+            enemy->state = ENEMY_STATE_PIT_FALL_SENTINEL;
             enemy->y = PLAYFIELD_HEIGHT - 2;
             return;
         }

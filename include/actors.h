@@ -12,6 +12,7 @@ constexpr uint8_t ENEMY_STATE_DESPAWNED = 0;      /* Not yet spawned */
 constexpr uint8_t ENEMY_STATE_SPAWNED = 1;        /* Active and moving */
 constexpr uint8_t ENEMY_STATE_WHITE_SPARK = 2;    /* Death animation (frames 2-7) */
 constexpr uint8_t ENEMY_STATE_RED_SPARK = 8;      /* Death animation (frames 8-13) */
+constexpr uint8_t ENEMY_STATE_PIT_FALL_SENTINEL = 14; /* Clamp at pit bottom for one frame, no spark */
 constexpr uint8_t DEATH_ANIMATION_LAST_FRAME = 5; /* Offset from start to last frame */
 
 /* Enemy restraint (movement throttle) */

@@ -50,6 +50,7 @@ static bool ceiling_stick_flag = false;
 static bool player_is_dying = false;
 static bool player_death_too_bad_phase = false;
 static bool player_death_show_animation = true;
+static bool player_death_fall_clip_render = false;
 static uint8_t player_death_ticks_remaining = 0;
 constexpr uint8_t PLAYER_DEATH_ANIMATION_TICKS = 8;
 constexpr uint8_t PLAYER_DEATH_TOO_BAD_TICKS = 15;
@@ -62,7 +63,11 @@ bool should_show_player_death_animation() {
     return player_is_dying && !player_death_too_bad_phase && player_death_show_animation;
 }
 
-void trigger_player_death(bool show_animation) {
+bool should_clip_player_death_render() {
+    return player_is_dying && !player_death_too_bad_phase && player_death_fall_clip_render;
+}
+
+void trigger_player_death(bool show_animation, bool fall_clip_render) {
     if (player_is_dying) {
         return;
     }
@@ -70,6 +75,7 @@ void trigger_player_death(bool show_animation) {
     player_is_dying = true;
     player_death_too_bad_phase = false;
     player_death_show_animation = show_animation;
+    player_death_fall_clip_render = fall_clip_render;
     player_death_ticks_remaining = show_animation ? PLAYER_DEATH_ANIMATION_TICKS : 0;
 
     comic_y_vel = 0;
@@ -109,6 +115,7 @@ void update_player_death_sequence() {
             player_is_dying = false;
             player_death_too_bad_phase = false;
             player_death_show_animation = true;
+            player_death_fall_clip_render = false;
             game_over_triggered = true;
             return;
         }
@@ -116,6 +123,7 @@ void update_player_death_sequence() {
         player_is_dying = false;
         player_death_too_bad_phase = false;
         player_death_show_animation = true;
+        player_death_fall_clip_render = false;
 
         // Respawn at checkpoint after the death animation completes.
         comic_x = comic_x_checkpoint;
@@ -271,7 +279,7 @@ void handle_fall_or_jump() {
         
         // Bounds check: death if too far down
         if (comic_y >= PLAYFIELD_HEIGHT - 3) {
-            trigger_player_death(false);
+            trigger_player_death(false, true);
             return;
         }
         

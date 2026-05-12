@@ -45,6 +45,7 @@ uint8_t comic_hp = MAX_HP;
 uint8_t comic_hp_pending_increase = 0;
 
 uint8_t score_bytes[3] = {0, 0, 0};
+uint8_t score_10000_counter = 0;
 
 // Helper implementations
 void check(bool condition, const std::string& message) {
@@ -102,6 +103,7 @@ void reset_physics_state() {
     score_bytes[0] = 0;
     score_bytes[1] = 0;
     score_bytes[2] = 0;
+    score_10000_counter = 0;
 }
 
 void reset_door_state() {

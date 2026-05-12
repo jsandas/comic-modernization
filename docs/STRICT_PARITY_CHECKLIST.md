@@ -107,3 +107,24 @@ For each test, mark Pass/Fail and attach clip or notes.
 - [ ] All Critical items Pass.
 - [ ] All High items Pass, or explicit waived exceptions approved.
 - [ ] Medium items reviewed and accepted as intentional differences.
+
+## Phase 8 QA Regression Checks
+
+- [x] Extra life is awarded every 50,000 points (`score_10000_counter` rollover).
+Evidence:
+- [src/actors.cpp](../src/actors.cpp)
+- [tests/test_ui.cpp](../tests/test_ui.cpp)
+
+- [x] Door opening visuals shift door leaves away from center (not black-only replacement).
+Evidence:
+- [src/main.cpp](../src/main.cpp)
+
+- [x] Enemy spawn logic avoids placing enemies inside solid tiles.
+Evidence:
+- [src/actors.cpp](../src/actors.cpp)
+- [tests/test_actors.cpp](../tests/test_actors.cpp)
+
+- [x] Pit-fall enemy deaths do not display white spark animation.
+Evidence:
+- [src/actors.cpp](../src/actors.cpp)
+- [tests/test_actors.cpp](../tests/test_actors.cpp)
