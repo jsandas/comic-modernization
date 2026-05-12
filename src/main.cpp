@@ -1196,7 +1196,13 @@ int main(int argc, char* argv[]) {
             current_time = SDL_GetTicks();
             Animation* previous_animation = current_animation;
             if (is_player_dying()) {
-                current_animation = should_show_player_death_animation() ? &comic_death : nullptr;
+                if (should_show_player_death_animation()) {
+                    current_animation = &comic_death;
+                } else if (should_clip_player_death_render()) {
+                    current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
+                } else {
+                    current_animation = nullptr;
+                }
             } else if (comic_is_falling_or_jumping && !suppress_jump_animation_this_frame) {
                 current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
             } else {
@@ -1409,8 +1415,22 @@ int main(int argc, char* argv[]) {
                 int screen_y = comic_y * render_scale + render_scale * 2; // Center Y
                 int player_width = render_scale * 2;
                 const int player_full_height = render_scale * 4;
-                g_graphics->render_sprite_centered_scaled(
-                    screen_x, screen_y, frame->sprite, player_width, player_full_height);
+                if (should_clip_player_death_render()) {
+                    g_graphics->render_sprite_top_clip_scaled(
+                        screen_x,
+                        screen_y,
+                        frame->sprite,
+                        player_width,
+                        player_full_height,
+                        render_scale * 2);
+                } else {
+                    g_graphics->render_sprite_centered_scaled(
+                        screen_x,
+                        screen_y,
+                        frame->sprite,
+                        player_width,
+                        player_full_height);
+                }
             }
         }
 
