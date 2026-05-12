@@ -355,6 +355,13 @@ void ActorSystem::render_enemies(GraphicsSystem* graphics_system, int camera_x, 
 
         // Dying enemy states: white spark (2..6) or red spark (8..12).
         if (enemy.state >= ENEMY_STATE_WHITE_SPARK) {
+            // Pit-fall sentinel: render enemy clamped at bottom for one frame,
+            // with no spark effect, then despawn on the next update tick.
+            if (enemy.state == ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME) {
+                render_enemy_base();
+                continue;
+            }
+
             uint8_t normalized_state = enemy.state;
             if (enemy.state >= ENEMY_STATE_RED_SPARK) {
                 normalized_state = static_cast<uint8_t>(
@@ -475,11 +482,6 @@ void ActorSystem::update(
             check_enemy_despawn(&enemy);
 
             if (enemy.state != ENEMY_STATE_SPAWNED) {
-                // Pit-fall sentinel (WHITE_SPARK + last frame) should despawn
-                // immediately without ever rendering a spark.
-                if (enemy.state == ENEMY_STATE_WHITE_SPARK + DEATH_ANIMATION_LAST_FRAME) {
-                    despawn_enemy(enemy);
-                }
                 continue;
             }
 
