@@ -88,6 +88,7 @@ static const std::vector<TestCase>& test_registry() {
         {"award_points_max_score_saturation", test_award_points_max_score_saturation},
         {"award_points_large_carry_saturation", test_award_points_large_carry_saturation},
         {"award_points_awards_extra_life_every_50000", test_award_points_awards_extra_life_every_50000},
+        {"award_points_awards_extra_life_after_500_internal_units", test_award_points_awards_extra_life_after_500_internal_units},
         {"high_score_bytes_conversion", test_high_score_bytes_conversion}
     };
     return tests;

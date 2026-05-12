@@ -1346,57 +1346,49 @@ int main(int argc, char* argv[]) {
             SDL_RenderFillRect(renderer, &door_rect);
 
             if (can_draw_tiles) {
-                auto draw_tile_half = [&](uint8_t tile_id, bool left_half, int dst_x, int dst_y) {
-                    auto it = tileset->tiles.find(tile_id);
-                    if (it == tileset->tiles.end()) {
-                        return;
-                    }
-
-                    const TextureInfo& texture = it->second;
-                    if (!texture.texture || texture.width <= 0 || texture.height <= 0) {
-                        return;
-                    }
-
-                    const int src_half_w = texture.width / 2;
-                    if (src_half_w <= 0) {
-                        return;
-                    }
-
-                    SDL_Rect src = {
-                        left_half ? 0 : src_half_w,
-                        0,
-                        src_half_w,
-                        texture.height
-                    };
-                    SDL_Rect dst = {dst_x, dst_y, tile_w / 2, tile_h};
-                    SDL_RenderCopy(renderer, texture.texture, &src, &dst);
-                };
-
                 const uint8_t tile_ul = current_level_ptr->door_tile_ul;
                 const uint8_t tile_ur = current_level_ptr->door_tile_ur;
                 const uint8_t tile_ll = current_level_ptr->door_tile_ll;
                 const uint8_t tile_lr = current_level_ptr->door_tile_lr;
 
-                const int half_w = tile_w / 2;
+                auto redraw_world_tile = [&](int world_tile_x, int world_tile_y) {
+                    if (world_tile_x < 0 || world_tile_y < 0) {
+                        return;
+                    }
+
+                    if (world_tile_x >= MAP_WIDTH_TILES * 2 || world_tile_y >= MAP_HEIGHT_TILES * 2) {
+                        return;
+                    }
+
+                    const int tile_screen_x = (world_tile_x - camera_x) * render_scale;
+                    const int tile_screen_y = world_tile_y * render_scale;
+                    const uint8_t tile_id = get_tile_at(world_tile_x, world_tile_y);
+                    g_graphics->render_tile(tile_screen_x, tile_screen_y, tileset, tile_id, render_scale);
+                };
+
                 int shift = 0;
                 if (door_render_mode == DoorAnimationRenderMode::HALF_OPEN ||
                     door_render_mode == DoorAnimationRenderMode::HALF_CLOSED) {
-                    shift = half_w / 2;
+                    shift = tile_w / 4;
                 } else if (door_render_mode == DoorAnimationRenderMode::FULL_OPEN) {
-                    shift = half_w;
+                    shift = tile_w / 2;
                 }
 
-                // Top row
-                draw_tile_half(tile_ul, true,  screen_x + 0,                    screen_y);
-                draw_tile_half(tile_ul, false, screen_x + half_w - shift,       screen_y);
-                draw_tile_half(tile_ur, true,  screen_x + tile_w + shift,       screen_y);
-                draw_tile_half(tile_ur, false, screen_x + tile_w + half_w,      screen_y);
+                const int left_col_x = screen_x - shift;
+                const int right_col_x = screen_x + tile_w + shift;
 
-                // Bottom row
-                draw_tile_half(tile_ll, true,  screen_x + 0,                    screen_y + tile_h);
-                draw_tile_half(tile_ll, false, screen_x + half_w - shift,       screen_y + tile_h);
-                draw_tile_half(tile_lr, true,  screen_x + tile_w + shift,       screen_y + tile_h);
-                draw_tile_half(tile_lr, false, screen_x + tile_w + half_w,      screen_y + tile_h);
+                // Each door leaf is one full tile column (2 game units wide).
+                g_graphics->render_tile(left_col_x, screen_y, tileset, tile_ul, render_scale);
+                g_graphics->render_tile(left_col_x, screen_y + tile_h, tileset, tile_ll, render_scale);
+                g_graphics->render_tile(right_col_x, screen_y, tileset, tile_ur, render_scale);
+                g_graphics->render_tile(right_col_x, screen_y + tile_h, tileset, tile_lr, render_scale);
+
+                // Redraw the wall columns beside the doorway so the leaves slide
+                // behind the surrounding tiles instead of overlapping them.
+                redraw_world_tile(static_cast<int>(door_world_x) - 2, static_cast<int>(door_world_y));
+                redraw_world_tile(static_cast<int>(door_world_x) - 2, static_cast<int>(door_world_y) + 2);
+                redraw_world_tile(static_cast<int>(door_world_x) + 4, static_cast<int>(door_world_y));
+                redraw_world_tile(static_cast<int>(door_world_x) + 4, static_cast<int>(door_world_y) + 2);
             }
 
             SDL_SetRenderDrawColor(renderer, prev_r, prev_g, prev_b, prev_a);

@@ -40,9 +40,12 @@ void award_points(uint16_t points) {
     uint16_t sum1 = static_cast<uint16_t>(score_bytes[1]) + carry;
     score_bytes[1] = static_cast<uint8_t>(sum1 % 100);
 
-    // Match original behavior: increment score_10000_counter once per award
-    // call when points carry into the third base-100 byte.
-    bool carried_into_ten_thousands = (sum1 >= 100);
+    uint16_t ten_thousand_progress = static_cast<uint16_t>(score_10000_counter) + carry;
+    while (ten_thousand_progress >= 5) {
+        ten_thousand_progress -= 5;
+        award_extra_life();
+    }
+    score_10000_counter = static_cast<uint8_t>(ten_thousand_progress);
 
     carry = sum1 / 100;
     if (carry == 0) {
@@ -58,18 +61,6 @@ void award_points(uint16_t points) {
     } else {
         score_bytes[2] = static_cast<uint8_t>(high);
     }
-
-    if (!carried_into_ten_thousands) {
-        return;
-    }
-
-    score_10000_counter++;
-    if (score_10000_counter < 5) {
-        return;
-    }
-
-    score_10000_counter = 0;
-    award_extra_life();
 }
 
 void award_extra_life() {
