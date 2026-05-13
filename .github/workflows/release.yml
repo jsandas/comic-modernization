@@ -88,7 +88,11 @@ jobs:
 
           cp build/captain_comic "package/${pkg}/"
           cp README.md "package/${pkg}/"
-          cp -R assets "package/${pkg}/assets"
+          if [ -d assets ]; then
+            cp -R assets "package/${pkg}/assets"
+          else
+            echo "assets directory not found; packaging binary and README only"
+          fi
 
           tar -czf "dist/${pkg}.tar.gz" -C package "${pkg}"
 
@@ -103,7 +107,12 @@ jobs:
 
           Copy-Item "build/Release/captain_comic.exe" "package/$pkg/"
           Copy-Item "README.md" "package/$pkg/"
-          Copy-Item "assets" "package/$pkg/assets" -Recurse
+          if (Test-Path "assets") {
+            Copy-Item "assets" "package/$pkg/assets" -Recurse
+          }
+          else {
+            Write-Host "assets directory not found; packaging binary and README only"
+          }
 
           Compress-Archive -Path "package/$pkg" -DestinationPath "dist/$pkg.zip" -Force
 

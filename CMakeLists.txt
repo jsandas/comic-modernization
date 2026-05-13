@@ -25,6 +25,15 @@ set(SDL2_TTF_TARGET "")
 set(SDL2_MIXER_TARGET "")
 set(SDL_INCLUDE_DIRS_FALLBACK "")
 
+function(set_first_existing_target out_var)
+    foreach(candidate ${ARGN})
+        if (TARGET ${candidate})
+            set(${out_var} ${candidate} PARENT_SCOPE)
+            return()
+        endif()
+    endforeach()
+endfunction()
+
 if (WIN32)
     # Prefer config packages on Windows (vcpkg-friendly).
     find_package(SDL2 CONFIG REQUIRED)
@@ -32,13 +41,11 @@ if (WIN32)
     find_package(SDL2_ttf CONFIG REQUIRED)
     find_package(SDL2_mixer CONFIG QUIET)
 
-    set(SDL2_TARGET SDL2::SDL2)
-    set(SDL2_IMAGE_TARGET SDL2_image::SDL2_image)
-    set(SDL2_TTF_TARGET SDL2_ttf::SDL2_ttf)
+    set_first_existing_target(SDL2_TARGET SDL2::SDL2 SDL2::SDL2-static)
+    set_first_existing_target(SDL2_IMAGE_TARGET SDL2_image::SDL2_image SDL2_image::SDL2_image-static)
+    set_first_existing_target(SDL2_TTF_TARGET SDL2_ttf::SDL2_ttf SDL2_ttf::SDL2_ttf-static)
 
-    if (TARGET SDL2_mixer::SDL2_mixer)
-        set(SDL2_MIXER_TARGET SDL2_mixer::SDL2_mixer)
-    endif()
+    set_first_existing_target(SDL2_MIXER_TARGET SDL2_mixer::SDL2_mixer SDL2_mixer::SDL2_mixer-static)
 else()
     # Prefer pkg-config on Unix-like systems, but support environments without it.
     find_package(PkgConfig QUIET)
