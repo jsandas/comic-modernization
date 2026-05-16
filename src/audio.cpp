@@ -397,6 +397,16 @@ static uint16_t calculate_sequence_duration_ms(const std::vector<FrequencyNote>&
     return total_ms;
 }
 
+static void cleanup_audio_init_failure(bool mixer_opened) {
+    if (mixer_opened) {
+        Mix_CloseAudio();
+    }
+    if (g_sdl_audio_initialized) {
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
+        g_sdl_audio_initialized = false;
+    }
+}
+
 } // namespace
 
 bool initialize_audio_system() {
@@ -417,10 +427,7 @@ bool initialize_audio_system() {
     if (Mix_OpenAudio(AUDIO_SAMPLE_RATE, AUDIO_S16SYS, AUDIO_CHANNELS, AUDIO_CHUNK_SIZE) < 0) {
         std::cerr << "Failed to initialize SDL_mixer audio: " << Mix_GetError() << std::endl;
         // if we initialized the subsystem just above, undo it so callers can retry
-        if (g_sdl_audio_initialized) {
-            SDL_QuitSubSystem(SDL_INIT_AUDIO);
-            g_sdl_audio_initialized = false;
-        }
+        cleanup_audio_init_failure(false);
         return false;
     }
 
@@ -429,21 +436,13 @@ bool initialize_audio_system() {
     int mixer_channels = 0;
     if (Mix_QuerySpec(&mixer_frequency, &mixer_format, &mixer_channels) == 0) {
         std::cerr << "Failed to query SDL_mixer audio spec: " << Mix_GetError() << std::endl;
-        Mix_CloseAudio();
-        if (g_sdl_audio_initialized) {
-            SDL_QuitSubSystem(SDL_INIT_AUDIO);
-            g_sdl_audio_initialized = false;
-        }
+        cleanup_audio_init_failure(true);
         return false;
     }
 
     if (mixer_format != AUDIO_S16SYS) {
         std::cerr << "Unsupported SDL_mixer format (expected AUDIO_S16SYS)." << std::endl;
-        Mix_CloseAudio();
-        if (g_sdl_audio_initialized) {
-            SDL_QuitSubSystem(SDL_INIT_AUDIO);
-            g_sdl_audio_initialized = false;
-        }
+        cleanup_audio_init_failure(true);
         return false;
     }
 
@@ -465,11 +464,7 @@ bool initialize_audio_system() {
         if (sequence->empty()) {
             std::cerr << "Error: Sound #" << index << " has empty sequence" << std::endl;
             free_loaded_sounds();
-            Mix_CloseAudio();
-            if (g_sdl_audio_initialized) {
-                SDL_QuitSubSystem(SDL_INIT_AUDIO);
-                g_sdl_audio_initialized = false;
-            }
+            cleanup_audio_init_failure(true);
             return false;
         }
 
@@ -477,11 +472,7 @@ bool initialize_audio_system() {
         if (!chunk) {
             std::cerr << "Failed to synthesize sound #" << index << std::endl;
             free_loaded_sounds();
-            Mix_CloseAudio();
-            if (g_sdl_audio_initialized) {
-                SDL_QuitSubSystem(SDL_INIT_AUDIO);
-                g_sdl_audio_initialized = false;
-            }
+            cleanup_audio_init_failure(true);
             return false;
         }
 
@@ -504,11 +495,7 @@ bool initialize_audio_system() {
             std::cerr << "Error: Music #" << index << " has empty sequence" << std::endl;
             free_loaded_sounds();
             free_loaded_music();
-            Mix_CloseAudio();
-            if (g_sdl_audio_initialized) {
-                SDL_QuitSubSystem(SDL_INIT_AUDIO);
-                g_sdl_audio_initialized = false;
-            }
+            cleanup_audio_init_failure(true);
             return false;
         }
 
@@ -517,11 +504,7 @@ bool initialize_audio_system() {
             std::cerr << "Failed to synthesize music #" << index << std::endl;
             free_loaded_sounds();
             free_loaded_music();
-            Mix_CloseAudio();
-            if (g_sdl_audio_initialized) {
-                SDL_QuitSubSystem(SDL_INIT_AUDIO);
-                g_sdl_audio_initialized = false;
-            }
+            cleanup_audio_init_failure(true);
             return false;
         }
 
