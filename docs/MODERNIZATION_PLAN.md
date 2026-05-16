@@ -289,13 +289,7 @@ A centralized system for managing debug cheats and development tools. Activated 
    - Uses SDL2_ttf for text rendering with system font fallback chain
    - Useful for: Verifying position during complex maneuvers, monitoring physics state, visual feedback on cheat status
 
-5. **Door Key Toggle (F5)**
-   - Toggle the door key inventory item on/off
-   - When active (1): Allows opening all doors
-   - When inactive (0): Cannot open doors even if they're nearby
-   - Useful for: Testing door mechanics, accessing specific areas, bypassing door locks for testing
-
-6. **Item Granting (F6)**
+5. **Item Granting (F5)**
    - Interactive menu to select and grant any item (0-9)
    - Items available:
      - 0 = Corkscrew (fireball vertical oscillation)
