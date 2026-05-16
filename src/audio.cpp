@@ -17,6 +17,9 @@ constexpr int AUDIO_CHANNELS = 1;
 constexpr int AUDIO_CHUNK_SIZE = 1024;
 constexpr int SFX_CHANNEL = 0;
 
+int g_mixer_sample_rate = AUDIO_SAMPLE_RATE;
+int g_mixer_channels = AUDIO_CHANNELS;
+
 // ===== Shared Musical Notes (Hz) =====
 // Use these for melodic sequences where exact note names are intended.
 // Keep PIT-derived effect tones as dedicated FREQ_* constants for original fidelity.
@@ -256,26 +259,27 @@ Mix_Chunk* create_sound_sequence_chunk(const std::vector<FrequencyNote>& sequenc
         return nullptr;
     }
 
-    // Calculate total sample count needed
-    uint32_t total_samples = 0;
+    // Calculate total frame count needed.
+    // A frame is one sample across all output channels.
+    uint32_t total_frames = 0;
     for (const auto& note : sequence) {
         uint16_t duration_ms = ticks_to_ms(note.duration_ticks);
-        uint32_t note_samples = (static_cast<uint64_t>(AUDIO_SAMPLE_RATE) * duration_ms) / 1000;
-        total_samples += note_samples;
+        uint32_t note_frames = (static_cast<uint64_t>(g_mixer_sample_rate) * duration_ms) / 1000;
+        total_frames += note_frames;
     }
 
-    if (total_samples == 0) {
+    if (total_frames == 0) {
         return nullptr;
     }
 
-    uint32_t byte_count = total_samples * sizeof(int16_t);
+    uint32_t byte_count = total_frames * static_cast<uint32_t>(g_mixer_channels) * sizeof(int16_t);
     auto* sample_buffer = static_cast<int16_t*>(SDL_malloc(byte_count));
     if (!sample_buffer) {
         return nullptr;
     }
 
     // Generate waveform for each frequency note
-    uint32_t current_sample = 0;
+    uint32_t current_frame = 0;
     constexpr int16_t amplitude = 9000;
 
     for (const auto& note : sequence) {
@@ -284,15 +288,19 @@ Mix_Chunk* create_sound_sequence_chunk(const std::vector<FrequencyNote>& sequenc
         }
 
         uint16_t duration_ms = ticks_to_ms(note.duration_ticks);
-        uint32_t note_samples = (static_cast<uint64_t>(AUDIO_SAMPLE_RATE) * duration_ms) / 1000;
-        int period = std::max(1, AUDIO_SAMPLE_RATE / note.frequency_hz);
+        uint32_t note_frames = (static_cast<uint64_t>(g_mixer_sample_rate) * duration_ms) / 1000;
+        int period = std::max(1, g_mixer_sample_rate / note.frequency_hz);
         int half_period = std::max(1, period / 2);
 
-        for (uint32_t i = 0; i < note_samples; ++i) {
-            if (current_sample < total_samples) {
-                int phase = static_cast<int>((current_sample) % period);
-                sample_buffer[current_sample] = (phase < half_period) ? amplitude : -amplitude;
-                current_sample++;
+        for (uint32_t i = 0; i < note_frames; ++i) {
+            if (current_frame < total_frames) {
+                int phase = static_cast<int>(current_frame % static_cast<uint32_t>(period));
+                int16_t value = (phase < half_period) ? amplitude : -amplitude;
+                uint32_t frame_offset = current_frame * static_cast<uint32_t>(g_mixer_channels);
+                for (int channel = 0; channel < g_mixer_channels; ++channel) {
+                    sample_buffer[frame_offset + static_cast<uint32_t>(channel)] = value;
+                }
+                current_frame++;
             }
         }
     }
@@ -415,6 +423,32 @@ bool initialize_audio_system() {
         }
         return false;
     }
+
+    int mixer_frequency = 0;
+    uint16_t mixer_format = 0;
+    int mixer_channels = 0;
+    if (Mix_QuerySpec(&mixer_frequency, &mixer_format, &mixer_channels) == 0) {
+        std::cerr << "Failed to query SDL_mixer audio spec: " << Mix_GetError() << std::endl;
+        Mix_CloseAudio();
+        if (g_sdl_audio_initialized) {
+            SDL_QuitSubSystem(SDL_INIT_AUDIO);
+            g_sdl_audio_initialized = false;
+        }
+        return false;
+    }
+
+    if (mixer_format != AUDIO_S16SYS) {
+        std::cerr << "Unsupported SDL_mixer format (expected AUDIO_S16SYS)." << std::endl;
+        Mix_CloseAudio();
+        if (g_sdl_audio_initialized) {
+            SDL_QuitSubSystem(SDL_INIT_AUDIO);
+            g_sdl_audio_initialized = false;
+        }
+        return false;
+    }
+
+    g_mixer_sample_rate = mixer_frequency;
+    g_mixer_channels = mixer_channels;
 
     Mix_AllocateChannels(8);
 
