@@ -2,6 +2,8 @@
 
 A modern recreation of the classic 1988 DOS game *The Adventures of Captain Comic* using SDL2 and C++.
 
+![Captain Comic Title](images/title.png)
+
 ## Project Status
 
 **Current Phase:** Game Loop Integration (Phase 8 - In Progress)
