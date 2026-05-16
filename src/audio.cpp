@@ -441,7 +441,12 @@ bool initialize_audio_system() {
     }
 
     if (mixer_format != AUDIO_S16SYS) {
-        std::cerr << "Unsupported SDL_mixer format (expected AUDIO_S16SYS)." << std::endl;
+        std::cerr << "Unsupported SDL_mixer format: got format="
+                  << static_cast<int>(mixer_format)
+                  << ", frequency=" << mixer_frequency
+                  << ", channels=" << mixer_channels
+                  << " (expected format=" << static_cast<int>(AUDIO_S16SYS)
+                  << " / AUDIO_S16SYS)." << std::endl;
         cleanup_audio_init_failure(true);
         return false;
     }
