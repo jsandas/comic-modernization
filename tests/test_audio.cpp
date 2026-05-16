@@ -59,6 +59,21 @@ void test_audio_enemy_hit_interrupts_fire() {
     check(init_sdl_audio(), "audio_enemy_hit_interrupts_fire: SDL audio init should succeed");
     check(initialize_audio_system(), "audio_enemy_hit_interrupts_fire: initialization should succeed");
     check(play_game_sound(GameSound::FIRE), "audio_enemy_hit_interrupts_fire: fire should start playing");
+    Mix_Chunk* fire_chunk = Mix_GetChunk(0);
+    check(fire_chunk != nullptr,
+        "audio_enemy_hit_interrupts_fire: fire chunk should be available on the SFX channel");
+    int mixer_frequency = 0;
+    Uint16 mixer_format = 0;
+    int mixer_channels = 0;
+    check(Mix_QuerySpec(&mixer_frequency, &mixer_format, &mixer_channels) != 0,
+        "audio_enemy_hit_interrupts_fire: Mix_QuerySpec should succeed");
+    const uint32_t expected_frames_per_tick = static_cast<uint32_t>(
+        (static_cast<uint64_t>(mixer_frequency) * 55) / 1000);
+    const uint32_t expected_frames = expected_frames_per_tick * 2;
+    const uint32_t expected_bytes = expected_frames * static_cast<uint32_t>(mixer_channels) *
+                                    sizeof(int16_t);
+    check(fire_chunk->alen == expected_bytes,
+        "audio_enemy_hit_interrupts_fire: FIRE chunk size should match the queried mixer spec");
     check(Mix_Playing(0) != 0,
         "audio_enemy_hit_interrupts_fire: fire should occupy the SFX channel");
     check(play_game_sound(GameSound::ENEMY_HIT),
