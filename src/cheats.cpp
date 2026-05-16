@@ -5,6 +5,20 @@
 #include <iostream>
 #include <cstdlib>
 
+namespace {
+
+void print_cheat_menu() {
+    std::cout << "[CHEAT] Debug mode enabled. Press F1-F6 for cheats:" << std::endl;
+    std::cout << "  F1 - Toggle noclip (walk through walls)" << std::endl;
+    std::cout << "  F2 - Level warp (choose level/stage)" << std::endl;
+    std::cout << "  F3 - Toggle debug overlay" << std::endl;
+    std::cout << "  F4 - Position warp (teleport to coordinates)" << std::endl;
+    std::cout << "  F5 - Toggle door key" << std::endl;
+    std::cout << "  F6 - Grant item (testing item effects)" << std::endl;
+}
+
+}  // namespace
+
 // Global cheat system instance
 CheatSystem* g_cheats = nullptr;
 
@@ -52,13 +66,7 @@ bool CheatSystem::initialize(bool debug_mode) {
     debug_enabled = debug_mode;
     
     if (debug_enabled) {
-        std::cout << "[CHEAT] Debug mode enabled. Press F1-F6 for cheats:" << std::endl;
-        std::cout << "  F1 - Toggle noclip (walk through walls)" << std::endl;
-        std::cout << "  F2 - Level warp (choose level/stage)" << std::endl;
-        std::cout << "  F3 - Toggle debug overlay" << std::endl;
-        std::cout << "  F4 - Position warp (teleport to coordinates)" << std::endl;
-        std::cout << "  F5 - Toggle door key" << std::endl;
-        std::cout << "  F6 - Grant item (testing item effects)" << std::endl;
+        print_cheat_menu();
     }
     
     initialized = true;
@@ -163,7 +171,7 @@ void CheatSystem::activate_level_warp() {
     std::cout << "[CHEAT] Level warp activated. Press 0-7 to select level:" << std::endl;
     std::cout << "  0=LAKE, 1=FOREST, 2=SPACE, 3=BASE" << std::endl;
     std::cout << "  4=CAVE, 5=SHED, 6=CASTLE, 7=COMP" << std::endl;
-    std::cout << "  ESC to cancel" << std::endl;
+    std::cout << "  Q to cancel" << std::endl;
 }
 
 void CheatSystem::activate_position_warp() {
@@ -178,11 +186,12 @@ void CheatSystem::activate_position_warp() {
 }
 
 void CheatSystem::handle_level_warp_input(SDL_Keycode key) {
-    // Cancel on ESC
-    if (key == SDLK_ESCAPE) {
+    // Cancel on Q
+    if (key == SDLK_q) {
         awaiting_level_input = false;
         awaiting_stage_input = false;
         std::cout << "[CHEAT] Level warp cancelled" << std::endl;
+        print_cheat_menu();
         return;
     }
     
@@ -194,7 +203,7 @@ void CheatSystem::handle_level_warp_input(SDL_Keycode key) {
             awaiting_stage_input = true;
             
             std::cout << "[CHEAT] Level " << static_cast<int>(target_level) 
-                      << " selected. Press 0-2 for stage (ESC to cancel)" << std::endl;
+                      << " selected. Press 0-2 for stage (Q to cancel)" << std::endl;
         }
     } else if (awaiting_stage_input) {
         // Accept stage input (0-2)
@@ -208,12 +217,13 @@ void CheatSystem::handle_level_warp_input(SDL_Keycode key) {
 }
 
 void CheatSystem::handle_position_warp_input(SDL_Keycode key) {
-    // Cancel on ESC
-    if (key == SDLK_ESCAPE) {
+    // Cancel on Q
+    if (key == SDLK_q) {
         awaiting_x_input = false;
         awaiting_y_input = false;
         position_input_buffer.clear();
         std::cout << std::endl << "[CHEAT] Position warp cancelled" << std::endl;
+        print_cheat_menu();
         return;
     }
     
@@ -355,14 +365,15 @@ void CheatSystem::activate_item_grant() {
     std::cout << "  7 = Gold (treasure 3/3)" << std::endl;
     std::cout << "  8 = Blastola Cola (increase firepower)" << std::endl;
     std::cout << "  9 = Shield (HP refill)" << std::endl;
-    std::cout << "  ESC to cancel" << std::endl;
+    std::cout << "  Q to cancel" << std::endl;
 }
 
 void CheatSystem::handle_item_grant_input(SDL_Keycode key) {
-    // Cancel on ESC
-    if (key == SDLK_ESCAPE) {
+    // Cancel on Q
+    if (key == SDLK_q) {
         awaiting_item_input = false;
         std::cout << "[CHEAT] Item grant cancelled" << std::endl;
+        print_cheat_menu();
         return;
     }
     
