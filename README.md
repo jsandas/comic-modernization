@@ -67,6 +67,51 @@ After extraction the `assets/` folder will contain neatly categorized
 subdirectories (`sprites`, `tiles`, `maps`, `shp`, `sounds`, etc.) that
 are referenced by the C++ code.
 
+### Running Precompiled Binaries
+
+Release archives include the game executable and asset extraction tools, but
+do not include copyrighted game assets. To run a precompiled release, install
+the required runtime libraries for your platform, extract assets from original
+game files, then launch the executable.
+
+**Runtime dependencies by platform:**
+
+- **macOS (Homebrew):**
+
+```bash
+brew install sdl2 sdl2_image sdl2_ttf sdl2_mixer python
+```
+
+- **Ubuntu/Debian Linux:**
+
+```bash
+sudo apt-get update
+sudo apt-get install -y libsdl2-2.0-0 libsdl2-image-2.0-0 libsdl2-ttf-2.0-0 libsdl2-mixer-2.0-0 python3 python3-pip
+```
+
+- **Windows:**
+  - The release binary is built with static SDL linkage.
+  - Install Python 3 (for asset extraction tooling): https://www.python.org/downloads/windows/
+
+**From inside the extracted release folder:**
+
+1. Download and unpack the original game files into an `original/` directory.
+2. Install Python dependencies:
+
+```bash
+pip install -r tools/requirements.txt
+```
+
+3. Extract assets:
+
+```bash
+python3 tools/extract_assets.py --orig original
+```
+
+4. Run the game:
+   - macOS/Linux: `./captain_comic`
+   - Windows: `.\captain_comic.exe`
+
 ### macOS
 
 ```bash
