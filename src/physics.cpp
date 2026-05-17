@@ -103,7 +103,7 @@ void update_player_death_sequence() {
             // followed by wait_n_ticks(15) before losing a life / respawning.
             player_death_too_bad_phase = true;
             player_death_ticks_remaining = PLAYER_DEATH_TOO_BAD_TICKS;
-            play_game_sound(GameSound::GAME_OVER);
+            play_game_sound(GameSound::TOO_BAD);
             return;
         }
 

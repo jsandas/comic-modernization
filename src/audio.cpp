@@ -153,9 +153,14 @@ static const std::vector<FrequencyNote> SOUND_PLAYER_DIE_SEQUENCE = {
     {FREQ_DEATH_4, 1}, {FREQ_DEATH_5, 1}, {FREQ_DEATH_6, 2}
 };
 
-static const std::vector<FrequencyNote> SOUND_GAME_OVER_SEQUENCE = {
+static const std::vector<FrequencyNote> SOUND_TOO_BAD_SEQUENCE = {
     {FREQ_TOO_BAD_1, 5}, {FREQ_TOO_BAD_2, 5},
     {FREQ_TOO_BAD_1, 5}, {FREQ_TOO_BAD_3, 10}
+};
+
+static const std::vector<FrequencyNote> SOUND_GAME_OVER_SEQUENCE = {
+    {NOTE_B3, 2}, {NOTE_C4, 4}, {NOTE_D4, 2}, {NOTE_E4, 6},
+    {NOTE_G4, 7}, {NOTE_FS4, 5}, {NOTE_E4, 2}, {NOTE_D4, 4}, {NOTE_E4, 15}
 };
 
 // Extra life award sound (SOUND_EXTRA_LIFE in comic-c).
@@ -361,6 +366,8 @@ static const std::vector<FrequencyNote>* get_sound_sequence(GameSound sound) {
             return &SOUND_PLAYER_HIT_SEQUENCE;
         case GameSound::PLAYER_DIE:
             return &SOUND_PLAYER_DIE_SEQUENCE;
+        case GameSound::TOO_BAD:
+            return &SOUND_TOO_BAD_SEQUENCE;
         case GameSound::GAME_OVER:
             return &SOUND_GAME_OVER_SEQUENCE;
         case GameSound::EXTRA_LIFE:

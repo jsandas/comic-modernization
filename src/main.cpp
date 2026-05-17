@@ -396,7 +396,7 @@ int main(int argc, char* argv[]) {
         "comic_standing", "comic_running_1", "comic_running_2", "comic_running_3", "comic_jumping"
     };
     const char* directions[] = {"right", "left"};
-    
+
     for (const char* sprite : sprite_names) {
         for (const char* dir : directions) {
             if (!g_graphics->load_sprite(sprite, dir)) {
@@ -561,7 +561,7 @@ int main(int argc, char* argv[]) {
         return true;
     };
 
-    auto render_beam_in_frame = [&](bool show_comic, Sprite* materialize_sprite) {
+    auto render_beam_in_frame = [&](bool show_comic, Sprite* materialize_sprite, bool present_frame = true) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
@@ -648,7 +648,9 @@ int main(int argc, char* argv[]) {
         SDL_RenderSetScale(renderer, 1.0f, 1.0f);
         SDL_RenderSetViewport(renderer, nullptr);
 
-        SDL_RenderPresent(renderer);
+        if (present_frame) {
+            SDL_RenderPresent(renderer);
+        }
     };
 
     auto play_beam_out_sequence = [&]() {
@@ -775,7 +777,6 @@ int main(int argc, char* argv[]) {
         stop_game_music();
 
         if (!quit) {
-            play_game_sound(GameSound::GAME_OVER);
             render_beam_in_frame(false, nullptr);
 
             if (game_over_sprite) {
@@ -817,7 +818,7 @@ int main(int argc, char* argv[]) {
         game_state = GameState::Playing;
         pause_waiting_for_escape_release = false;
 
-        render_beam_in_frame(false, nullptr);
+        render_beam_in_frame(false, nullptr, false);
 
         if (game_over_sprite && !quit) {
             SDL_Rect gameplay_frame_rect = g_graphics->compute_letterbox_rect(renderer);
@@ -836,6 +837,7 @@ int main(int argc, char* argv[]) {
             };
             SDL_RenderCopy(renderer, game_over_sprite->texture.texture, nullptr, &game_over_rect);
             SDL_RenderPresent(renderer);
+            play_game_sound(GameSound::GAME_OVER);
         }
 
         if (!quit) {

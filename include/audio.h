@@ -12,7 +12,8 @@ enum class GameSound : uint8_t {
     ENEMY_HIT,          // Fireball hits enemy
     PLAYER_HIT,         // Player takes damage
     PLAYER_DIE,         // Player death
-    GAME_OVER,          // "Too bad" death jingle
+    TOO_BAD,            // Short death jingle after the player loses a life
+    GAME_OVER,          // Final game-over screen melody
     EXTRA_LIFE,         // Extra life award ("we're in the money")
     MATERIALIZE,        // Beam in/out and materialize effects
     TELEPORT,           // Teleport action
