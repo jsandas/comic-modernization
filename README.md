@@ -8,15 +8,15 @@ A modern recreation of the classic 1988 DOS game *The Adventures of Captain Comi
 
 **Current Phase:** Polish and Testing (Phase 9 - In Progress)
 
-[x] Foundation complete (SDL2 setup, build system, basic game loop)  
-[x] Core physics complete (gravity, jumping, collision, stage transitions)  
-[x] Rendering system complete (tiles, sprites, animations, camera)  
-[x] Level system complete (all 8 levels, doors, stage transitions)  
-[x] Actor system complete (enemies, fireballs, items)  
-[x] Audio system complete (SFX + music)  
-[x] UI/Menus complete (title sequence, HUD, menus, animations)  
-[x] Game loop integration complete (Phase 8)  
-[ ] Polish and testing in progress (Phase 9)
+- [x] Foundation complete (SDL2 setup, build system, basic game loop)  
+- [x] Core physics complete (gravity, jumping, collision, stage transitions)  
+- [x] Rendering system complete (tiles, sprites, animations, camera)  
+- [x] Level system complete (all 8 levels, doors, stage transitions)  
+- [x] Actor system complete (enemies, fireballs, items)  
+- [x] Audio system complete (SFX + music)  
+- [x] UI/Menus complete (title sequence, HUD, menus, animations)  
+- [x] Game loop integration complete (Phase 8)  
+- [ ] Polish and testing in progress (Phase 9)
 
 ## About
 
