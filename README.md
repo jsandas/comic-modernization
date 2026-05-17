@@ -17,6 +17,7 @@ A modern recreation of the classic 1988 DOS game *The Adventures of Captain Comi
 - [x] UI/Menus complete (title sequence, HUD, menus, animations)  
 - [x] Game loop integration complete (Phase 8)  
 - [ ] Polish and testing in progress (Phase 9)
+- [ ] Release preparation and packaging (Phase 10)
 
 ## About
 
