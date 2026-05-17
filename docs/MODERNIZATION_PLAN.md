@@ -390,11 +390,11 @@ A centralized system for managing debug cheats and development tools. Activated 
 - `include/actors.h`: Data structures and constants
 
 **Success Criteria:**
-- All enemy behaviors work correctly [x]
-- Enemies spawn at proper distances [x]
-- Fireballs kill enemies on contact [x]
-- Items grant correct abilities [x]
-- Treasure collection triggers win sequence [x]
+- [x] All enemy behaviors work correctly
+- [x] Enemies spawn at proper distances
+- [x] Fireballs kill enemies on contact
+- [x] Items grant correct abilities
+- [x] Treasure collection triggers win sequence
 
 ---
 
@@ -849,14 +849,14 @@ comic-modernization/
 - [x] Win/lose conditions trigger correctly
 
 ### Quality Requirements
-- [x] Runs at 60 FPS on target hardware
+- [ ] Runs at 60 FPS on target hardware
 - [x] No crashes or major bugs
 - [x] Clean, maintainable code
 - [ ] Comprehensive documentation
 
 ### Fidelity Requirements
 - [x] Game looks like original (pixel-perfect at native res)
-- [x] Game feels like original (physics constants exact)
+- [ ] Game feels like original (physics constants exact)
 - [x] Game sounds like original (PC speaker recreation)
 - [x] Level layouts identical
 - [ ] Enemy behavior identical

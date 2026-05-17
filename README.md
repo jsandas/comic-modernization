@@ -212,14 +212,14 @@ cmake --build .
   - [x] Corkscrew: fireball vertical oscillation
   - [x] Boots: increased jump power (4→5)
   - [x] Lantern: castle lighting flag
-  - [x] Shield: HP refill (placeholder)
+  - [x] Shield: HP refill or extra life when HP is already full
   - [x] Door Key: unlock doors
   - [x] Teleport Wand: special teleport ability
   - [x] Treasures (Gems, Crown, Gold): victory tracking
 - [x] Audio system:
   - [x] PC-speaker-style square-wave SFX synthesis (SDL2_mixer)
   - [x] Single-channel priority SFX system (higher priority interrupts lower)
-  - [x] 10 sound effects: fire, item collect, door open, stage transition, enemy hit, player hit, player die, game over, teleport
+  - [x] 11 sound effects: fire, item collect, door open, stage transition, enemy hit, player hit, player die, game over, teleport, extra life, materialize
   - [x] Title music with full looping (100-note melody)
   - [x] Dedicated music channel independent from SFX
 - [x] Title sequence:
