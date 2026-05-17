@@ -336,11 +336,11 @@ A centralized system for managing debug cheats and development tools. Activated 
   - Modified: `CMakeLists.txt` (cheats.cpp, SDL2_ttf)
 
 **Testing:**
-- Builds without warnings or errors [x]
-- All existing tests pass [x]
-- Cheats silently ignored when --debug not specified [x]
-- Debug overlay font loads successfully [x]
-- Position validation prevents out-of-bounds warping [x]
+- [x] Builds without warnings or errors
+- [x] All existing tests pass
+- [x] Cheats silently ignored when --debug not specified
+- [x] Debug overlay font loads successfully
+- [x] Position validation prevents out-of-bounds warping
 
 **Future Enhancements:**
 - God mode (invincibility) - deferred to when damage/HP system exists
@@ -430,7 +430,6 @@ A centralized system for managing debug cheats and development tools. Activated 
 
 ### Phase 7: UI and Menus
 **Status:** Complete
-**Current Stage:** Phase 7.2 - HUD/UI System
 **Completion Date (7.1):** 2026-03-07
 **Completion Date (7.2):** 2026-03-07
 **Goal:** Implement game menus and HUD
@@ -841,9 +840,9 @@ comic-modernization/
 
 ### Functional Requirements
 - [x] Game launches on Windows, macOS, Linux
-- [x] All 8 levels playable from start to finish
-- [x] Physics matches original (jump height, fall speed, movement)
-- [x] All enemies behave correctly (5 AI types)
+- [ ] All 8 levels playable from start to finish
+- [ ] Physics matches original (jump height, fall speed, movement)
+- [ ] All enemies behave correctly (5 AI types)
 - [x] All items work (firepower, treasures, keys, etc.)
 - [x] Sound effects and music play
 - [x] Menus and UI function properly
@@ -860,7 +859,7 @@ comic-modernization/
 - [x] Game feels like original (physics constants exact)
 - [x] Game sounds like original (PC speaker recreation)
 - [x] Level layouts identical
-- [x] Enemy behavior identical
+- [ ] Enemy behavior identical
 
 ## Resources
 
