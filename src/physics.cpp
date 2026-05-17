@@ -107,10 +107,6 @@ void update_player_death_sequence() {
             return;
         }
 
-        if (comic_num_lives > 0) {
-            comic_num_lives--;
-        }
-
         if (comic_num_lives == 0) {
             player_is_dying = false;
             player_death_too_bad_phase = false;
@@ -119,6 +115,10 @@ void update_player_death_sequence() {
             game_over_triggered = true;
             return;
         }
+
+        // Match DOS flow (comic_dies): if lives are nonzero, respawn and then
+        // subtract one life. This allows one more play when lives reaches 0.
+        comic_num_lives--;
 
         player_is_dying = false;
         player_death_too_bad_phase = false;
