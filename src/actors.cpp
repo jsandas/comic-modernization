@@ -1708,6 +1708,7 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
 
         case ITEM_GEMS:
             if (!comic_has_gems) {
+                award_extra_life();
                 comic_has_gems = 1;
                 comic_num_treasures++;
             }
@@ -1715,6 +1716,7 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
 
         case ITEM_CROWN:
             if (!comic_has_crown) {
+                award_extra_life();
                 comic_has_crown = 1;
                 comic_num_treasures++;
             }
@@ -1722,6 +1724,7 @@ void ActorSystem::apply_item_effect(uint8_t item_type) {
 
         case ITEM_GOLD:
             if (!comic_has_gold) {
+                award_extra_life();
                 comic_has_gold = 1;
                 comic_num_treasures++;
             }
