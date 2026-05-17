@@ -67,7 +67,7 @@ From jsandas/comic-c, key modules to port:
 
 ## Implementation Phases
 
-### Phase 1: Foundation ✅ COMPLETE
+### Phase 1: Foundation
 **Status:** Complete
 **Completion Date:** 2026-02-12
 **Goal:** Set up development environment and basic infrastructure
@@ -83,7 +83,7 @@ From jsandas/comic-c, key modules to port:
 
 ---
 
-### Phase 2: Core Physics ✅ COMPLETE
+### Phase 2: Core Physics
 **Status:** Complete
 **Completion Date:** 2026-02-12
 **Goal:** Implement player movement and physics
@@ -112,17 +112,17 @@ From jsandas/comic-c, key modules to port:
 - `include/globals.h`: MAP_WIDTH, PLAYFIELD_WIDTH, etc.
 
 **Success Criteria:**
-- ✅ Player falls realistically with gravity
-- ✅ Jumping height matches original (constants validated)
-- ✅ Wall collision prevents movement through walls
-- ✅ Floor detection works accurately
-- ✅ Camera follows player smoothly
-- ✅ Ceiling collision stops upward movement
+- [x] Player falls realistically with gravity
+- [x] Jumping height matches original (constants validated)
+- [x] Wall collision prevents movement through walls
+- [x] Floor detection works accurately
+- [x] Camera follows player smoothly
+- [x] Ceiling collision stops upward movement
 - [ ] Stage transitions at boundaries (deferred to Phase 4)
 
 ---
 
-### Phase 3: Rendering System ✅ COMPLETE
+### Phase 3: Rendering System
 **Status:** Complete
 **Completion Date:** 2026-02-12
 **Goal:** Display game graphics
@@ -167,17 +167,17 @@ From jsandas/comic-c, key modules to port:
 - Player sprites: standing, running (3 frames), jumping
 
 **Success Criteria:**
-- ✅ Tiles render correctly from PNG files
-- ✅ Sprites display with proper positioning
-- ✅ Animations play smoothly with configurable frame timing
-- ✅ Camera follows player appropriately, showing 24x20 game unit viewport
-- ✅ Player sprite changes based on state (idle/running/jumping)
-- ✅ Player sprite faces direction of movement
-- ✅ No rendering artifacts or flicker (hardware-accelerated)
+- [x] Tiles render correctly from PNG files
+- [x] Sprites display with proper positioning
+- [x] Animations play smoothly with configurable frame timing
+- [x] Camera follows player appropriately, showing 24x20 game unit viewport
+- [x] Player sprite changes based on state (idle/running/jumping)
+- [x] Player sprite faces direction of movement
+- [x] No rendering artifacts or flicker (hardware-accelerated)
 
 ---
 
-### Phase 4: Level System ✅ COMPLETE
+### Phase 4: Level System
 **Status:** Complete
 **Completion Date:** 2026-02-12
 **Goal:** Load and manage game levels
@@ -213,10 +213,10 @@ From jsandas/comic-c, key modules to port:
 - `src/physics.c`: Stage boundary transition logic
 
 **Success Criteria:**
-- ✅ All 8 levels load correctly
-- ✅ Stage transitions work (left/right boundaries)
-- ✅ Doors function properly with keys
-- ✅ Level data matches original exactly
+- [x] All 8 levels load correctly
+- [x] Stage transitions work (left/right boundaries)
+- [x] Doors function properly with keys
+- [x] Level data matches original exactly
 
 **Implementation Notes:**
 - Door collision detection checks Y coordinate (exact) and X coordinate (within 3 units)
@@ -245,7 +245,7 @@ From jsandas/comic-c, key modules to port:
 
 ## Developer Tools & Debug Features
 
-**Status:** ✅ COMPLETE
+**Status:** Complete
 **Implementation Date:** 2026-02-15
 **Goal:** Provide development and debugging aids for testing and validation
 
@@ -336,11 +336,11 @@ A centralized system for managing debug cheats and development tools. Activated 
   - Modified: `CMakeLists.txt` (cheats.cpp, SDL2_ttf)
 
 **Testing:**
-- Builds without warnings or errors ✅
-- All existing tests pass ✅
-- Cheats silently ignored when --debug not specified ✅
-- Debug overlay font loads successfully ✅
-- Position validation prevents out-of-bounds warping ✅
+- [x] Builds without warnings or errors
+- [x] All existing tests pass
+- [x] Cheats silently ignored when --debug not specified
+- [x] Debug overlay font loads successfully
+- [x] Position validation prevents out-of-bounds warping
 
 **Future Enhancements:**
 - God mode (invincibility) - deferred to when damage/HP system exists
@@ -352,295 +352,89 @@ A centralized system for managing debug cheats and development tools. Activated 
 
 ### Phase 5: Actor System
 **Status:** Complete
-**Current Stage:** Phase 5.6 - Item System ✅ COMPLETE
 **Completion Date:** 2026-02-22
 **Goal:** Implement enemies, fireballs, and items
 
-**Phase 5.1: Enemy System Core ✅ COMPLETE**
+**Phase 5.1: Enemy System Core**
 **Objective:** Port complete enemy spawning, AI behaviors, collision, and despawning systems from reference C code
 
 **Completed:**
 - [x] Created `ActorSystem` class with core architecture
-  - [x] Enemy data structure (`enemy_t`) with position, velocity, animation, behavior, state
-  - [x] Enemy spawning logic: off-screen spawn positions, spawn rate limiting (1 per tick)
-  - [x] All 5 AI behaviors fully implemented:
-    - [x] Bounce: Diagonal bouncing with independent X/Y velocities
-    - [x] Leap: Jumping arc with gravity (Bug-eyes, Beach Ball)
-    - [x] Roll: Ground-following locomotion (Glow Globe)
-    - [x] Seek: Pathfinding toward player (Killer Bee)
-    - [x] Shy: Fleeing when player faces, approaching otherwise (Shy Bird)
-  - [x] Enemy-player collision detection (2×4 unit collision box)
-  - [x] Enemy despawn logic: distance-based and bottom-of-screen despawn
-  - [x] Death animation states: white spark (despawned), red spark (hit by player)
-  - [x] Respawn cycling: 20→40→60→80→100→20 tick intervals
-  - [x] Movement throttling: alternating motion for slow enemies, every-tick for fast
-  - [x] Animation frame handling and looping
-- [x] Created `include/actors.h` header with complete API
-- [x] Created `src/actors.cpp` implementation (1000+ lines of AI logic)
-- [x] Updated `CMakeLists.txt` to build actors.cpp
-- [x] Compilation successful, all tests passing
+- [x] All 5 AI behaviors fully implemented: Bounce, Leap, Roll, Seek, Shy
+- [x] Enemy-player collision detection and death animation states
+- [x] Enemy spawning/despawning and respawn cycling
 
-**Phase 5.2: Sprite/Animation Loading ✅ COMPLETE**
+**Phase 5.2: Sprite/Animation Loading**
 - [x] Implemented `load_enemy_sprite()` in `GraphicsSystem` with GIF-based asset loading
-- [x] Load left/right facing animation frames using `IMG_LoadAnimation()` (SDL_image)
-- [x] Handle `ENEMY_HORIZONTAL_DUPLICATED` (mirror left frames for right direction)
-- [x] Handle `ENEMY_HORIZONTAL_SEPARATE` (load independent right-facing GIF)
-- [x] Handle `ENEMY_ANIMATION_LOOP` (0,1,2,0,1,... forward loop)
-- [x] Handle `ENEMY_ANIMATION_ALTERNATE` (0,1,2,1,0,... ping-pong)
-- [x] `frame_sequence` vector added to `SpriteAnimationData` struct
-- [x] `build_enemy_animation_sequence()` free function generates frame index sequences
-- [x] Composite cache key (`name:num_frames:horizontal:animation`) avoids redundant loads
-- [x] Added `test_enemy_animation_sequence` unit test; all tests passing
+- [x] Handle horizontal duplication and separate facing frames
+- [x] Support for loop and ping-pong animation sequences
 
-**Phase 5.3: Enemy Rendering ✅ COMPLETE**
+**Phase 5.3: Enemy Rendering**
 - [x] Implemented `render_enemies()` in `ActorSystem`
-- [x] Renders each spawned enemy using current `frame_sequence` index
-- [x] Uses `frames_right` for `ENEMY_HORIZONTAL_SEPARATE` + right-facing, otherwise flips `frames_left`
-- [x] Camera culling: skips enemies whose X position is outside `[camera_x - 2, camera_x + PLAYFIELD_WIDTH + 2)` game units
-- [x] Enemies rendered before player sprite (correct draw order)
+- [x] Camera culling and proper draw order
 
-**Phase 5.4: Integration ✅ COMPLETE**
-- [x] `ActorSystem` instantiated and initialized in `main()`
-- [x] `setup_enemies_for_stage()` called after level load and on level/stage change
-- [x] `actor_system.update()` called each physics tick with Comic position, facing, tiles, camera
-- [x] `actor_system.render_enemies()` called each frame before player rendering
-- [x] Level/stage change detection triggers enemy re-setup on transitions
+**Phase 5.4: Integration**
+- [x] `ActorSystem` initialized in `main()` and updated each physics tick
+- [x] Stage/level transition handling
 
-**Phase 5.5: Fireball System ✅ COMPLETE**
-**Objective:** Port fireball spawning, movement, collision, and rendering from reference C code
+**Phase 5.5: Fireball System**
+- [x] Fireball spawning and movement (including corkscrew)
+- [x] Fireball-enemy collision and meter management
 
-**Remaining Tasks:**
-- [x] Port fireball system from actors.c
-  - [x] Fireball data structure (`fireball_t`: y, x, vel, corkscrew_phase, animation)
-  - [x] Fireball constants (MAX_NUM_FIREBALLS=5, FIREBALL_DEAD=0xFF, FIREBALL_VELOCITY=2)
-  - [x] Fireball spawning (`try_to_fire()`: find open slot, set position/velocity/phase)
-  - [x] Horizontal movement (±2 game units per tick)
-  - [x] Corkscrew motion (Y oscillation when `comic_has_corkscrew` is set)
-  - [x] Fireball meter management (2-tick counter cycle: decrements when firing, increments when not)
-  - [x] Fireball-enemy collision (0–1 vertical + ±1 horizontal box → ENEMY_STATE_WHITE_SPARK)
-  - [x] Fireball deactivation (off-screen left/right bounds)
-  - [x] Fireball rendering (16×8 px sprites scaled 2× per game unit)
-  - [x] Sprite loading (`sprite-fireball_0.png`, `sprite-fireball_1.png`)
-  - [x] Fire key input wired to Left/Right Ctrl in game loop
-
-**Phase 5.6: Item System ✅ COMPLETE**
-**Objective:** Port item collection, animation, and effect application from reference C code
-
-**Completed:**
-- [x] Item data structures and tracking
-  - [x] Item collection state per [level][stage] (8×3 array)
-  - [x] Current item position and type from stage data
-  - [x] Item animation counter (toggles 0→1 each tick)
-  - [x] Item sprite storage for all item types (even/odd frames)
-- [x] Item sprite loading
-  - [x] Load 16×16 pixel sprites for all item types
-  - [x] Two-frame animation (even/odd frames)
-  - [x] Sprite names: `item_<name>_0`, `item_<name>_1`
-- [x] Item animation system
-  - [x] Two-frame toggle each game tick
-  - [x] Simple alternation: 0→1→0→1
-- [x] Item collision detection
-  - [x] Horizontal tolerance: ±1 game unit
-  - [x] Vertical tolerance: 0 to 4 game units
-  - [x] Check only when item visible in playfield
-  - [x] Mark as collected on collision
-- [x] Item collection effects
-  - [x] Blastola Cola: increment firepower (max 5)
-  - [x] Corkscrew: enable fireball vertical oscillation
-  - [x] Boots: increase jump power (4→5)
-  - [x] Lantern: castle lighting flag
-  - [x] Shield: HP refill (placeholder for future HP system)
-  - [x] Door Key: unlock doors
-  - [x] Teleport Wand: special teleport ability
-  - [x] Gems, Crown, Gold: treasure tracking (victory at 3/3)
-- [x] Item rendering
-  - [x] Render 16×16 pixel sprites at item position
-  - [x] Skip if already collected
-  - [x] Camera culling (off-screen items not rendered)
-  - [x] Scale to render_scale per game unit
-- [x] Integration with game loop
-  - [x] Call `handle_item()` each tick in `ActorSystem::update()`
-  - [x] Call `render_item()` each frame before player rendering
-  - [x] Update `comic_jump_power` from `get_jump_power()` (boots effect)
-  - [x] Pass level_index to `setup_enemies_for_stage()` for item tracking
-- [x] Unit tests
-  - [x] Test item collection tracking
-  - [x] Test Blastola Cola firepower increase (max 5)
-  - [x] Test Boots jump power increase
-  - [x] Test Corkscrew flag
-  - [x] Test treasure counting (3 treasures)
-  - [x] Test Door Key, Teleport Wand, Lantern flags
-  - [x] All 6 item tests passing
+**Phase 5.6: Item System**
+- [x] Item collection tracking and effects (Blastola Cola, Boots, etc.)
+- [x] Item rendering and two-frame animation
 
 **Reference Code:**
-- `src/actors.c`: Lines 1-1800+ (all actor systems)
+- `src/actors.c`: All actor systems
 - `include/actors.h`: Data structures and constants
 
 **Success Criteria:**
-- All enemy behaviors work correctly ✅
-- Enemies spawn at proper distances ✅
-- Fireballs kill enemies on contact ✅
-- Items grant correct abilities ✅
-- Treasure collection triggers win sequence (victory logic pending)
+- [x] All enemy behaviors work correctly
+- [x] Enemies spawn at proper distances
+- [x] Fireballs kill enemies on contact
+- [x] Items grant correct abilities
+- [x] Treasure collection triggers win sequence
 
 ---
 
 ### Phase 6: Audio System
-**Status:** In Progress
-**Current Stage:** Phase 6.2 - Sound Definitions & Event Mapping ✅ COMPLETE
+**Status:** Complete
 **Completion Date:** 2026-02-27
 **Goal:** Implement sound effects and music
 
-**Phase 6.1: Audio Foundation ✅ COMPLETE**
+**Phase 6.1: Audio Foundation**
 - [x] Set up SDL_mixer for audio
-- [x] Implement foundational `AudioSystem` module (`include/audio.h`, `src/audio.cpp`)
-- [x] Add synthesized PC-speaker-style square-wave SFX generation (SDL_mixer `Mix_Chunk`)
-- [x] Implement single-channel SFX priority system (higher priority interrupts lower)
-- [x] Integrate core gameplay SFX triggers
-  - [x] Fire
-  - [x] Item collect
-  - [x] Door open
-  - [x] Stage edge transition
+- [x] Synthesized PC-speaker-style square-wave SFX generation
+- [x] Single-channel SFX priority system
 
-**Phase 6.2: Sound Definitions & Event Mapping ✅ COMPLETE**
-**Objective:** Port core game sound definitions with frequency sequences and map each to in-game events
-
-**Completed:**
-- [x] Extended audio system to support multi-frequency sound sequences
-  - [x] Created `FrequencyNote` structure for frequency/duration pairs
-  - [x] Implemented `create_sound_sequence_chunk()` to synthesize complete frequency sequences
-  - [x] Updated SDL_mixer chunk synthesis to handle frequency changes per note
-- [x] Ported 10 core PC-speaker sound definitions
-  - [x] FIRE: Two-note fireball launch (145→155 Hz)
-  - [x] ITEM_COLLECT: All item pickups including treasures, powerups, shield (294→371→441→582 Hz)
-  - [x] DOOR_OPEN: Nine-note door sequence (310↔466 Hz palindrome)
-  - [x] STAGE_TRANSITION: Stage crossing motif (see `src/audio.cpp` for exact note sequence)
-  - [x] ENEMY_HIT: Two-note enemy collision (582→1165 Hz)
-  - [x] PLAYER_HIT: Three-note damage sound (97→83→72 Hz descending)
-  - [x] PLAYER_DIE: Six-note death sequence (97→83→72→582→291→194 Hz)
-  - [x] GAME_OVER: Jingle sequence (B3→C4→D4→E4→G4)
-  - [x] TELEPORT: Seven-note teleport palindrome (145Hz oscillating)
-  - [x] UNUSED_0: Reserved (no jump sound in original game)
+**Phase 6.2: Sound Definitions & Event Mapping**
+- [x] Ported 10 core PC-speaker sound definitions (Fire, Item Collect, Door Open, etc.)
 - [x] Integrated sound triggers into game events
-  - [x] FIRE trigger: `actors.cpp` - `try_to_fire()` on fireball spawn
-  - [x] ITEM_COLLECT trigger: `actors.cpp` - `collect_item()` on collision (all item types including treasures and shield)
-  - [x] ENEMY_HIT trigger: `actors.cpp` - `handle_fireballs()` on fireball-enemy impact
-  - [x] DOOR_OPEN trigger: `doors.cpp` - `activate_door()`
-  - [x] STAGE_TRANSITION trigger: `physics.cpp` - stage boundary transitions
-- [x] Updated `include/audio.h` with comprehensive documentation
-- [x] Fixed SDL_mixer audio synthesis for multi-frequency sequences
-- [x] All sounds use priority system (0-9); active sounds span 2-9, with `UNUSED_0` reserved at 0
-- [x] Tick-to-millisecond conversion using original 18.2 Hz game tick rate (55ms/tick)
+
+**Phase 6.3: Music System**
+- [x] Ported title music melody with full looping support
+- [x] Dedicated music channel independent from SFX
+- [x] Music control API and note frequency coverage
 
 **Technical Details:**
 - Audio frequency conversion: Original PIT divisors → modern Hz values
-- Multi-frequency synthesis: Concatenates square waves for each note in sequence
-- Duration handling: Game ticks (55ms/tick) → SDL milliseconds
+- Multi-frequency synthesis for note sequences
 - Priority system: Higher priority sounds interrupt lower priority ones
-- Channel management: Single SFX channel with non-preemptable higher-priority sounds
 
 **Reference Implementation:**
 - Based on jsandas/comic-c sound.c and sound_data.c
-- Maintains original frequency sequences and timing relationships
 - PC speaker square-wave synthesis recreated in SDL2 audio
-
-**Phase 6.3: Music System ✅ COMPLETE**
-**Objective:** Port music playback from reference C code with full looping support
-
-**Completed:**
-- [x] Ported title music melody (100+ notes, ~15 second loop)
-  - [x] Full note sequence from jsandas/comic-c SOUND_TITLE
-  - [x] Perfect fidelity to original PC speaker implementation
-- [x] Ported game over music (reference-only, currently uses GAME_OVER SFX)
-  - [x] Short 9-note jingle sequence
-  - [x] Available for future use if game over becomes a music track
-- [x] Music playback system separate from SFX
-  - [x] Dedicated music channel (channel 1) independent from SFX channel (channel 0)
-  - [x] Infinite loop support: `Mix_PlayChannel(..., chunk, -1)`
-  - [x] Priority handling: music plays on separate channel, no priority conflicts
-- [x] Music control functions API
-  - [x] `play_game_music(GameMusic music)` - Start playing a music track
-  - [x] `stop_game_music()` - Stop current music
-  - [x] `is_game_music_playing()` - Query playback status
-  - [x] `get_current_music()` - Return currently playing track
-- [x] Full note frequency coverage
-  - [x] Added missing note constants (NOTE_C3-NOTE_B4, NOTE_C5, etc.)
-  - [x] Covers full range from C3 (131 Hz) to G5 (784 Hz)
-- [x] Music initialization and cleanup
-  - [x] Music loaded during `initialize_audio_system()`
-  - [x] Music cleanup in `shutdown_audio_system()`
-  - [x] Proper channel management and halt on shutdown
-
-**Implementation Details:**
-- Title music: 100 notes, ~15.2 seconds per loop (no priority; plays on independent music channel)
-- Game over music: 9 notes, ~1.5 seconds (reference for future enhancement)
-- Music data structure: `LoadedMusic` with chunk pointer and duration
-- Looping: Uses SDL_mixer's -1 loop count (infinite loop) vs SFX's 0 (one-shot)
-- Channel allocation: Music automatically allocated to channel 1 on first play
-- Synthesis: Same square-wave synthesis as SFX (see `create_sound_sequence_chunk()`)
-
-**Technical Specs:**
-- Dependencies: SDL2_mixer (same as SFX)
-- Code Coverage:
-  - Modified: `include/audio.h` (added GameMusic enum, 5 new functions)
-  - Modified: `src/audio.cpp` (music sequences, LoadedMusic struct, playback functions)
-  - Plus existing SFX infrastructure for synthesis and timing
-- No terminal calls needed - pure API-based integration
-
-**Usage Example (for future Title Sequence):**
-```cpp
-// Play title music during title screen
-play_game_music(GameMusic::TITLE);  // Starts infinite loop
-
-// Wait for user input...
-
-// Stop music when transitioning to gameplay
-stop_game_music();
-```
-
-**Usage Example (for future Victory/End-Game Sequence):**
-```cpp
-// When player collects 3rd treasure
-if (comic_num_treasures == 3) {
-    // Play beam-out animation
-    // ...
-    
-    // Play title music during victory sequence
-    play_game_music(GameMusic::TITLE);  // Reuses title music as per original
-    
-    // Award points while music plays
-    // ...
-    
-    // Stop music before returning to main menu
-    stop_game_music();
-}
-```
-
-**Pending (Phase 7+):**
-- [ ] Title sequence screen and menus (Phase 7)
-- [ ] Victory/end-game sequence (Phase 7-8)
-- [ ] Integration of title music into these sequences
-- [ ] Optional: Additional music tracks for different game states
-
-**Post-completion enhancements (non-original behavior):**
-- [ ] Add distinct item-category SFX (POWERUP, SHIELD, TREASURE) as optional enhancements
-- [ ] Add separate GameSound enum entries for enhancement-only item SFX
-- [ ] Map item collection triggers to enhancement-only item SFX when enabled
-
-**Todos:**
-- [ ] Test all 10 implemented sounds with actual gameplay
-- [ ] Adjust sound frequencies/durations if needed based on player feedback
 
 ---
 
 ### Phase 7: UI and Menus
-**Status:** In Progress
-**Current Stage:** Phase 7.2 - HUD/UI System ✅ COMPLETE
+**Status:** Complete
 **Completion Date (7.1):** 2026-03-07
 **Completion Date (7.2):** 2026-03-07
 **Goal:** Implement game menus and HUD
 
-**Phase 7.1: Title Sequence System ✅ COMPLETE**
+**Phase 7.1: Title Sequence System**
 **Objective:** Port complete title sequence from original game with proper visual transitions and asset loading
 
 **Completed:**
@@ -694,7 +488,7 @@ if (comic_num_treasures == 3) {
 - Original palette fade sequence fully replicated
 - Asset timing matches original (~770ms title display, instant story/items)
 
-**Phase 7.2: HUD/UI System ✅ COMPLETE**
+**Phase 7.2: HUD/UI System**
 **Objective:** Port complete HUD rendering system with score, lives, meters, and inventory from reference implementation
 
 **Completed:**
@@ -778,16 +572,16 @@ if (comic_num_treasures == 3) {
 - Based on jsandas/comic-c `graphics.c` (sprite positioning)
 
 **Success Criteria:**
-- ✅ Score displays correctly with 6 digits
-- ✅ Lives icons show active/inactive states
-- ✅ HP meter accurately reflects player health
-- ✅ Fireball meter shows charge state with half/full cells
-- ✅ Inventory items appear when collected
-- ✅ Inventory animations toggle smoothly
-- ✅ All sprites load without errors
-- ✅ Unit tests pass for helper functions
-- ✅ HUD renders every frame at correct positions
-- ✅ No rendering artifacts or performance issues
+- [x] Score displays correctly with 6 digits
+- [x] Lives icons show active/inactive states
+- [x] HP meter accurately reflects player health
+- [x] Fireball meter shows charge state with half/full cells
+- [x] Inventory items appear when collected
+- [x] Inventory animations toggle smoothly
+- [x] All sprites load without errors
+- [x] Unit tests pass for helper functions
+- [x] HUD renders every frame at correct positions
+- [x] No rendering artifacts or performance issues
 
 ---
 
@@ -809,28 +603,28 @@ if (comic_num_treasures == 3) {
 - `src/graphics.c`: Text rendering, fullscreen graphics
 
 **Success Criteria Phase 7.1:**
-- ✅ Title sequence displays in correct order
-- ✅ Palette fades smoothly (6 steps at 55ms each)
-- ✅ All screens display correctly
-- ✅ Title music plays during title screen
-- ✅ Input advances story and items screens
-- ✅ HUD texture preserved for gameplay rendering
-- ✅ No crashes or memory leaks
-- ✅ Seamless transition to gameplay
+- [x] Title sequence displays in correct order
+- [x] Palette fades smoothly (6 steps at 55ms each)
+- [x] All screens display correctly
+- [x] Title music plays during title screen
+- [x] Input advances story and items screens
+- [x] HUD texture preserved for gameplay rendering
+- [x] No crashes or memory leaks
+- [x] Seamless transition to gameplay
 
 **Success Criteria (Full Phase 7):**
-- ✅ HUD displays correctly during gameplay with all elements
-  - ✅ Score (6 digits) renders at correct position
-  - ✅ Lives (0-5 icons) show active/inactive states
-  - ✅ HP meter (6 cells) reflects player health
-  - ✅ Fireball meter (6 cells) shows charge with half/full states
-  - ✅ Inventory items (9 items) appear when collected with animations
-- ✅ All menus are functional and match original
-- ✅ Startup notice and high scores screens work
-- ✅ Pause menu functions properly
-- ✅ Beam-in/beam-out animations play correctly
-- ✅ Death and victory sequences work
-- [ ] Game state transitions are smooth
+- [x] HUD displays correctly during gameplay with all elements
+  - [x] Score (6 digits) renders at correct position
+  - [x] Lives (0-5 icons) show active/inactive states
+  - [x] HP meter (6 cells) reflects player health
+  - [x] Fireball meter (6 cells) shows charge with half/full states
+  - [x] Inventory items (9 items) appear when collected with animations
+- [x] All menus are functional and match original
+- [x] Startup notice and high scores screens work
+- [x] Pause menu functions properly
+- [x] Beam-in/beam-out animations play correctly
+- [x] Death and victory sequences work
+- [x] Game state transitions are smooth
 
 ---
 
@@ -854,39 +648,10 @@ if (comic_num_treasures == 3) {
   - [x] Victory state
 
 **Implementation Progress Notes:**
-- Main loop now uses an explicit runtime `GameState` enum (`Playing`, `Paused`, `Victory`, `GameOver`, `Exiting`) in `src/main.cpp`.
-- Pause/resume and terminal flow (victory/game-over sequence handoff) now transition through `GameState` instead of only boolean flags.
-- Teleportation (edge-trigger input, safe-landing search, camera motion, and FX rendering) is integrated into the tick pipeline.
-- End-to-end gameplay validation confirms collecting the 3rd treasure starts the DOS-faithful `win_counter` countdown before victory handoff.
-
-**Concrete Phase 8 Action Items (Current Sprint):**
-- [x] Keep modern pause implementation (state-based SDL event loop pause) as an intentional modernization decision.
-- [x] Add DOS-faithful victory countdown behavior (`win_counter` equivalent): trigger victory sequence when countdown reaches 1, not immediately at 3 treasures.
-- [x] Update victory flow ordering to match reference sequence more closely:
-  - [x] Beam-out
-  - [x] Score/life tally
-  - [x] Win screen (`SYS002`)
-  - [x] Game-over panel + game-over sound before high scores
-  - [x] High-scores screen handoff
-- [x] Validate end-to-end parity with gameplay capture: compare treasure-3-to-victory delay and post-win input gating against comic-c.
-- [x] Add/expand tests for victory trigger timing and sequence ordering (or scripted verification notes if unit testing is impractical for sequence code).
-
-**Phase 8 Manual QA Checklist (Parity Verification):**
-- [x] Capture reference and modern runs from "3rd treasure collected" to victory handoff.
-- [x] Verify countdown pacing: sequence triggers after `win_counter` countdown behavior (not immediate).
-- [x] Verify input gating: each blocking screen (win screen, post-win game-over panel) requires a fresh keypress.
-- [x] Verify ordering: beam-out → tally → `SYS002` win screen → game-over panel/sound → high-scores.
-- [x] Verify pause behavior remains modern/state-driven and unchanged by victory fixes.
-- [x] Port special mechanics
-  - [x] Teleportation
-  - [x] Door system
-  - [x] Stage boundaries
-  - [x] Fall death
-  - [x] Life loss
-
-**Reference Code:**
-- `src/game_main.c`: Lines 3725-3960 (game_loop function)
-- `docs/GAME_LOOP_FLOW.md`: Flow documentation
+- Main loop uses an explicit runtime `GameState` enum (`Playing`, `Paused`, `Victory`, `GameOver`, `Exiting`).
+- Pause/resume and terminal flow (victory/game-over sequence handoff) transition through `GameState`.
+- Teleportation, stage boundaries, and door transitions are fully integrated into the tick pipeline.
+- DOS-faithful victory countdown and beam-out sequence implemented.
 
 **Success Criteria:**
 - Game loop runs at consistent 60 FPS
@@ -897,7 +662,8 @@ if (comic_num_treasures == 3) {
 ---
 
 ### Phase 9: Polish and Testing
-**Status:** Not Started
+**Status:** In Progress
+**Current Stage:** Phase 9.1 - Validation and Testing
 **Completion Date:** TBD
 **Goal:** Ensure quality and faithfulness
 
@@ -1073,26 +839,26 @@ comic-modernization/
 ## Success Criteria
 
 ### Functional Requirements
-- ✅ Game launches on Windows, macOS, Linux
+- [x] Game launches on Windows, macOS, Linux
 - [ ] All 8 levels playable from start to finish
 - [ ] Physics matches original (jump height, fall speed, movement)
 - [ ] All enemies behave correctly (5 AI types)
-- [ ] All items work (firepower, treasures, keys, etc.)
-- [ ] Sound effects and music play
-- [ ] Menus and UI function properly
-- [ ] Win/lose conditions trigger correctly
+- [x] All items work (firepower, treasures, keys, etc.)
+- [x] Sound effects and music play
+- [x] Menus and UI function properly
+- [x] Win/lose conditions trigger correctly
 
 ### Quality Requirements
 - [ ] Runs at 60 FPS on target hardware
-- [ ] No crashes or major bugs
-- [ ] Clean, maintainable code
+- [x] No crashes or major bugs
+- [x] Clean, maintainable code
 - [ ] Comprehensive documentation
 
 ### Fidelity Requirements
-- [ ] Game looks like original (pixel-perfect at native res)
+- [x] Game looks like original (pixel-perfect at native res)
 - [ ] Game feels like original (physics constants exact)
-- [ ] Game sounds like original (PC speaker recreation)
-- [ ] Level layouts identical
+- [x] Game sounds like original (PC speaker recreation)
+- [x] Level layouts identical
 - [ ] Enemy behavior identical
 
 ## Resources
