@@ -33,33 +33,36 @@ void award_points(uint16_t points) {
     score_bytes[0] = static_cast<uint8_t>(sum0 % 100);
 
     uint16_t carry = sum0 / 100;
-    if (carry == 0) {
-        return;
-    }
+    if (carry > 0) {
+        uint16_t sum1 = static_cast<uint16_t>(score_bytes[1]) + carry;
+        score_bytes[1] = static_cast<uint8_t>(sum1 % 100);
 
-    uint16_t sum1 = static_cast<uint16_t>(score_bytes[1]) + carry;
-    score_bytes[1] = static_cast<uint8_t>(sum1 % 100);
+        // Assembly parity: each carry from score byte 0 into byte 1 is one
+        // ten-thousand increment; on 5 increments reset counter, then award life.
+        for (uint16_t i = 0; i < carry; ++i) {
+            const uint8_t next = static_cast<uint8_t>(score_10000_counter + 1);
+            if (next >= 5) {
+                score_10000_counter = 0;
+                award_extra_life();
+            } else {
+                score_10000_counter = next;
+            }
+        }
 
-    uint16_t ten_thousand_progress = static_cast<uint16_t>(score_10000_counter) + carry;
-    while (ten_thousand_progress >= 5) {
-        ten_thousand_progress -= 5;
-        award_extra_life();
-    }
-    score_10000_counter = static_cast<uint8_t>(ten_thousand_progress);
+        carry = sum1 / 100;
+        if (carry == 0) {
+            return;
+        }
 
-    carry = sum1 / 100;
-    if (carry == 0) {
-        return;
-    }
-
-    uint16_t high = static_cast<uint16_t>(score_bytes[2]) + carry;
-    if (high >= 100) {
-        // Saturate to max representable score.
-        score_bytes[0] = 99;
-        score_bytes[1] = 99;
-        score_bytes[2] = 99;
-    } else {
-        score_bytes[2] = static_cast<uint8_t>(high);
+        uint16_t high = static_cast<uint16_t>(score_bytes[2]) + carry;
+        if (high >= 100) {
+            // Saturate to max representable score.
+            score_bytes[0] = 99;
+            score_bytes[1] = 99;
+            score_bytes[2] = 99;
+        } else {
+            score_bytes[2] = static_cast<uint8_t>(high);
+        }
     }
 }
 
