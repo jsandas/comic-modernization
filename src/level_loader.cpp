@@ -10,6 +10,7 @@
 #include "../include/level_tiles.h"
 #include "../include/physics.h"
 #include "../include/graphics.h"
+#include "../include/actors.h"
 #include <cstring>
 #include <iostream>
 
@@ -26,6 +27,7 @@ extern uint8_t comic_x_checkpoint;
 extern uint8_t comic_y_checkpoint;
 extern int camera_x;
 extern GraphicsSystem* g_graphics;
+extern ActorSystem* g_actor_system;
 
 /* Runtime mutable copies of level data */
 static level_t runtime_levels[8];
@@ -132,6 +134,12 @@ void load_new_level() {
             std::cerr << "Warning: Failed to load tileset for level: " << level_name << std::endl;
             /* Continue anyway - may work with existing tileset */
         }
+
+        const bool has_lantern =
+            (g_actor_system != nullptr) && (g_actor_system->comic_has_lantern == 1);
+        const bool should_blackout_tiles =
+            (current_level_number == LEVEL_NUMBER_CASTLE) && !has_lantern;
+        g_graphics->set_tileset_blackout(level_name, should_blackout_tiles);
     }
     
     /* Load the current stage */

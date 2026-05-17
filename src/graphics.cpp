@@ -334,6 +334,13 @@ bool GraphicsSystem::load_tileset(const std::string& level_name) {
     }
     
     tilesets[level_name] = tileset;
+
+    // Apply any previously configured blackout state to newly loaded tiles.
+    auto blackout_it = tileset_blackout.find(level_name);
+    if (blackout_it != tileset_blackout.end()) {
+        set_tileset_blackout(level_name, blackout_it->second);
+    }
+
     return true;
 }
 
@@ -343,6 +350,23 @@ Tileset* GraphicsSystem::get_tileset(const std::string& level_name) {
         return &it->second;
     }
     return nullptr;
+}
+
+void GraphicsSystem::set_tileset_blackout(const std::string& level_name, bool blackout) {
+    tileset_blackout[level_name] = blackout;
+
+    auto tileset_it = tilesets.find(level_name);
+    if (tileset_it == tilesets.end()) {
+        return;
+    }
+
+    const uint8_t color = blackout ? 0 : 255;
+    for (auto& tile_entry : tileset_it->second.tiles) {
+        TextureInfo& tile_texture = tile_entry.second;
+        if (tile_texture.texture != nullptr) {
+            SDL_SetTextureColorMod(tile_texture.texture, color, color, color);
+        }
+    }
 }
 
 bool GraphicsSystem::load_sprite(const std::string& sprite_name, const std::string& direction) {
