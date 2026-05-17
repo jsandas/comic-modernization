@@ -390,4 +390,4 @@ Assets: Original game assets © Michael Denio - consult original licensing
 ---
 
 **Last Updated:** 2026-04-26  
-**Status:** Active Development (Phase 8 of 10)
+**Status:** Active Development (Phase 9 of 10)
