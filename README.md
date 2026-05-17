@@ -8,14 +8,14 @@ A modern recreation of the classic 1988 DOS game *The Adventures of Captain Comi
 
 **Current Phase:** Game Loop Integration (Phase 8 - In Progress)
 
-✅ Foundation complete (SDL2 setup, build system, basic game loop)  
-✅ Core physics complete (gravity, jumping, collision, stage transitions)  
-✅ Rendering system complete (tiles, sprites, animations, camera)  
-✅ Level system complete (all 8 levels, doors, stage transitions)  
-✅ Actor system complete (enemies, fireballs, items — Phase 5)  
-✅ Audio system complete (SFX + music — Phase 6)  
-✅ UI/Menus complete (title sequence, HUD, menus, animations — Phase 7)  
-🔄 Game loop integration in progress (Phase 8)
+[x] Foundation complete (SDL2 setup, build system, basic game loop)  
+[x] Core physics complete (gravity, jumping, collision, stage transitions)  
+[x] Rendering system complete (tiles, sprites, animations, camera)  
+[x] Level system complete (all 8 levels, doors, stage transitions)  
+[x] Actor system complete (enemies, fireballs, items — Phase 5)  
+[x] Audio system complete (SFX + music — Phase 6)  
+[x] UI/Menus complete (title sequence, HUD, menus, animations — Phase 7)  
+[x] Game loop integration in progress (Phase 8)
 
 ## About
 
@@ -171,90 +171,80 @@ cmake --build .
 
 ## Current Features
 
-- ✅ SDL2 window and event loop
-- ✅ Keyboard input handling (arrow keys, space, Ctrl to fire)
-- ✅ Complete physics system:
-  - ✅ Gravity and terminal velocity
-  - ✅ Jumping with original constants (GRAVITY=5, ACCELERATION=7)
-  - ✅ Ceiling, floor, and wall collision detection
-  - ✅ Mid-air momentum and drag
-  - ✅ Stage boundary transitions (left/right edge)
-  - ✅ Camera following with viewport scrolling
-- ✅ Full rendering system:
-  - ✅ Tile rendering from converted PNG tilesets (all 8 levels)
-  - ✅ Player sprite with idle, run (3-frame), and jump animations
-  - ✅ Direction-aware sprite rendering (left/right facing)
-  - ✅ Enemy sprite rendering with GIF-based animation (loop and ping-pong)
-  - ✅ Fireball rendering (2-frame animated sprites)
-  - ✅ Hardware-accelerated (SDL2 renderer)
-- ✅ Level system:
-  - ✅ All 8 levels (LAKE, FOREST, SPACE, BASE, CAVE, SHED, CASTLE, COMP)
-  - ✅ 3 stages per level with complete tile, door, and enemy data
-  - ✅ Door system with key requirement and level/stage transitions
-  - ✅ Stage transitions at left/right boundaries
-- ✅ Enemy system (Actor System):
-  - ✅ All 5 AI behaviors: Bounce, Leap, Roll, Seek, Shy
-  - ✅ Enemy spawning, despawning, and respawn cycling
-  - ✅ Enemy-player collision (damage trigger)
-  - ✅ Death animations: white spark (killed by fireball), red spark (hit player)
-- ✅ Fireball system:
-  - ✅ Up to 5 simultaneous fireballs (based on Blastola Cola count)
-  - ✅ Horizontal movement (±2 units/tick) in facing direction
-  - ✅ Corkscrew motion when Corkscrew item is held
-  - ✅ Fireball-enemy collision detection and kill
-  - ✅ Fireball meter with 2-tick charge/discharge rate
-- ✅ Item system:
-  - ✅ Item placement and rendering (16×16 px, 2-frame animation)
-  - ✅ Collision detection and collection
-  - ✅ Blastola Cola: increase firepower (max 5)
-  - ✅ Corkscrew: fireball vertical oscillation
-  - ✅ Boots: increased jump power (4→5)
-  - ✅ Lantern: castle lighting flag
-  - ✅ Shield: HP refill (placeholder)
-  - ✅ Door Key: unlock doors
-  - ✅ Teleport Wand: special teleport ability
-  - ✅ Treasures (Gems, Crown, Gold): victory tracking
-- ✅ Audio system:
-  - ✅ PC-speaker-style square-wave SFX synthesis (SDL2_mixer)
-  - ✅ Single-channel priority SFX system (higher priority interrupts lower)
-  - ✅ 10 sound effects: fire, item collect, door open, stage transition, enemy hit, player hit, player die, game over, teleport
-  - ✅ Title music with full looping (100-note melody)
-  - ✅ Dedicated music channel independent from SFX
-- ✅ Title sequence:
-  - ✅ Title screen (SYS000.EGA) with 6-step palette fade-in
-  - ✅ Story screen (SYS001.EGA) and items/controls screen (SYS004.EGA)
-  - ✅ Title music playback during sequence
-  - ✅ Letterbox rendering for 320×200 EGA content
-  - ✅ `--skip-title` flag to bypass sequence during development
-- ✅ HUD/UI system:
-  - ✅ Score display (6-digit base-100 encoding)
-  - ✅ Lives counter (0-5 icons, bright/dark states)
-  - ✅ HP meter (6 cells)
-  - ✅ Fireball meter (6 cells, full/half/empty states)
-  - ✅ Full inventory grid (9 items, 3×3 layout, 2-frame animation)
-  - ✅ Menus: pause, high scores, keyboard setup, startup notice
-  - ✅ Beam-in/beam-out, death, and victory animations
-- ✅ **Debug/Cheat System** (development tool, `--debug` flag required):
-  - ✅ Noclip mode (F1)
-  - ✅ Level/stage warp (F2)
-  - ✅ Debug overlay — coordinates, velocity, level/stage (F3)
-  - ✅ Position warp (F4)
-  - ✅ Item granting (F5) — grant any item for testing effects
+- [x] SDL2 window and event loop
+- [x] Keyboard input handling (arrow keys, space, Ctrl to fire)
+- [x] Complete physics system:
+  - [x] Gravity and terminal velocity
+  - [x] Jumping with original constants (GRAVITY=5, ACCELERATION=7)
+  - [x] Ceiling, floor, and wall collision detection
+  - [x] Mid-air momentum and drag
+  - [x] Stage boundary transitions (left/right edge)
+  - [x] Camera following with viewport scrolling
+- [x] Full rendering system:
+  - [x] Tile rendering from converted PNG tilesets (all 8 levels)
+  - [x] Player sprite with idle, run (3-frame), and jump animations
+  - [x] Direction-aware sprite rendering (left/right facing)
+  - [x] Enemy sprite rendering with GIF-based animation (loop and ping-pong)
+  - [x] Fireball rendering (2-frame animated sprites)
+  - [x] Hardware-accelerated (SDL2 renderer)
+- [x] Level system:
+  - [x] All 8 levels (LAKE, FOREST, SPACE, BASE, CAVE, SHED, CASTLE, COMP)
+  - [x] 3 stages per level with complete tile, door, and enemy data
+  - [x] Door system with key requirement and level/stage transitions
+  - [x] Stage transitions at left/right boundaries
+- [x] Enemy system (Actor System):
+  - [x] All 5 AI behaviors: Bounce, Leap, Roll, Seek, Shy
+  - [x] Enemy spawning, despawning, and respawn cycling
+  - [x] Enemy-player collision (damage trigger)
+  - [x] Death animations: white spark (killed by fireball), red spark (hit player)
+- [x] Fireball system:
+  - [x] Up to 5 simultaneous fireballs (based on Blastola Cola count)
+  - [x] Horizontal movement (±2 units/tick) in facing direction
+  - [x] Corkscrew motion when Corkscrew item is held
+  - [x] Fireball-enemy collision detection and kill
+  - [x] Fireball meter with 2-tick charge/discharge rate
+- [x] Item system:
+  - [x] Item placement and rendering (16×16 px, 2-frame animation)
+  - [x] Collision detection and collection
+  - [x] Blastola Cola: increase firepower (max 5)
+  - [x] Corkscrew: fireball vertical oscillation
+  - [x] Boots: increased jump power (4→5)
+  - [x] Lantern: castle lighting flag
+  - [x] Shield: HP refill (placeholder)
+  - [x] Door Key: unlock doors
+  - [x] Teleport Wand: special teleport ability
+  - [x] Treasures (Gems, Crown, Gold): victory tracking
+- [x] Audio system:
+  - [x] PC-speaker-style square-wave SFX synthesis (SDL2_mixer)
+  - [x] Single-channel priority SFX system (higher priority interrupts lower)
+  - [x] 10 sound effects: fire, item collect, door open, stage transition, enemy hit, player hit, player die, game over, teleport
+  - [x] Title music with full looping (100-note melody)
+  - [x] Dedicated music channel independent from SFX
+- [x] Title sequence:
+  - [x] Title screen (SYS000.EGA) with 6-step palette fade-in
+  - [x] Story screen (SYS001.EGA) and items/controls screen (SYS004.EGA)
+  - [x] Title music playback during sequence
+  - [x] Letterbox rendering for 320×200 EGA content
+  - [x] `--skip-title` flag to bypass sequence during development
+- [x] HUD/UI system:
+  - [x] Score display (6-digit base-100 encoding)
+  - [x] Lives counter (0-5 icons, bright/dark states)
+  - [x] HP meter (6 cells)
+  - [x] Fireball meter (6 cells, full/half/empty states)
+  - [x] Full inventory grid (9 items, 3×3 layout, 2-frame animation)
+  - [x] Menus: pause, high scores, keyboard setup, startup notice
+  - [x] Beam-in/beam-out, death, and victory animations
+- [x] **Debug/Cheat System** (development tool, `--debug` flag required):
+  - [x] Noclip mode (F1)
+  - [x] Level/stage warp (F2)
+  - [x] Debug overlay — coordinates, velocity, level/stage (F3)
+  - [x] Position warp (F4)
+  - [x] Item granting (F5) — grant any item for testing effects
 
 ## Roadmap
 
 See [MODERNIZATION_PLAN.md](docs/MODERNIZATION_PLAN.md) for the complete 10-phase implementation plan:
 
-1. ✅ **Foundation** - SDL2 setup, build system
-2. ✅ **Core Physics** - Gravity, jumping, collision, stage transitions
-3. ✅ **Rendering** - Tiles, sprites, animations, hardware acceleration
-4. ✅ **Level System** - All 8 levels, doors, stage transitions
-5. ✅ **Actors** - Enemies, fireballs, items
-6. ✅ **Audio** - SFX (10 sounds), title music, priority system
-7. ✅ **UI/Menus** - Title sequence, HUD, menus, death/victory animations
-8. 🔄 **Game Loop** - Complete game flow, states
-9. ⏸️ **Polish** - Testing, optimization
-10. ⏸️ **Release** - Packaging, distribution
 ## Project Structure
 
 ```

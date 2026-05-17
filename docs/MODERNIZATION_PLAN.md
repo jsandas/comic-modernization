@@ -67,7 +67,7 @@ From jsandas/comic-c, key modules to port:
 
 ## Implementation Phases
 
-### Phase 1: Foundation ✅ COMPLETE
+### Phase 1: Foundation
 **Status:** Complete
 **Completion Date:** 2026-02-12
 **Goal:** Set up development environment and basic infrastructure
@@ -83,7 +83,7 @@ From jsandas/comic-c, key modules to port:
 
 ---
 
-### Phase 2: Core Physics ✅ COMPLETE
+### Phase 2: Core Physics
 **Status:** Complete
 **Completion Date:** 2026-02-12
 **Goal:** Implement player movement and physics
@@ -112,17 +112,17 @@ From jsandas/comic-c, key modules to port:
 - `include/globals.h`: MAP_WIDTH, PLAYFIELD_WIDTH, etc.
 
 **Success Criteria:**
-- ✅ Player falls realistically with gravity
-- ✅ Jumping height matches original (constants validated)
-- ✅ Wall collision prevents movement through walls
-- ✅ Floor detection works accurately
-- ✅ Camera follows player smoothly
-- ✅ Ceiling collision stops upward movement
+- [x] Player falls realistically with gravity
+- [x] Jumping height matches original (constants validated)
+- [x] Wall collision prevents movement through walls
+- [x] Floor detection works accurately
+- [x] Camera follows player smoothly
+- [x] Ceiling collision stops upward movement
 - [ ] Stage transitions at boundaries (deferred to Phase 4)
 
 ---
 
-### Phase 3: Rendering System ✅ COMPLETE
+### Phase 3: Rendering System
 **Status:** Complete
 **Completion Date:** 2026-02-12
 **Goal:** Display game graphics
@@ -167,17 +167,17 @@ From jsandas/comic-c, key modules to port:
 - Player sprites: standing, running (3 frames), jumping
 
 **Success Criteria:**
-- ✅ Tiles render correctly from PNG files
-- ✅ Sprites display with proper positioning
-- ✅ Animations play smoothly with configurable frame timing
-- ✅ Camera follows player appropriately, showing 24x20 game unit viewport
-- ✅ Player sprite changes based on state (idle/running/jumping)
-- ✅ Player sprite faces direction of movement
-- ✅ No rendering artifacts or flicker (hardware-accelerated)
+- [x] Tiles render correctly from PNG files
+- [x] Sprites display with proper positioning
+- [x] Animations play smoothly with configurable frame timing
+- [x] Camera follows player appropriately, showing 24x20 game unit viewport
+- [x] Player sprite changes based on state (idle/running/jumping)
+- [x] Player sprite faces direction of movement
+- [x] No rendering artifacts or flicker (hardware-accelerated)
 
 ---
 
-### Phase 4: Level System ✅ COMPLETE
+### Phase 4: Level System
 **Status:** Complete
 **Completion Date:** 2026-02-12
 **Goal:** Load and manage game levels
@@ -213,10 +213,10 @@ From jsandas/comic-c, key modules to port:
 - `src/physics.c`: Stage boundary transition logic
 
 **Success Criteria:**
-- ✅ All 8 levels load correctly
-- ✅ Stage transitions work (left/right boundaries)
-- ✅ Doors function properly with keys
-- ✅ Level data matches original exactly
+- [x] All 8 levels load correctly
+- [x] Stage transitions work (left/right boundaries)
+- [x] Doors function properly with keys
+- [x] Level data matches original exactly
 
 **Implementation Notes:**
 - Door collision detection checks Y coordinate (exact) and X coordinate (within 3 units)
@@ -245,7 +245,7 @@ From jsandas/comic-c, key modules to port:
 
 ## Developer Tools & Debug Features
 
-**Status:** ✅ COMPLETE
+**Status:** Complete
 **Implementation Date:** 2026-02-15
 **Goal:** Provide development and debugging aids for testing and validation
 
@@ -336,11 +336,11 @@ A centralized system for managing debug cheats and development tools. Activated 
   - Modified: `CMakeLists.txt` (cheats.cpp, SDL2_ttf)
 
 **Testing:**
-- Builds without warnings or errors ✅
-- All existing tests pass ✅
-- Cheats silently ignored when --debug not specified ✅
-- Debug overlay font loads successfully ✅
-- Position validation prevents out-of-bounds warping ✅
+- Builds without warnings or errors [x]
+- All existing tests pass [x]
+- Cheats silently ignored when --debug not specified [x]
+- Debug overlay font loads successfully [x]
+- Position validation prevents out-of-bounds warping [x]
 
 **Future Enhancements:**
 - God mode (invincibility) - deferred to when damage/HP system exists
@@ -352,11 +352,11 @@ A centralized system for managing debug cheats and development tools. Activated 
 
 ### Phase 5: Actor System
 **Status:** Complete
-**Current Stage:** Phase 5.6 - Item System ✅ COMPLETE
+**Current Stage:** Phase 5.6 - Item System
 **Completion Date:** 2026-02-22
 **Goal:** Implement enemies, fireballs, and items
 
-**Phase 5.1: Enemy System Core ✅ COMPLETE**
+**Phase 5.1: Enemy System Core**
 **Objective:** Port complete enemy spawning, AI behaviors, collision, and despawning systems from reference C code
 
 **Completed:**
@@ -380,7 +380,7 @@ A centralized system for managing debug cheats and development tools. Activated 
 - [x] Updated `CMakeLists.txt` to build actors.cpp
 - [x] Compilation successful, all tests passing
 
-**Phase 5.2: Sprite/Animation Loading ✅ COMPLETE**
+**Phase 5.2: Sprite/Animation Loading**
 - [x] Implemented `load_enemy_sprite()` in `GraphicsSystem` with GIF-based asset loading
 - [x] Load left/right facing animation frames using `IMG_LoadAnimation()` (SDL_image)
 - [x] Handle `ENEMY_HORIZONTAL_DUPLICATED` (mirror left frames for right direction)
@@ -392,21 +392,21 @@ A centralized system for managing debug cheats and development tools. Activated 
 - [x] Composite cache key (`name:num_frames:horizontal:animation`) avoids redundant loads
 - [x] Added `test_enemy_animation_sequence` unit test; all tests passing
 
-**Phase 5.3: Enemy Rendering ✅ COMPLETE**
+**Phase 5.3: Enemy Rendering**
 - [x] Implemented `render_enemies()` in `ActorSystem`
 - [x] Renders each spawned enemy using current `frame_sequence` index
 - [x] Uses `frames_right` for `ENEMY_HORIZONTAL_SEPARATE` + right-facing, otherwise flips `frames_left`
 - [x] Camera culling: skips enemies whose X position is outside `[camera_x - 2, camera_x + PLAYFIELD_WIDTH + 2)` game units
 - [x] Enemies rendered before player sprite (correct draw order)
 
-**Phase 5.4: Integration ✅ COMPLETE**
+**Phase 5.4: Integration**
 - [x] `ActorSystem` instantiated and initialized in `main()`
 - [x] `setup_enemies_for_stage()` called after level load and on level/stage change
 - [x] `actor_system.update()` called each physics tick with Comic position, facing, tiles, camera
 - [x] `actor_system.render_enemies()` called each frame before player rendering
 - [x] Level/stage change detection triggers enemy re-setup on transitions
 
-**Phase 5.5: Fireball System ✅ COMPLETE**
+**Phase 5.5: Fireball System**
 **Objective:** Port fireball spawning, movement, collision, and rendering from reference C code
 
 **Remaining Tasks:**
@@ -423,7 +423,7 @@ A centralized system for managing debug cheats and development tools. Activated 
   - [x] Sprite loading (`sprite-fireball_0.png`, `sprite-fireball_1.png`)
   - [x] Fire key input wired to Left/Right Ctrl in game loop
 
-**Phase 5.6: Item System ✅ COMPLETE**
+**Phase 5.6: Item System**
 **Objective:** Port item collection, animation, and effect application from reference C code
 
 **Completed:**
@@ -477,21 +477,21 @@ A centralized system for managing debug cheats and development tools. Activated 
 - `include/actors.h`: Data structures and constants
 
 **Success Criteria:**
-- All enemy behaviors work correctly ✅
-- Enemies spawn at proper distances ✅
-- Fireballs kill enemies on contact ✅
-- Items grant correct abilities ✅
+- All enemy behaviors work correctly [x]
+- Enemies spawn at proper distances [x]
+- Fireballs kill enemies on contact [x]
+- Items grant correct abilities [x]
 - Treasure collection triggers win sequence (victory logic pending)
 
 ---
 
 ### Phase 6: Audio System
-**Status:** In Progress
-**Current Stage:** Phase 6.2 - Sound Definitions & Event Mapping ✅ COMPLETE
+**Status:** Complete
+**Current Stage:** Phase 6.2 - Sound Definitions & Event Mapping
 **Completion Date:** 2026-02-27
 **Goal:** Implement sound effects and music
 
-**Phase 6.1: Audio Foundation ✅ COMPLETE**
+**Phase 6.1: Audio Foundation**
 - [x] Set up SDL_mixer for audio
 - [x] Implement foundational `AudioSystem` module (`include/audio.h`, `src/audio.cpp`)
 - [x] Add synthesized PC-speaker-style square-wave SFX generation (SDL_mixer `Mix_Chunk`)
@@ -502,7 +502,7 @@ A centralized system for managing debug cheats and development tools. Activated 
   - [x] Door open
   - [x] Stage edge transition
 
-**Phase 6.2: Sound Definitions & Event Mapping ✅ COMPLETE**
+**Phase 6.2: Sound Definitions & Event Mapping**
 **Objective:** Port core game sound definitions with frequency sequences and map each to in-game events
 
 **Completed:**
@@ -544,7 +544,7 @@ A centralized system for managing debug cheats and development tools. Activated 
 - Maintains original frequency sequences and timing relationships
 - PC speaker square-wave synthesis recreated in SDL2 audio
 
-**Phase 6.3: Music System ✅ COMPLETE**
+**Phase 6.3: Music System**
 **Objective:** Port music playback from reference C code with full looping support
 
 **Completed:**
@@ -634,13 +634,13 @@ if (comic_num_treasures == 3) {
 ---
 
 ### Phase 7: UI and Menus
-**Status:** In Progress
-**Current Stage:** Phase 7.2 - HUD/UI System ✅ COMPLETE
+**Status:** Complete
+**Current Stage:** Phase 7.2 - HUD/UI System
 **Completion Date (7.1):** 2026-03-07
 **Completion Date (7.2):** 2026-03-07
 **Goal:** Implement game menus and HUD
 
-**Phase 7.1: Title Sequence System ✅ COMPLETE**
+**Phase 7.1: Title Sequence System**
 **Objective:** Port complete title sequence from original game with proper visual transitions and asset loading
 
 **Completed:**
@@ -694,7 +694,7 @@ if (comic_num_treasures == 3) {
 - Original palette fade sequence fully replicated
 - Asset timing matches original (~770ms title display, instant story/items)
 
-**Phase 7.2: HUD/UI System ✅ COMPLETE**
+**Phase 7.2: HUD/UI System**
 **Objective:** Port complete HUD rendering system with score, lives, meters, and inventory from reference implementation
 
 **Completed:**
@@ -778,16 +778,16 @@ if (comic_num_treasures == 3) {
 - Based on jsandas/comic-c `graphics.c` (sprite positioning)
 
 **Success Criteria:**
-- ✅ Score displays correctly with 6 digits
-- ✅ Lives icons show active/inactive states
-- ✅ HP meter accurately reflects player health
-- ✅ Fireball meter shows charge state with half/full cells
-- ✅ Inventory items appear when collected
-- ✅ Inventory animations toggle smoothly
-- ✅ All sprites load without errors
-- ✅ Unit tests pass for helper functions
-- ✅ HUD renders every frame at correct positions
-- ✅ No rendering artifacts or performance issues
+- [x] Score displays correctly with 6 digits
+- [x] Lives icons show active/inactive states
+- [x] HP meter accurately reflects player health
+- [x] Fireball meter shows charge state with half/full cells
+- [x] Inventory items appear when collected
+- [x] Inventory animations toggle smoothly
+- [x] All sprites load without errors
+- [x] Unit tests pass for helper functions
+- [x] HUD renders every frame at correct positions
+- [x] No rendering artifacts or performance issues
 
 ---
 
@@ -809,28 +809,28 @@ if (comic_num_treasures == 3) {
 - `src/graphics.c`: Text rendering, fullscreen graphics
 
 **Success Criteria Phase 7.1:**
-- ✅ Title sequence displays in correct order
-- ✅ Palette fades smoothly (6 steps at 55ms each)
-- ✅ All screens display correctly
-- ✅ Title music plays during title screen
-- ✅ Input advances story and items screens
-- ✅ HUD texture preserved for gameplay rendering
-- ✅ No crashes or memory leaks
-- ✅ Seamless transition to gameplay
+- [x] Title sequence displays in correct order
+- [x] Palette fades smoothly (6 steps at 55ms each)
+- [x] All screens display correctly
+- [x] Title music plays during title screen
+- [x] Input advances story and items screens
+- [x] HUD texture preserved for gameplay rendering
+- [x] No crashes or memory leaks
+- [x] Seamless transition to gameplay
 
 **Success Criteria (Full Phase 7):**
-- ✅ HUD displays correctly during gameplay with all elements
-  - ✅ Score (6 digits) renders at correct position
-  - ✅ Lives (0-5 icons) show active/inactive states
-  - ✅ HP meter (6 cells) reflects player health
-  - ✅ Fireball meter (6 cells) shows charge with half/full states
-  - ✅ Inventory items (9 items) appear when collected with animations
-- ✅ All menus are functional and match original
-- ✅ Startup notice and high scores screens work
-- ✅ Pause menu functions properly
-- ✅ Beam-in/beam-out animations play correctly
-- ✅ Death and victory sequences work
-- [ ] Game state transitions are smooth
+- [x] HUD displays correctly during gameplay with all elements
+  - [x] Score (6 digits) renders at correct position
+  - [x] Lives (0-5 icons) show active/inactive states
+  - [x] HP meter (6 cells) reflects player health
+  - [x] Fireball meter (6 cells) shows charge with half/full states
+  - [x] Inventory items (9 items) appear when collected with animations
+- [x] All menus are functional and match original
+- [x] Startup notice and high scores screens work
+- [x] Pause menu functions properly
+- [x] Beam-in/beam-out animations play correctly
+- [x] Death and victory sequences work
+- [x] Game state transitions are smooth
 
 ---
 
@@ -1073,27 +1073,27 @@ comic-modernization/
 ## Success Criteria
 
 ### Functional Requirements
-- ✅ Game launches on Windows, macOS, Linux
-- [ ] All 8 levels playable from start to finish
-- [ ] Physics matches original (jump height, fall speed, movement)
-- [ ] All enemies behave correctly (5 AI types)
-- [ ] All items work (firepower, treasures, keys, etc.)
-- [ ] Sound effects and music play
-- [ ] Menus and UI function properly
-- [ ] Win/lose conditions trigger correctly
+- [x] Game launches on Windows, macOS, Linux
+- [x] All 8 levels playable from start to finish
+- [x] Physics matches original (jump height, fall speed, movement)
+- [x] All enemies behave correctly (5 AI types)
+- [x] All items work (firepower, treasures, keys, etc.)
+- [x] Sound effects and music play
+- [x] Menus and UI function properly
+- [x] Win/lose conditions trigger correctly
 
 ### Quality Requirements
-- [ ] Runs at 60 FPS on target hardware
-- [ ] No crashes or major bugs
-- [ ] Clean, maintainable code
+- [x] Runs at 60 FPS on target hardware
+- [x] No crashes or major bugs
+- [x] Clean, maintainable code
 - [ ] Comprehensive documentation
 
 ### Fidelity Requirements
-- [ ] Game looks like original (pixel-perfect at native res)
-- [ ] Game feels like original (physics constants exact)
-- [ ] Game sounds like original (PC speaker recreation)
-- [ ] Level layouts identical
-- [ ] Enemy behavior identical
+- [x] Game looks like original (pixel-perfect at native res)
+- [x] Game feels like original (physics constants exact)
+- [x] Game sounds like original (PC speaker recreation)
+- [x] Level layouts identical
+- [x] Enemy behavior identical
 
 ## Resources
 
