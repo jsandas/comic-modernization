@@ -40,6 +40,7 @@ static const std::vector<TestCase>& test_registry() {
         {"enemy_animation_sequence", test_enemy_animation_sequence},
         {"asset_path_resolution", test_asset_path_resolution},
         {"runtime_level_tiles_populated", test_runtime_level_tiles_populated},
+        {"playfield_viewport_height_matches_render_scale", test_playfield_viewport_height_matches_render_scale},
 
         // Actors & Items
         {"actor_spawn_one_per_tick", test_actor_spawn_one_per_tick},

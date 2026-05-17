@@ -580,8 +580,8 @@ int main(int argc, char* argv[]) {
         SDL_Rect playfield_viewport;
         playfield_viewport.x = gameplay_frame_rect.x + static_cast<int>(8 * letterbox_scale);
         playfield_viewport.y = gameplay_frame_rect.y + static_cast<int>(8 * letterbox_scale);
-        playfield_viewport.w = static_cast<int>(192 * letterbox_scale);
-        playfield_viewport.h = static_cast<int>(160 * letterbox_scale);
+        playfield_viewport.w = render_scale * PLAYFIELD_WIDTH;
+        playfield_viewport.h = render_scale * PLAYFIELD_HEIGHT;
         SDL_RenderSetViewport(renderer, &playfield_viewport);
 
         const int OFFSCREEN_MARGIN_UNITS = 2;
@@ -1262,8 +1262,8 @@ int main(int argc, char* argv[]) {
         SDL_Rect playfield_viewport;
         playfield_viewport.x = gameplay_frame_rect.x + static_cast<int>(8 * letterbox_scale);
         playfield_viewport.y = gameplay_frame_rect.y + static_cast<int>(8 * letterbox_scale);
-        playfield_viewport.w = static_cast<int>(192 * letterbox_scale);
-        playfield_viewport.h = static_cast<int>(160 * letterbox_scale);
+        playfield_viewport.w = render_scale * PLAYFIELD_WIDTH;
+        playfield_viewport.h = render_scale * PLAYFIELD_HEIGHT;
         SDL_RenderSetViewport(renderer, &playfield_viewport);
 
         bool level_changed = current_level_number != cached_level_number;
