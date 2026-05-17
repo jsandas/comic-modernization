@@ -9,6 +9,7 @@ void test_jump_height();
 void test_space_level_uses_lower_gravity();
 void test_jump_top_clamped_to_playfield();
 void test_player_death_sequence_respawn();
+void test_player_death_sequence_last_life_allows_one_more_play();
 void test_player_death_sequence_game_over();
 void test_teleport_does_not_update_respawn_checkpoint();
 void test_door_activation_alignment_x();

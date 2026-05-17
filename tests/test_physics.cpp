@@ -155,7 +155,7 @@ void test_player_death_sequence_respawn() {
 void test_player_death_sequence_game_over() {
     reset_physics_state();
     game_over_triggered = false;
-    comic_num_lives = 1;
+    comic_num_lives = 0;
     comic_hp = 2;
     comic_x = 41;
     comic_y = 8;
@@ -170,11 +170,37 @@ void test_player_death_sequence_game_over() {
     advance_death_sequence_until_complete();
 
     check(!is_player_dying(), "game_over: death sequence should finish");
-    check(comic_num_lives == 0, "game_over: lives should decrement to zero");
+    check(comic_num_lives == 0, "game_over: lives should remain zero");
     check(game_over_triggered, "game_over: zero lives should trigger game-over flag");
     check(comic_x == 41 && comic_y == 8,
         "game_over: zero-lives path should not respawn to checkpoint");
     check(comic_hp == 2, "game_over: zero-lives path should not reset HP");
+}
+
+void test_player_death_sequence_last_life_allows_one_more_play() {
+    reset_physics_state();
+    game_over_triggered = false;
+    comic_num_lives = 1;
+    comic_hp = 2;
+    comic_x = 41;
+    comic_y = 8;
+    comic_x_checkpoint = 20;
+    comic_y_checkpoint = 12;
+
+    trigger_player_death(false);
+    check(is_player_dying(), "last_life: player should enter dying state");
+
+    advance_death_sequence_until_complete();
+
+    check(!is_player_dying(), "last_life: death sequence should finish");
+    check(comic_num_lives == 0,
+        "last_life: one remaining life should be consumed on respawn path");
+    check(!game_over_triggered,
+        "last_life: game over should not trigger until the next death at zero lives");
+    check(comic_x == comic_x_checkpoint && comic_y == comic_y_checkpoint,
+        "last_life: player should respawn at checkpoint when starting death with one life");
+    check(comic_hp == MAX_HP,
+        "last_life: respawn should refill HP");
 }
 
 void test_teleport_does_not_update_respawn_checkpoint() {

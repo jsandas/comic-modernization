@@ -14,6 +14,7 @@ static const std::vector<TestCase>& test_registry() {
         {"space_level_uses_lower_gravity", test_space_level_uses_lower_gravity},
         {"jump_top_clamped_to_playfield", test_jump_top_clamped_to_playfield},
         {"player_death_sequence_respawn", test_player_death_sequence_respawn},
+        {"player_death_sequence_last_life_allows_one_more_play", test_player_death_sequence_last_life_allows_one_more_play},
         {"player_death_sequence_game_over", test_player_death_sequence_game_over},
         {"teleport_does_not_update_respawn_checkpoint", test_teleport_does_not_update_respawn_checkpoint},
         {"door_activation_alignment_x", test_door_activation_alignment_x},
