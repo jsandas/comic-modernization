@@ -9,6 +9,7 @@ void test_jump_height();
 void test_space_level_uses_lower_gravity();
 void test_jump_top_clamped_to_playfield();
 void test_player_death_sequence_respawn();
+void test_player_death_sequence_last_life_allows_one_more_play();
 void test_player_death_sequence_game_over();
 void test_teleport_does_not_update_respawn_checkpoint();
 void test_door_activation_alignment_x();
@@ -34,6 +35,7 @@ void test_animation_zero_duration();
 void test_enemy_animation_sequence();
 void test_asset_path_resolution();
 void test_runtime_level_tiles_populated();
+void test_playfield_viewport_height_matches_render_scale();
 
 // Actors & Items
 void test_actor_spawn_one_per_tick();
