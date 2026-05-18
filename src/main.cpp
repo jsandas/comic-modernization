@@ -777,7 +777,7 @@ int main(int argc, char* argv[]) {
         stop_game_music();
 
         if (!quit) {
-            render_beam_in_frame(false, nullptr);
+            render_beam_in_frame(false, nullptr, false);
 
             if (game_over_sprite) {
                 SDL_Rect gameplay_frame_rect = g_graphics->compute_letterbox_rect(renderer);
