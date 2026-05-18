@@ -33,8 +33,8 @@ extern bool cheat_noclip;  // When true, disables collision detection
 // Functions
 void process_jump_input();
 void handle_fall_or_jump();
-void move_left();
-void move_right();
+bool move_left();
+bool move_right();
 void trigger_player_death(bool show_animation = true, bool fall_clip_render = false);
 void update_player_death_sequence();
 bool is_player_dying();

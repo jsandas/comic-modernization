@@ -392,19 +392,19 @@ void handle_fall_or_jump() {
     }
 }
 
-void move_left() {
+bool move_left() {
     // Check if at left edge of stage
     if (comic_x == 0) {
         // Guard against NULL level pointer
         if (current_level_ptr == nullptr) {
             comic_x_momentum = 0;
-            return;
+            return false;
         }
         
         // Validate stage number is within bounds (0-2)
         if (current_stage_number >= 3) {
             comic_x_momentum = 0;
-            return;
+            return false;
         }
         
         const stage_t* stage = &current_level_ptr->stages[current_stage_number];
@@ -413,7 +413,7 @@ void move_left() {
         if (stage->exit_l == EXIT_UNUSED) {
             // No exit here, stop moving
             comic_x_momentum = 0;
-            return;
+            return false;
         }
         
         // Stage transition to the left
@@ -434,7 +434,7 @@ void move_left() {
         
         // Load the new stage
         load_new_stage();
-        return;
+        return true;
     }
     
     int new_x = comic_x - 1;
@@ -444,7 +444,7 @@ void move_left() {
     uint8_t tile_id = get_tile_at(new_x, check_y);
     if (is_tile_solid(tile_id)) {
         comic_x_momentum = 0;
-        return;
+        return false;
     }
     
     // Can move left
@@ -456,21 +456,22 @@ void move_left() {
     if (camera_x > 0 && relative_x < (PLAYFIELD_WIDTH / 2 - 2)) {
         camera_x--;
     }
+    return true;
 }
 
-void move_right() {
+bool move_right() {
     // Check if at right edge of stage
     if (comic_x >= MAP_WIDTH - 2) {
         // Guard against NULL level pointer
         if (current_level_ptr == nullptr) {
             comic_x_momentum = 0;
-            return;
+            return false;
         }
         
         // Validate stage number is within bounds (0-2)
         if (current_stage_number >= 3) {
             comic_x_momentum = 0;
-            return;
+            return false;
         }
         
         const stage_t* stage = &current_level_ptr->stages[current_stage_number];
@@ -479,7 +480,7 @@ void move_right() {
         if (stage->exit_r == EXIT_UNUSED) {
             // No exit here, stop moving
             comic_x_momentum = 0;
-            return;
+            return false;
         }
         
         // Stage transition to the right
@@ -500,7 +501,7 @@ void move_right() {
         
         // Load the new stage
         load_new_stage();
-        return;
+        return true;
     }
     
     int new_x = comic_x + 1;
@@ -511,7 +512,7 @@ void move_right() {
     uint8_t tile_id = get_tile_at(check_tile_x, check_y);
     if (is_tile_solid(tile_id)) {
         comic_x_momentum = 0;
-        return;
+        return false;
     }
     
     // Can move right
@@ -524,6 +525,7 @@ void move_right() {
     if (camera_x < max_camera_x && relative_x > (PLAYFIELD_WIDTH / 2)) {
         camera_x++;
     }
+    return true;
 }
 bool load_stage_tiles(const std::string& level_name, int stage_number) {
     // Get the level data (which has been pre-loaded with tiles)
