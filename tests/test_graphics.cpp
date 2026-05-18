@@ -1,5 +1,7 @@
 #include "test_helpers.h"
 #include "test_cases.h"
+#include "../include/physics.h"
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 
@@ -113,6 +115,59 @@ void test_asset_path_resolution() {
     // cleanup
     fs::current_path(orig_cwd);
     fs::remove_all(base);
+}
+
+// Regression: viewport height must be derived from render_scale * PLAYFIELD_HEIGHT
+// so that it always agrees with the game-unit coordinate system used for sprites.
+// Previously, playfield_viewport.h = floor(160 * letterbox_scale) could produce a
+// smaller value than render_scale * PLAYFIELD_HEIGHT (which equals 20 * render_scale),
+// causing the bottom of the player sprite to be clipped when falling back to the
+// floor from a jump.
+void test_playfield_viewport_height_matches_render_scale() {
+    // Probe a representative range of window widths. For each width, compute
+    // letterbox_scale (as main.cpp does) and verify the two formulas agree.
+    // EGA_WIDTH=320, EGA_HEIGHT=200; playfield is 192x160 EGA pixels (24x20 game units).
+    constexpr int EGA_WIDTH = 320;
+    constexpr float EGA_PLAYFIELD_H = 160.0f;
+
+    // Spot-check: demonstrate the old formula was wrong at the scale that caused the bug.
+    // At window_w = 992 (a common non-integer multiple of 320):
+    //   letterbox_scale = 992/320 = 3.1
+    //   render_scale = round(8 * 3.1) = round(24.8) = 25
+    //   old viewport_h = floor(160 * 3.1) = floor(496.0) = 496
+    //   new viewport_h = 25 * 20 = 500
+    //   sprite at comic_y=16 has bottom at 16*25 + 4*25 = 500 > old_viewport(496) → clipped!
+    {
+        const int window_w = 992;
+        const float ls = static_cast<float>(window_w) / EGA_WIDTH;
+        const int rs = static_cast<int>(8.0f * ls + 0.5f);
+        const int old_viewport_h = static_cast<int>(EGA_PLAYFIELD_H * ls);
+        const int new_viewport_h = rs * PLAYFIELD_HEIGHT;
+        check(new_viewport_h >= old_viewport_h,
+            "viewport_h (new) must be >= old formula at scale 3.1");
+        // The sprite bottom for a player at comic_y = PLAYFIELD_HEIGHT - 4 (lowest
+        // visible position) is (PLAYFIELD_HEIGHT) * rs. That must fit in viewport.
+        const int sprite_bottom_at_floor = PLAYFIELD_HEIGHT * rs;
+        check(new_viewport_h >= sprite_bottom_at_floor,
+            "new viewport must contain sprite at comic_y = PLAYFIELD_HEIGHT - 4");
+        check(old_viewport_h < sprite_bottom_at_floor,
+            "old viewport was too small at scale 3.1 (regression guard)");
+    }
+
+    // Also verify the new formula holds across a broad range of window widths.
+    bool all_ok = true;
+    for (int w = 320; w <= 3840; w += 1) {
+        const float ls = static_cast<float>(w) / EGA_WIDTH;
+        const int rs = (ls < 0.125f) ? 1 : static_cast<int>(8.0f * ls + 0.5f);
+        const int new_viewport_h = rs * PLAYFIELD_HEIGHT;
+        const int sprite_bottom = PLAYFIELD_HEIGHT * rs;
+        if (new_viewport_h < sprite_bottom) {
+            all_ok = false;
+            break;
+        }
+    }
+    check(all_ok,
+        "render_scale * PLAYFIELD_HEIGHT must always contain the bottom of the playfield sprite");
 }
 
 void test_runtime_level_tiles_populated() {

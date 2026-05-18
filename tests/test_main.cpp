@@ -14,6 +14,7 @@ static const std::vector<TestCase>& test_registry() {
         {"space_level_uses_lower_gravity", test_space_level_uses_lower_gravity},
         {"jump_top_clamped_to_playfield", test_jump_top_clamped_to_playfield},
         {"player_death_sequence_respawn", test_player_death_sequence_respawn},
+        {"player_death_sequence_last_life_allows_one_more_play", test_player_death_sequence_last_life_allows_one_more_play},
         {"player_death_sequence_game_over", test_player_death_sequence_game_over},
         {"teleport_does_not_update_respawn_checkpoint", test_teleport_does_not_update_respawn_checkpoint},
         {"door_activation_alignment_x", test_door_activation_alignment_x},
@@ -39,6 +40,7 @@ static const std::vector<TestCase>& test_registry() {
         {"enemy_animation_sequence", test_enemy_animation_sequence},
         {"asset_path_resolution", test_asset_path_resolution},
         {"runtime_level_tiles_populated", test_runtime_level_tiles_populated},
+        {"playfield_viewport_height_matches_render_scale", test_playfield_viewport_height_matches_render_scale},
 
         // Actors & Items
         {"actor_spawn_one_per_tick", test_actor_spawn_one_per_tick},
