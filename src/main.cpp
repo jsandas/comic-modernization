@@ -1418,13 +1418,21 @@ int main(int argc, char* argv[]) {
                 int player_width = render_scale * 2;
                 const int player_full_height = render_scale * 4;
                 if (should_clip_player_death_render()) {
-                    g_graphics->render_sprite_top_clip_scaled(
-                        screen_x,
-                        screen_y,
-                        frame->sprite,
-                        player_width,
-                        player_full_height,
-                        render_scale * 2);
+                    // Compute how much of the sprite still fits within the playfield
+                    // viewport so the sinking effect matches natural SDL clipping.
+                    // sprite_top_y == comic_y * render_scale (center Y - half height).
+                    const int sprite_top_y = screen_y - player_full_height / 2;
+                    const int clip_h = std::clamp(
+                        playfield_viewport.h - sprite_top_y, 0, player_full_height);
+                    if (clip_h > 0) {
+                        g_graphics->render_sprite_top_clip_scaled(
+                            screen_x,
+                            screen_y,
+                            frame->sprite,
+                            player_width,
+                            player_full_height,
+                            clip_h);
+                    }
                 } else {
                     g_graphics->render_sprite_centered_scaled(
                         screen_x,
