@@ -668,23 +668,17 @@ A centralized system for managing debug cheats and development tools. Activated 
 **Goal:** Ensure quality and faithfulness
 
 **Tasks:**
-- [ ] Validate physics against original
-  - [ ] Jump height measurements
-  - [ ] Fall speed verification
-  - [ ] Movement speed checks
-- [ ] Test all levels and stages
-  - [ ] Completability
-  - [ ] No softlocks
-  - [ ] Item accessibility
-- [ ] Performance optimization
-  - [ ] 60 FPS on target hardware
-  - [ ] Memory usage profiling
-  - [ ] Asset loading optimization
+- [X] Validate physics against original
+  - [X] Jump height measurements
+  - [x] Fall speed verification
+  - [x] Movement speed checks
+- [x] Test all levels and stages
+  - [x] Completability
+  - [x] No softlocks
+  - [x] Item accessibility
 - [ ] Bug fixes and edge cases
   - [ ] Collision edge cases
   - [ ] Enemy behavior quirks
-- [ ] Quality of life improvements
-  - [ ] Configurable controls
 
 **Testing Resources:**
 - DOSBox for side-by-side comparison
