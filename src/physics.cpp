@@ -235,7 +235,7 @@ bool is_tile_solid(uint8_t tile_id) {
 void process_jump_input() {
     if (comic_is_falling_or_jumping == 0 &&
         key_state_jump && !previous_key_state_jump &&
-        comic_jump_counter == comic_jump_power) {
+        comic_jump_counter != 1) {
         comic_is_falling_or_jumping = 1;
         // Note: Original game had no jump sound
     }
@@ -368,7 +368,8 @@ void handle_fall_or_jump() {
         }
         
         // Check if we should start falling (no ground beneath)
-        uint8_t foot_y = comic_y + 5;
+        // Assembly game_loop.check_for_floor probes at comic_y + 4
+        uint8_t foot_y = comic_y + 4;
         uint8_t foot_tile = get_tile_at(comic_x, foot_y);
         bool foot_solid = is_tile_solid(foot_tile);
         
@@ -506,7 +507,7 @@ bool move_right() {
     
     int new_x = comic_x + 1;
     uint8_t check_y = comic_y + 3; // Check at knees
-    uint8_t check_tile_x = new_x + 1; // Look at tile 1 unit to the right
+    uint8_t check_tile_x = new_x + 1; // Check right edge (player is 2 units wide)
     
     // Check if we'd hit a wall
     uint8_t tile_id = get_tile_at(check_tile_x, check_y);
