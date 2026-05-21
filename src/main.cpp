@@ -880,6 +880,11 @@ int main(int argc, char* argv[]) {
         clear_gameplay_key_states();
     }
 
+    // Persists between render frames; updated each tick when movement is attempted.
+    bool player_moved_last_tick = false;
+    // True while airborne due to walking off an edge (not a jump).
+    bool player_airborne_from_walk_off = false;
+
     while (!quit) {
         uint32_t current_time = SDL_GetTicks();
         uint32_t delta_time = current_time - last_tick_time;
@@ -988,6 +993,10 @@ int main(int argc, char* argv[]) {
                 tick_accumulator -= MS_PER_TICK;
                 ticks_processed++;
 
+                // Per-tick movement result must be cleared before any early-continue
+                // branches (death, door anim, teleport) to avoid stale run state.
+                player_moved_last_tick = false;
+
                 // Phase 5: advance run cycle unconditionally every tick before any
                 // early-return branches, matching assembly .tick behavior.
                 // Derive modulus from the actual run animation frame count so the
@@ -1043,22 +1052,26 @@ int main(int argc, char* argv[]) {
                 // Assembly: on landing, jmp game_loop.check_pause_input skips ALL
                 // left/right movement AND the floor walk-off check for that tick.
                 const bool just_landed = (was_falling_or_jumping != 0) && (comic_is_falling_or_jumping == 0);
+                if (just_landed) {
+                    player_airborne_from_walk_off = false;
+                }
 
                 // If physics transitioned from grounded to airborne using the
                 // no-floor path, suppress jump art for this render frame.
                 if (!was_falling_or_jumping && comic_is_falling_or_jumping &&
                     comic_jump_counter == 1 && comic_y_vel == 8) {
                     suppress_jump_animation_this_frame = true;
+                    player_airborne_from_walk_off = true;
                 }
 
                 // Ground movement (only when not in air AND did not just land this tick)
                 // Skipping on landing matches assembly: landing jumps past the left/right block
                 if (!comic_is_falling_or_jumping && !just_landed) {
                     if (key_state_left) {
-                        move_left();
+                        player_moved_last_tick |= move_left();
                     }
                     if (key_state_right) {
-                        move_right();
+                        player_moved_last_tick |= move_right();
                     }
 
                     // Match original game-loop floor check ordering: after
@@ -1090,6 +1103,7 @@ int main(int argc, char* argv[]) {
                             comic_is_falling_or_jumping = 1;
                             comic_jump_counter = 1;
                             suppress_jump_animation_this_frame = true;
+                            player_airborne_from_walk_off = true;
                         }
                     }
                 }
@@ -1205,10 +1219,11 @@ int main(int argc, char* argv[]) {
                 } else {
                     current_animation = nullptr;
                 }
-            } else if (comic_is_falling_or_jumping && !suppress_jump_animation_this_frame) {
+            } else if (comic_is_falling_or_jumping && !suppress_jump_animation_this_frame
+                       && !player_airborne_from_walk_off) {
                 current_animation = comic_facing ? &comic_jump_right : &comic_jump_left;
             } else {
-                if (key_state_left || key_state_right) {
+                if (player_moved_last_tick) {
                     current_animation = comic_facing ? &comic_run_right : &comic_run_left;
                 } else {
                     current_animation = comic_facing ? &comic_idle_right : &comic_idle_left;
@@ -1418,13 +1433,21 @@ int main(int argc, char* argv[]) {
                 int player_width = render_scale * 2;
                 const int player_full_height = render_scale * 4;
                 if (should_clip_player_death_render()) {
-                    g_graphics->render_sprite_top_clip_scaled(
-                        screen_x,
-                        screen_y,
-                        frame->sprite,
-                        player_width,
-                        player_full_height,
-                        render_scale * 2);
+                    // Compute how much of the sprite still fits within the playfield
+                    // viewport so the sinking effect matches natural SDL clipping.
+                    // sprite_top_y == comic_y * render_scale (center Y - half height).
+                    const int sprite_top_y = screen_y - player_full_height / 2;
+                    const int clip_h = std::clamp(
+                        playfield_viewport.h - sprite_top_y, 0, player_full_height);
+                    if (clip_h > 0) {
+                        g_graphics->render_sprite_top_clip_scaled(
+                            screen_x,
+                            screen_y,
+                            frame->sprite,
+                            player_width,
+                            player_full_height,
+                            clip_h);
+                    }
                 } else {
                     g_graphics->render_sprite_centered_scaled(
                         screen_x,

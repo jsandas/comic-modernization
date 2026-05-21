@@ -83,6 +83,8 @@ public:
     // Tileset loading/management
     bool load_tileset(const std::string& level_name);
     Tileset* get_tileset(const std::string& level_name);
+    void set_tileset_blackout(const std::string& level_name, bool blackout);
+    bool is_tileset_blacked_out(const std::string& level_name) const;
     
     // Sprite loading
     bool load_sprite(const std::string& sprite_name, const std::string& direction);
@@ -128,6 +130,7 @@ private:
     bool ttf_inited;
     TTF_Font* debug_font;  // Font for debug overlay text
     std::map<std::string, Tileset> tilesets;
+    std::map<std::string, bool> tileset_blackout;
     std::map<std::string, Sprite> sprites;
     std::map<std::string, SpriteAnimationData*> enemy_sprites;  // Enemy sprite animation data
     

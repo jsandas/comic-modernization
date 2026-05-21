@@ -235,7 +235,7 @@ bool is_tile_solid(uint8_t tile_id) {
 void process_jump_input() {
     if (comic_is_falling_or_jumping == 0 &&
         key_state_jump && !previous_key_state_jump &&
-        comic_jump_counter == comic_jump_power) {
+        comic_jump_counter != 1) {
         comic_is_falling_or_jumping = 1;
         // Note: Original game had no jump sound
     }
@@ -368,7 +368,8 @@ void handle_fall_or_jump() {
         }
         
         // Check if we should start falling (no ground beneath)
-        uint8_t foot_y = comic_y + 5;
+        // Assembly game_loop.check_for_floor probes at comic_y + 4
+        uint8_t foot_y = comic_y + 4;
         uint8_t foot_tile = get_tile_at(comic_x, foot_y);
         bool foot_solid = is_tile_solid(foot_tile);
         
@@ -392,19 +393,19 @@ void handle_fall_or_jump() {
     }
 }
 
-void move_left() {
+bool move_left() {
     // Check if at left edge of stage
     if (comic_x == 0) {
         // Guard against NULL level pointer
         if (current_level_ptr == nullptr) {
             comic_x_momentum = 0;
-            return;
+            return false;
         }
         
         // Validate stage number is within bounds (0-2)
         if (current_stage_number >= 3) {
             comic_x_momentum = 0;
-            return;
+            return false;
         }
         
         const stage_t* stage = &current_level_ptr->stages[current_stage_number];
@@ -413,7 +414,7 @@ void move_left() {
         if (stage->exit_l == EXIT_UNUSED) {
             // No exit here, stop moving
             comic_x_momentum = 0;
-            return;
+            return false;
         }
         
         // Stage transition to the left
@@ -434,7 +435,7 @@ void move_left() {
         
         // Load the new stage
         load_new_stage();
-        return;
+        return true;
     }
     
     int new_x = comic_x - 1;
@@ -444,7 +445,7 @@ void move_left() {
     uint8_t tile_id = get_tile_at(new_x, check_y);
     if (is_tile_solid(tile_id)) {
         comic_x_momentum = 0;
-        return;
+        return false;
     }
     
     // Can move left
@@ -456,21 +457,22 @@ void move_left() {
     if (camera_x > 0 && relative_x < (PLAYFIELD_WIDTH / 2 - 2)) {
         camera_x--;
     }
+    return true;
 }
 
-void move_right() {
+bool move_right() {
     // Check if at right edge of stage
     if (comic_x >= MAP_WIDTH - 2) {
         // Guard against NULL level pointer
         if (current_level_ptr == nullptr) {
             comic_x_momentum = 0;
-            return;
+            return false;
         }
         
         // Validate stage number is within bounds (0-2)
         if (current_stage_number >= 3) {
             comic_x_momentum = 0;
-            return;
+            return false;
         }
         
         const stage_t* stage = &current_level_ptr->stages[current_stage_number];
@@ -479,7 +481,7 @@ void move_right() {
         if (stage->exit_r == EXIT_UNUSED) {
             // No exit here, stop moving
             comic_x_momentum = 0;
-            return;
+            return false;
         }
         
         // Stage transition to the right
@@ -500,18 +502,18 @@ void move_right() {
         
         // Load the new stage
         load_new_stage();
-        return;
+        return true;
     }
     
     int new_x = comic_x + 1;
     uint8_t check_y = comic_y + 3; // Check at knees
-    uint8_t check_tile_x = new_x + 1; // Look at tile 1 unit to the right
+    uint8_t check_tile_x = new_x + 1; // Check right edge (player is 2 units wide)
     
     // Check if we'd hit a wall
     uint8_t tile_id = get_tile_at(check_tile_x, check_y);
     if (is_tile_solid(tile_id)) {
         comic_x_momentum = 0;
-        return;
+        return false;
     }
     
     // Can move right
@@ -524,6 +526,7 @@ void move_right() {
     if (camera_x < max_camera_x && relative_x > (PLAYFIELD_WIDTH / 2)) {
         camera_x++;
     }
+    return true;
 }
 bool load_stage_tiles(const std::string& level_name, int stage_number) {
     // Get the level data (which has been pre-loaded with tiles)

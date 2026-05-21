@@ -1,9 +1,35 @@
 #include "test_helpers.h"
 #include "test_cases.h"
 #include "../include/physics.h"
+#include <SDL2/SDL.h>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
+
+namespace {
+bool write_minimal_png(const std::filesystem::path& path) {
+    // 1x1 opaque white PNG.
+    static const unsigned char kPngData[] = {
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+        0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41,
+        0x54, 0x78, 0x9C, 0x63, 0xF8, 0xFF, 0xFF, 0xFF,
+        0x7F, 0x00, 0x09, 0xFB, 0x03, 0xFD, 0x2A, 0x86,
+        0xE3, 0x8A, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
+        0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82
+    };
+
+    std::ofstream out(path, std::ios::binary);
+    if (!out.good()) {
+        return false;
+    }
+
+    out.write(reinterpret_cast<const char*>(kPngData), static_cast<std::streamsize>(sizeof(kPngData)));
+    return out.good();
+}
+} // namespace
 
 void test_animation_looping() {
     reset_physics_state();
@@ -66,6 +92,34 @@ void test_enemy_animation_sequence() {
     check(empty_sequence.empty(), "enemy sequence should be empty for 0 frames");
 }
 
+void test_tileset_blackout_state_tracking() {
+    // set_tileset_blackout against an empty tilesets map takes the early-return
+    // path (no tileset loaded yet) but must still record the requested state so
+    // that load_tileset can apply it when the tileset is loaded later.
+    GraphicsSystem graphics(nullptr);
+
+    // Default: no entry recorded for an unknown level.
+    check(!graphics.is_tileset_blacked_out("castle"),
+          "blackout: unset level should report false");
+
+    // Record blackout=true with no tileset present (early-return path).
+    graphics.set_tileset_blackout("castle", true);
+    check(graphics.is_tileset_blacked_out("castle"),
+          "blackout: state should be recorded as true after set with no tileset");
+
+    // Toggling to false must also be recorded.
+    graphics.set_tileset_blackout("castle", false);
+    check(!graphics.is_tileset_blacked_out("castle"),
+          "blackout: state should be updated to false after second set");
+
+    // A different level must be tracked independently.
+    graphics.set_tileset_blackout("forest", true);
+        check(graphics.is_tileset_blacked_out("forest"),
+          "blackout: separate level state should be true");
+        check(!graphics.is_tileset_blacked_out("castle"),
+          "blackout: castle state must remain false after forest was set");
+}
+
 void test_asset_path_resolution() {
     reset_physics_state();
     namespace fs = std::filesystem;
@@ -114,6 +168,97 @@ void test_asset_path_resolution() {
 
     // cleanup
     fs::current_path(orig_cwd);
+    fs::remove_all(base);
+}
+
+void test_tileset_blackout_state_tracks_unloaded_tileset() {
+    reset_physics_state();
+    namespace fs = std::filesystem;
+
+    fs::path base = fs::temp_directory_path() / "comic_blackout_tileset_test";
+    fs::path original_cwd = fs::current_path();
+    fs::remove_all(base);
+    fs::create_directories(base / "assets" / "tiles");
+
+    const fs::path castle_tile = base / "assets" / "tiles" / "castle.tt2-00.png";
+    if (!write_minimal_png(castle_tile)) {
+        check(false, "failed to create castle tile fixture for blackout test");
+        fs::remove_all(base);
+        return;
+    }
+
+    fs::current_path(base);
+
+    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "software");
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        check(false, std::string("SDL video init failed: ") + SDL_GetError());
+        fs::current_path(original_cwd);
+        fs::remove_all(base);
+        return;
+    }
+
+    SDL_Window* window = SDL_CreateWindow(
+        "test_blackout",
+        SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED,
+        64,
+        64,
+        SDL_WINDOW_HIDDEN);
+    if (window == nullptr) {
+        check(false, std::string("SDL window creation failed: ") + SDL_GetError());
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        fs::current_path(original_cwd);
+        fs::remove_all(base);
+        return;
+    }
+
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
+    if (renderer == nullptr) {
+        check(false, std::string("SDL renderer creation failed: ") + SDL_GetError());
+        SDL_DestroyWindow(window);
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        fs::current_path(original_cwd);
+        fs::remove_all(base);
+        return;
+    }
+
+    {
+        GraphicsSystem graphics(renderer);
+        check(graphics.initialize(), "graphics initialize should succeed for blackout test");
+
+        // Configure blackout before loading tileset; load_tileset should apply it.
+        graphics.set_tileset_blackout("castle", true);
+        check(graphics.load_tileset("castle"), "castle tileset should load for blackout test");
+
+        Tileset* castle_tileset = graphics.get_tileset("castle");
+        check(castle_tileset != nullptr, "castle tileset should be retrievable after load");
+
+        if (castle_tileset != nullptr && !castle_tileset->tiles.empty()) {
+            SDL_Texture* sample_texture = castle_tileset->tiles.begin()->second.texture;
+            check(sample_texture != nullptr, "sample castle tile texture should be non-null");
+
+            if (sample_texture != nullptr) {
+                Uint8 r = 255;
+                Uint8 g = 255;
+                Uint8 b = 255;
+                SDL_GetTextureColorMod(sample_texture, &r, &g, &b);
+                check(r == 0 && g == 0 && b == 0,
+                      "blackout set before load should darken loaded tile textures");
+
+                graphics.set_tileset_blackout("castle", false);
+                SDL_GetTextureColorMod(sample_texture, &r, &g, &b);
+                check(r == 255 && g == 255 && b == 255,
+                      "clearing blackout should restore tile texture color modulation");
+            }
+        } else {
+            check(false, "castle tileset should contain at least one tile texture");
+        }
+    }
+
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    fs::current_path(original_cwd);
     fs::remove_all(base);
 }
 
