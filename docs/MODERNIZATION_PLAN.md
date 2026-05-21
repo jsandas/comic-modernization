@@ -711,13 +711,20 @@ A centralized system for managing debug cheats and development tools. Activated 
   - [x] Asset extraction tooling (`tools/extract_assets.py` + `tools/requirements.txt`) ships in every release archive
   - [x] `ASSET_EXTRACTION.md` is generated into each release package with step-by-step instructions
   - [x] README documents the extraction workflow for local builds
-- [ ] License considerations
-  - [ ] Code licensing (MIT/GPL)
-  - [ ] Asset ownership clarification
-- [ ] Distribution
-  - [ ] GitHub releases
-  - [ ] Binaries for each platform
-  - [ ] Installation instructions
+- [x] License considerations
+  - [x] Code licensing: MIT — permissive license covering the C++17 source code
+    in this repository. See `LICENSE` in the repo root.
+    - Alternative considered: GPL v2/v3 (used by Chocolate Doom, Quakespasm,
+      etc.) would require derivative works to remain open-source. MIT was chosen
+      for simplicity and maximum reuse.
+  - [x] Asset ownership: All original game assets (graphics, sounds, level data,
+    tile maps) are Copyright 1990 by Michael A. Denio. This project does not
+    distribute those assets. Users must supply original game files; see README
+    and the extraction tooling in `tools/`.
+- [x] Distribution
+  - [x] GitHub releases — `release.yml` builds and publishes binaries on `v*` tag push
+  - [x] Binaries for each platform — linux-x64, macos-arm64, windows-x64
+  - [x] Installation instructions — covered in README (Quick Start + Assets sections)
 
 **Deliverables:**
 - Complete, playable game
