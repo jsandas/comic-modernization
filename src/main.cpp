@@ -993,6 +993,10 @@ int main(int argc, char* argv[]) {
                 tick_accumulator -= MS_PER_TICK;
                 ticks_processed++;
 
+                // Per-tick movement result must be cleared before any early-continue
+                // branches (death, door anim, teleport) to avoid stale run state.
+                player_moved_last_tick = false;
+
                 // Phase 5: advance run cycle unconditionally every tick before any
                 // early-return branches, matching assembly .tick behavior.
                 // Derive modulus from the actual run animation frame count so the
@@ -1059,8 +1063,6 @@ int main(int argc, char* argv[]) {
                     suppress_jump_animation_this_frame = true;
                     player_airborne_from_walk_off = true;
                 }
-
-                player_moved_last_tick = false;
 
                 // Ground movement (only when not in air AND did not just land this tick)
                 // Skipping on landing matches assembly: landing jumps past the left/right block
