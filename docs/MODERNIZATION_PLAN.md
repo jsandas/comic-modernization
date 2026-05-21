@@ -676,9 +676,6 @@ A centralized system for managing debug cheats and development tools. Activated 
   - [x] Completability
   - [x] No softlocks
   - [x] Item accessibility
-- [ ] Bug fixes and edge cases
-  - [ ] Collision edge cases
-  - [ ] Enemy behavior quirks
 
 **Testing Resources:**
 - DOSBox for side-by-side comparison
