@@ -696,11 +696,11 @@ A centralized system for managing debug cheats and development tools. Activated 
 **Goal:** Prepare for distribution
 
 **Tasks:**
-- [ ] Write comprehensive README
-  - [ ] Building instructions
-  - [ ] Running the game
-  - [ ] Controls
-  - [ ] Credits
+- [x] Write comprehensive README
+  - [x] Building instructions
+  - [x] Running the game
+  - [x] Controls
+  - [x] Credits
 - [ ] Create build scripts for all platforms
   - [ ] Windows (Visual Studio / MinGW)
   - [ ] macOS (Xcode / clang)
