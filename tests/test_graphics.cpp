@@ -1,6 +1,7 @@
 #include "test_helpers.h"
 #include "test_cases.h"
 #include "../include/physics.h"
+#include <SDL2/SDL.h>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -147,18 +148,70 @@ void test_asset_path_resolution() {
 
 void test_tileset_blackout_state_tracks_unloaded_tileset() {
     reset_physics_state();
-    GraphicsSystem graphics(nullptr);
 
-    check(!graphics.is_tileset_blacked_out("castle"),
-          "blackout should default to false for unknown tileset");
+    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "software");
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        check(false, std::string("SDL video init failed: ") + SDL_GetError());
+        return;
+    }
 
-    graphics.set_tileset_blackout("castle", true);
-    check(graphics.is_tileset_blacked_out("castle"),
-          "blackout should be tracked even when tileset is not loaded");
+    SDL_Window* window = SDL_CreateWindow(
+        "test_blackout",
+        SDL_WINDOWPOS_UNDEFINED,
+        SDL_WINDOWPOS_UNDEFINED,
+        64,
+        64,
+        SDL_WINDOW_HIDDEN);
+    if (window == nullptr) {
+        check(false, std::string("SDL window creation failed: ") + SDL_GetError());
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        return;
+    }
 
-    graphics.set_tileset_blackout("castle", false);
-    check(!graphics.is_tileset_blacked_out("castle"),
-          "blackout should update when toggled off");
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
+    if (renderer == nullptr) {
+        check(false, std::string("SDL renderer creation failed: ") + SDL_GetError());
+        SDL_DestroyWindow(window);
+        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        return;
+    }
+
+    {
+        GraphicsSystem graphics(renderer);
+        check(graphics.initialize(), "graphics initialize should succeed for blackout test");
+
+        // Configure blackout before loading tileset; load_tileset should apply it.
+        graphics.set_tileset_blackout("castle", true);
+        check(graphics.load_tileset("castle"), "castle tileset should load for blackout test");
+
+        Tileset* castle_tileset = graphics.get_tileset("castle");
+        check(castle_tileset != nullptr, "castle tileset should be retrievable after load");
+
+        if (castle_tileset != nullptr && !castle_tileset->tiles.empty()) {
+            SDL_Texture* sample_texture = castle_tileset->tiles.begin()->second.texture;
+            check(sample_texture != nullptr, "sample castle tile texture should be non-null");
+
+            if (sample_texture != nullptr) {
+                Uint8 r = 255;
+                Uint8 g = 255;
+                Uint8 b = 255;
+                SDL_GetTextureColorMod(sample_texture, &r, &g, &b);
+                check(r == 0 && g == 0 && b == 0,
+                      "blackout set before load should darken loaded tile textures");
+
+                graphics.set_tileset_blackout("castle", false);
+                SDL_GetTextureColorMod(sample_texture, &r, &g, &b);
+                check(r == 255 && g == 255 && b == 255,
+                      "clearing blackout should restore tile texture color modulation");
+            }
+        } else {
+            check(false, "castle tileset should contain at least one tile texture");
+        }
+    }
+
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
 // Regression: viewport height must be derived from render_scale * PLAYFIELD_HEIGHT
