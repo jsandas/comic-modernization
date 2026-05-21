@@ -701,13 +701,16 @@ A centralized system for managing debug cheats and development tools. Activated 
   - [x] Running the game
   - [x] Controls
   - [x] Credits
-- [ ] Create build scripts for all platforms
-  - [ ] Windows (Visual Studio / MinGW)
-  - [ ] macOS (Xcode / clang)
-  - [ ] Linux (GCC)
-- [ ] Package assets
-  - [ ] Include original game assets (if permissible)
-  - [ ] Asset extraction tools if needed
+- [x] Create build scripts for all platforms
+  - [x] Windows — handled by `release.yml` via vcpkg + Visual Studio 17 2022
+  - [x] macOS — handled by `release.yml` via Homebrew SDL2 packages
+  - [x] Linux — handled by `release.yml` via apt SDL2 packages
+  - Note: No standalone shell scripts are needed; local builds use `cmake --preset default` (documented in README); CI/release builds live in `.github/workflows/`
+- [x] Package assets
+  - Original game assets are copyrighted and cannot be bundled
+  - [x] Asset extraction tooling (`tools/extract_assets.py` + `tools/requirements.txt`) ships in every release archive
+  - [x] `ASSET_EXTRACTION.md` is generated into each release package with step-by-step instructions
+  - [x] README documents the extraction workflow for local builds
 - [ ] License considerations
   - [ ] Code licensing (MIT/GPL)
   - [ ] Asset ownership clarification
