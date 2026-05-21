@@ -147,6 +147,8 @@ public: // made public for testing convenience
     // appropriate subdirectory.  This is used internally and also verified by
     // unit tests to prevent regressions when reorganizing the asset tree.
     std::string get_asset_path(const std::string& filename);
+    // Returns the recorded blackout state for a level, or false if not set.
+    bool get_tileset_blackout(const std::string& level_name) const;
 
 private:
 };

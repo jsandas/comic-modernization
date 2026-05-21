@@ -66,6 +66,34 @@ void test_enemy_animation_sequence() {
     check(empty_sequence.empty(), "enemy sequence should be empty for 0 frames");
 }
 
+void test_tileset_blackout_state_tracking() {
+    // set_tileset_blackout against an empty tilesets map takes the early-return
+    // path (no tileset loaded yet) but must still record the requested state so
+    // that load_tileset can apply it when the tileset is loaded later.
+    GraphicsSystem graphics(nullptr);
+
+    // Default: no entry recorded for an unknown level.
+    check(!graphics.get_tileset_blackout("castle"),
+          "blackout: unset level should report false");
+
+    // Record blackout=true with no tileset present (early-return path).
+    graphics.set_tileset_blackout("castle", true);
+    check(graphics.get_tileset_blackout("castle"),
+          "blackout: state should be recorded as true after set with no tileset");
+
+    // Toggling to false must also be recorded.
+    graphics.set_tileset_blackout("castle", false);
+    check(!graphics.get_tileset_blackout("castle"),
+          "blackout: state should be updated to false after second set");
+
+    // A different level must be tracked independently.
+    graphics.set_tileset_blackout("forest", true);
+    check(graphics.get_tileset_blackout("forest"),
+          "blackout: separate level state should be true");
+    check(!graphics.get_tileset_blackout("castle"),
+          "blackout: castle state must remain false after forest was set");
+}
+
 void test_asset_path_resolution() {
     reset_physics_state();
     namespace fs = std::filesystem;
