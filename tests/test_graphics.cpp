@@ -73,24 +73,24 @@ void test_tileset_blackout_state_tracking() {
     GraphicsSystem graphics(nullptr);
 
     // Default: no entry recorded for an unknown level.
-    check(!graphics.get_tileset_blackout("castle"),
+    check(!graphics.is_tileset_blacked_out("castle"),
           "blackout: unset level should report false");
 
     // Record blackout=true with no tileset present (early-return path).
     graphics.set_tileset_blackout("castle", true);
-    check(graphics.get_tileset_blackout("castle"),
+    check(graphics.is_tileset_blacked_out("castle"),
           "blackout: state should be recorded as true after set with no tileset");
 
     // Toggling to false must also be recorded.
     graphics.set_tileset_blackout("castle", false);
-    check(!graphics.get_tileset_blackout("castle"),
+    check(!graphics.is_tileset_blacked_out("castle"),
           "blackout: state should be updated to false after second set");
 
     // A different level must be tracked independently.
     graphics.set_tileset_blackout("forest", true);
-    check(graphics.get_tileset_blackout("forest"),
+        check(graphics.is_tileset_blacked_out("forest"),
           "blackout: separate level state should be true");
-    check(!graphics.get_tileset_blackout("castle"),
+        check(!graphics.is_tileset_blacked_out("castle"),
           "blackout: castle state must remain false after forest was set");
 }
 

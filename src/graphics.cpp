@@ -288,14 +288,6 @@ std::vector<TextureInfo> GraphicsSystem::load_animation_frames(
     return frames;
 }
 
-bool GraphicsSystem::get_tileset_blackout(const std::string& level_name) const {
-    auto it = tileset_blackout.find(level_name);
-    if (it == tileset_blackout.end()) {
-        return false;
-    }
-    return it->second;
-}
-
 bool GraphicsSystem::load_tileset(const std::string& level_name) {
     if (tilesets.find(level_name) != tilesets.end()) {
         return true;
