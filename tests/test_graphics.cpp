@@ -6,6 +6,31 @@
 #include <filesystem>
 #include <fstream>
 
+namespace {
+bool write_minimal_png(const std::filesystem::path& path) {
+    // 1x1 opaque white PNG.
+    static const unsigned char kPngData[] = {
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+        0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+        0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41,
+        0x54, 0x78, 0x9C, 0x63, 0xF8, 0xFF, 0xFF, 0xFF,
+        0x7F, 0x00, 0x09, 0xFB, 0x03, 0xFD, 0x2A, 0x86,
+        0xE3, 0x8A, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
+        0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82
+    };
+
+    std::ofstream out(path, std::ios::binary);
+    if (!out.good()) {
+        return false;
+    }
+
+    out.write(reinterpret_cast<const char*>(kPngData), static_cast<std::streamsize>(sizeof(kPngData)));
+    return out.good();
+}
+} // namespace
+
 void test_animation_looping() {
     reset_physics_state();
     GraphicsSystem graphics(nullptr);
@@ -148,10 +173,27 @@ void test_asset_path_resolution() {
 
 void test_tileset_blackout_state_tracks_unloaded_tileset() {
     reset_physics_state();
+    namespace fs = std::filesystem;
+
+    fs::path base = fs::temp_directory_path() / "comic_blackout_tileset_test";
+    fs::path original_cwd = fs::current_path();
+    fs::remove_all(base);
+    fs::create_directories(base / "assets" / "tiles");
+
+    const fs::path castle_tile = base / "assets" / "tiles" / "castle.tt2-00.png";
+    if (!write_minimal_png(castle_tile)) {
+        check(false, "failed to create castle tile fixture for blackout test");
+        fs::remove_all(base);
+        return;
+    }
+
+    fs::current_path(base);
 
     SDL_SetHint(SDL_HINT_RENDER_DRIVER, "software");
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         check(false, std::string("SDL video init failed: ") + SDL_GetError());
+        fs::current_path(original_cwd);
+        fs::remove_all(base);
         return;
     }
 
@@ -165,6 +207,8 @@ void test_tileset_blackout_state_tracks_unloaded_tileset() {
     if (window == nullptr) {
         check(false, std::string("SDL window creation failed: ") + SDL_GetError());
         SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        fs::current_path(original_cwd);
+        fs::remove_all(base);
         return;
     }
 
@@ -173,6 +217,8 @@ void test_tileset_blackout_state_tracks_unloaded_tileset() {
         check(false, std::string("SDL renderer creation failed: ") + SDL_GetError());
         SDL_DestroyWindow(window);
         SDL_QuitSubSystem(SDL_INIT_VIDEO);
+        fs::current_path(original_cwd);
+        fs::remove_all(base);
         return;
     }
 
@@ -212,6 +258,8 @@ void test_tileset_blackout_state_tracks_unloaded_tileset() {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    fs::current_path(original_cwd);
+    fs::remove_all(base);
 }
 
 // Regression: viewport height must be derived from render_scale * PLAYFIELD_HEIGHT
