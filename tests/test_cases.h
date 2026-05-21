@@ -35,6 +35,7 @@ void test_animation_zero_duration();
 void test_enemy_animation_sequence();
 void test_tileset_blackout_state_tracking();
 void test_asset_path_resolution();
+void test_tileset_blackout_state_tracks_unloaded_tileset();
 void test_runtime_level_tiles_populated();
 void test_playfield_viewport_height_matches_render_scale();
 

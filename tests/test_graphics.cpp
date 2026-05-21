@@ -145,6 +145,22 @@ void test_asset_path_resolution() {
     fs::remove_all(base);
 }
 
+void test_tileset_blackout_state_tracks_unloaded_tileset() {
+    reset_physics_state();
+    GraphicsSystem graphics(nullptr);
+
+    check(!graphics.is_tileset_blacked_out("castle"),
+          "blackout should default to false for unknown tileset");
+
+    graphics.set_tileset_blackout("castle", true);
+    check(graphics.is_tileset_blacked_out("castle"),
+          "blackout should be tracked even when tileset is not loaded");
+
+    graphics.set_tileset_blackout("castle", false);
+    check(!graphics.is_tileset_blacked_out("castle"),
+          "blackout should update when toggled off");
+}
+
 // Regression: viewport height must be derived from render_scale * PLAYFIELD_HEIGHT
 // so that it always agrees with the game-unit coordinate system used for sprites.
 // Previously, playfield_viewport.h = floor(160 * letterbox_scale) could produce a

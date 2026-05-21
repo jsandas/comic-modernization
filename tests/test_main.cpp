@@ -40,6 +40,8 @@ static const std::vector<TestCase>& test_registry() {
         {"enemy_animation_sequence", test_enemy_animation_sequence},
         {"tileset_blackout_state_tracking", test_tileset_blackout_state_tracking},
         {"asset_path_resolution", test_asset_path_resolution},
+        {"tileset_blackout_state_tracks_unloaded_tileset",
+         test_tileset_blackout_state_tracks_unloaded_tileset},
         {"runtime_level_tiles_populated", test_runtime_level_tiles_populated},
         {"playfield_viewport_height_matches_render_scale", test_playfield_viewport_height_matches_render_scale},
 

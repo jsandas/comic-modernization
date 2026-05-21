@@ -1060,10 +1060,11 @@ int main(int argc, char* argv[]) {
                     player_airborne_from_walk_off = true;
                 }
 
+                player_moved_last_tick = false;
+
                 // Ground movement (only when not in air AND did not just land this tick)
                 // Skipping on landing matches assembly: landing jumps past the left/right block
                 if (!comic_is_falling_or_jumping && !just_landed) {
-                    player_moved_last_tick = false;  // reset each tick
                     if (key_state_left) {
                         player_moved_last_tick |= move_left();
                     }

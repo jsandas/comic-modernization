@@ -377,6 +377,14 @@ void GraphicsSystem::set_tileset_blackout(const std::string& level_name, bool bl
     }
 }
 
+bool GraphicsSystem::is_tileset_blacked_out(const std::string& level_name) const {
+    auto blackout_it = tileset_blackout.find(level_name);
+    if (blackout_it == tileset_blackout.end()) {
+        return false;
+    }
+    return blackout_it->second;
+}
+
 bool GraphicsSystem::load_sprite(const std::string& sprite_name, const std::string& direction) {
     std::string key = direction.empty() ? sprite_name : (sprite_name + "_" + direction);
     if (sprites.find(key) != sprites.end()) {
